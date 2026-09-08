@@ -1,0 +1,17 @@
+{
+  "short_name": "Gramasiri",
+  "name": "Gramasiri - Digital Village Super App | ನಮ್ಮ ಗ್ರಾಮ",
+  "description": "The digital home for our village — people, news, sports, agriculture, culture, and future.",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0F172A",
+  "theme_color": "#0F5132",
+  "display": "standalone",
+  "orientation": "portrait"
+}
