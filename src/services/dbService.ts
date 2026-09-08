@@ -82,21 +82,37 @@ class DatabaseService {
 
   private initLocalData() {
     const savedDemoMode = localStorage.getItem('gramasiri_demo_mode');
-    this.isDemoMode = savedDemoMode !== null ? savedDemoMode === 'true' : true;
+    this.isDemoMode = savedDemoMode !== null ? savedDemoMode === 'true' : false;
 
-    // Load or initialize local cache
-    this.news = this.loadCollection('news', SEED_NEWS);
-    this.events = this.loadCollection('events', SEED_EVENTS);
-    this.tournaments = this.loadCollection('tournaments', SEED_TOURNAMENTS);
-    this.crops = this.loadCollection('crops', SEED_CROPS);
-    this.temples = this.loadCollection('temples', SEED_TEMPLES);
-    this.history = this.loadCollection('history', SEED_HISTORY);
-    this.stories = this.loadCollection('stories', SEED_STORIES);
-    this.villageStats = this.loadCollection('village_stats', SEED_VILLAGE_STATS);
-    this.achievements = this.loadCollection('achievements', SEED_ACHIEVEMENTS);
-    this.gallery = this.loadCollection('gallery', SEED_GALLERY);
-    this.socialLinks = this.loadCollection('social_links', SEED_SOCIAL_LINKS);
-    this.emergencyAlert = this.loadCollection('emergency_alert', SEED_EMERGENCY_ALERT);
+    // Load local collections (empty by default in clean production mode unless saved or toggled)
+    this.news = this.loadCollection('news', this.isDemoMode ? SEED_NEWS : []);
+    this.events = this.loadCollection('events', this.isDemoMode ? SEED_EVENTS : []);
+    this.tournaments = this.loadCollection('tournaments', this.isDemoMode ? SEED_TOURNAMENTS : []);
+    this.crops = this.loadCollection('crops', this.isDemoMode ? SEED_CROPS : []);
+    this.temples = this.loadCollection('temples', this.isDemoMode ? SEED_TEMPLES : []);
+    this.history = this.loadCollection('history', this.isDemoMode ? SEED_HISTORY : []);
+    this.stories = this.loadCollection('stories', this.isDemoMode ? SEED_STORIES : []);
+    this.villageStats = this.loadCollection('village_stats', this.isDemoMode ? SEED_VILLAGE_STATS : {
+      ...SEED_VILLAGE_STATS,
+      population: 3450,
+      households: 820,
+      area_sqkm: 16.2,
+      literacy_rate: 82.4,
+      schools: 2,
+      temples: 3,
+      hospitals: 1,
+      agricultural_land_acres: 2150,
+      main_crops_en: 'Ragi, Groundnut, Maize, Coconut, Arecanut',
+      main_crops_kn: 'ರಾಗಿ, ಕಡಲೆಕಾಯಿ, ಮೆಕ್ಕೆಜೋಳ, ತೆಂಗು, ಅಡಿಕೆ',
+      source: 'Muttagundi Grama Panchayat Official Records',
+      last_verified: new Date().toISOString().split('T')[0],
+      verified_by: 'Muttagundi Administration'
+    });
+    this.achievements = this.loadCollection('achievements', this.isDemoMode ? SEED_ACHIEVEMENTS : []);
+    this.gallery = this.loadCollection('gallery', this.isDemoMode ? SEED_GALLERY : []);
+    this.socialLinks = this.loadCollection('social_links', this.isDemoMode ? SEED_SOCIAL_LINKS : []);
+    this.emergencyAlert = this.loadCollection('emergency_alert', this.isDemoMode ? SEED_EMERGENCY_ALERT : null);
+
     this.users = this.loadCollection('users', SEED_USERS);
     this.conversations = this.loadCollection('conversations', SEED_CONVERSATIONS);
     this.messages = this.loadCollection('messages', SEED_MESSAGES);

@@ -58,10 +58,10 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setIsSubmitting(true);
     setErrorMsg(null);
 
-    // Initial status: If moderator/admin creates, can be VERIFIED or COMMUNITY_REPORT. Otherwise COMMUNITY_REPORT or PENDING.
+    // Initial status: If moderator/admin creates, it can be VERIFIED immediately. Regular user submissions go to PENDING for Admin verification.
     const initialStatus: VerificationStatus = isModerator
       ? 'VERIFIED'
-      : 'COMMUNITY_REPORT';
+      : 'PENDING';
 
     try {
       await dbService.addNews({
