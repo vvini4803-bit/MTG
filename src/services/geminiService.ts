@@ -114,13 +114,14 @@ class GeminiService {
     const alert = dbService['emergencyAlert'];
 
     let ctx = `VILLAGE KNOWLEDGE BASE:
-Village Name: Gramasiri (ನಮ್ಮ ಗ್ರಾಮಸಿರಿ), Karnataka
-Population: ${stats?.population || 4820} residents, ${stats?.households || 1120} households
-Literacy Rate: ${stats?.literacy_rate || 84.6}%
-Agricultural Area: ${stats?.agricultural_land_acres || 2450} acres
-Main Crops: ${stats?.main_crops_en || 'Ragi, Arecanut, Coconut, Paddy, Pepper'}
-Main Temples: Sri Chennakeshava Swamy Temple, Sri Veerabhadreshwara Temple, Grama Devi Temple
-Schools: 4 schools including Government High School and PU College. Primary Health Center has 2 doctors.
+Village Name: Muttagundi (ಮುಟ್ಟಗುಂಡಿ), Hosadurga Taluk, Chitradurga District, Karnataka
+Location: Hosadurga Taluk, Chitradurga District, Karnataka
+Population: ${stats?.population || 3450} residents, ${stats?.households || 820} households
+Literacy Rate: ${stats?.literacy_rate || 82.4}%
+Agricultural Area: ${stats?.agricultural_land_acres || 2150} acres
+Main Crops: ${stats?.main_crops_en || 'Ragi, Groundnut, Maize, Coconut, Arecanut, Pomegranate'}
+Main Temples: Sri Ranganatha Swamy Temple, Sri Veerabhadreshwara Temple, Grama Devathe Temple
+Schools: Government Model Higher Primary School & High School. Primary Health Center (PHC) available.
 
 `;
 
@@ -173,7 +174,7 @@ Schools: 4 schools including Government High School and PU College. Primary Heal
   ): Promise<GeminiResponse> {
     const context = this.buildVillageContext();
 
-    const systemInstruction = `You are "ಗ್ರಾಮಸಿರಿ ಸಹಾಯಕ" (Gramasiri AI Assistant), the official virtual assistant of Gramasiri village, Karnataka.
+    const systemInstruction = `You are "ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮ ಸಹಾಯಕ" (Muttagundi AI Assistant), the official virtual assistant of Muttagundi village, Hosadurga Taluk, Chitradurga District, Karnataka.
 Your job is to assist village residents, farmers, elders, students, and guests with warmth, simplicity, and accuracy.
 
 CRITICAL INSTRUCTIONS:

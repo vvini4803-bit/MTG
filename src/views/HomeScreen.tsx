@@ -86,8 +86,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   }, []);
 
   const villageName = isKannada
-    ? (import.meta.env.VITE_VILLAGE_NAME_KN || 'ನಮ್ಮ ಗ್ರಾಮ')
-    : (import.meta.env.VITE_VILLAGE_NAME_EN || 'Gramasiri');
+    ? (import.meta.env.VITE_VILLAGE_NAME_KN || 'ಮುಟ್ಟಗುಂಡಿ')
+    : (import.meta.env.VITE_VILLAGE_NAME_EN || 'Muttagundi');
 
   // Find any active live match
   const liveMatch = tournaments.flatMap((t) => t.matches).find((m) => m.is_live);

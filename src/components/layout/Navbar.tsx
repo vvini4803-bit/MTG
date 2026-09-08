@@ -54,8 +54,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, [currentUser]);
 
   const villageName = isKannada
-    ? (import.meta.env.VITE_VILLAGE_NAME_KN || 'ನಮ್ಮ ಗ್ರಾಮ')
-    : (import.meta.env.VITE_VILLAGE_NAME_EN || 'Gramasiri');
+    ? (import.meta.env.VITE_VILLAGE_NAME_KN || 'ಮುಟ್ಟಗುಂಡಿ')
+    : (import.meta.env.VITE_VILLAGE_NAME_EN || 'Muttagundi');
 
   return (
     <header className="header-glass">

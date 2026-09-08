@@ -10,7 +10,7 @@ interface LanguageContextType {
 
 const translations: Record<string, { en: string; kn: string }> = {
   // Brand & Tagline
-  appTitle: { en: 'Gramasiri', kn: 'ಗ್ರಾಮಸಿರಿ' },
+  appTitle: { en: 'Muttagundi', kn: 'ಮುಟ್ಟಗುಂಡಿ' },
   tagline: {
     en: 'OUR VILLAGE — OUR PEOPLE — OUR STORIES — OUR FUTURE',
     kn: 'ನಮ್ಮ ಗ್ರಾಮ — ನಮ್ಮ ಜನ — ನಮ್ಮ ಕಥೆಗಳು — ನಮ್ಮ ಭವಿಷ್ಯ'
