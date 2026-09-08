@@ -240,6 +240,42 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
               : 'Privacy Protected: Resident phone numbers, emails, and exact home addresses are strictly confidential.'}
           </span>
         </div>
+
+        {/* Guest Join Prompt Banner */}
+        {!currentUser && (
+          <div
+            style={{
+              marginTop: '16px',
+              padding: '14px 18px',
+              borderRadius: 'var(--radius-md)',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(59, 130, 246, 0.12) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '14px',
+              flexWrap: 'wrap'
+            }}
+          >
+            <div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: '0 0 2px', color: '#FFFFFF' }}>
+                {isKannada ? '👋 ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮಸ್ಥರ ಡೈರೆಕ್ಟರಿ' : '👋 Join Muttagundi Village Directory'}
+              </h4>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+                {isKannada
+                  ? 'ಇತರ ಸದಸ್ಯರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಲು ಮತ್ತು ನೈಜ ಸಮಯದಲ್ಲಿ ಸಂವಹನ ನಡೆಸಲು ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ನೋಂದಾಯಿಸಿ.'
+                  : 'Register your resident profile to chat, message, and interact with fellow villagers in real time.'}
+              </p>
+            </div>
+            <button
+              onClick={onOpenLogin}
+              className="btn-primary"
+              style={{ padding: '6px 16px', fontSize: '0.82rem', whiteSpace: 'nowrap' }}
+            >
+              {isKannada ? '+ ಸದಸ್ಯರಾಗಿ ನೋಂದಾಯಿಸಿ' : '+ Register Profile'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* --- USER PRIVACY CONTROLS PANEL --- */}
@@ -568,9 +604,16 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
             </h3>
             <p style={{ fontSize: '0.85rem' }}>
               {isKannada
-                ? 'ಬೇರೆ ಕೀವರ್ಡ್ ಅಥವಾ ವರ್ಗದೊಂದಿಗೆ ಹುಡುಕಿ ನೋಡಿ.'
-                : 'Try adjusting your search query or category filter.'}
+                ? 'ಬೇರೆ ಕೀವರ್ಡ್ ಅಥವಾ ವರ್ಗದೊಂದಿಗೆ ಹುಡುಕಿ ನೋಡಿ, ಅಥವಾ ಹೊಸ ಸದಸ್ಯರಾಗಿ ನೋಂದಾಯಿಸಿ.'
+                : 'Try adjusting your search query, or register as a village resident.'}
             </p>
+            <button
+              onClick={onOpenLogin}
+              className="btn-primary"
+              style={{ marginTop: '16px', padding: '8px 20px', fontSize: '0.85rem' }}
+            >
+              {isKannada ? '+ ಮೊದಲ ಸದಸ್ಯರಾಗಿ ನೋಂದಾಯಿಸಿ' : '+ Register as First Member'}
+            </button>
           </div>
         ) : (
           filteredUsers.map((user) => {

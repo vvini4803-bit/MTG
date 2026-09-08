@@ -40,6 +40,7 @@ import {
   SEED_MESSAGES
 } from './seedData';
 import { isFirebaseConfigured, db } from './firebaseConfig';
+import { realtimeSync } from './realtimeSync';
 import {
   collection,
   onSnapshot,
@@ -78,6 +79,7 @@ class DatabaseService {
 
   constructor() {
     this.initLocalData();
+    this.initRealtimeSync();
   }
 
   private initLocalData() {
@@ -140,6 +142,216 @@ class DatabaseService {
     } catch (e) {
       console.warn('Could not purge stale demo data', e);
     }
+  }
+
+  private initRealtimeSync() {
+    realtimeSync.subscribe((envelope) => {
+      switch (envelope.type) {
+        case 'USER_REGISTERED':
+        case 'USER_UPDATED': {
+          const remoteUser: UserProfile = envelope.payload;
+          if (!remoteUser || !remoteUser.uid) return;
+          const idx = this.users.findIndex((u) => u.uid === remoteUser.uid);
+          if (idx >= 0) {
+            this.users[idx] = { ...this.users[idx], ...remoteUser };
+          } else {
+            this.users.push(remoteUser);
+          }
+          this.saveCollection('users', [...this.users]);
+          break;
+        }
+
+        case 'NEWS_CREATED': {
+          const item: NewsItem = envelope.payload;
+          if (!item || !item.id) return;
+          if (!this.news.some((n) => n.id === item.id)) {
+            this.news = [item, ...this.news];
+            this.saveCollection('news', this.news);
+          }
+          break;
+        }
+
+        case 'NEWS_VERIFIED': {
+          const { newsId, status, verifiedByUid, verifiedByName, correction, correctionKn, urgent } = envelope.payload;
+          const target = this.news.find((n) => n.id === newsId);
+          if (target) {
+            target.verification_status = status;
+            target.verified_by = verifiedByUid;
+            target.verified_by_name = verifiedByName;
+            if (correction !== undefined) target.official_correction = correction;
+            if (correctionKn !== undefined) target.official_correction_kn = correctionKn;
+            if (urgent !== undefined) target.urgent = urgent;
+            this.saveCollection('news', [...this.news]);
+          }
+          break;
+        }
+
+        case 'NEWS_LIKED': {
+          const { newsId, uid, isLiked } = envelope.payload;
+          const target = this.news.find((n) => n.id === newsId);
+          if (target) {
+            if (isLiked && !target.liked_by.includes(uid)) {
+              target.liked_by.push(uid);
+              target.likes_count += 1;
+            } else if (!isLiked && target.liked_by.includes(uid)) {
+              target.liked_by = target.liked_by.filter((id) => id !== uid);
+              target.likes_count = Math.max(0, target.likes_count - 1);
+            }
+            this.saveCollection('news', [...this.news]);
+          }
+          break;
+        }
+
+        case 'EVENT_CREATED': {
+          const evt: EventItem = envelope.payload;
+          if (!evt || !evt.id) return;
+          if (!this.events.some((e) => e.id === evt.id)) {
+            this.events = [evt, ...this.events];
+            this.saveCollection('events', this.events);
+          }
+          break;
+        }
+
+        case 'PHOTO_ADDED': {
+          const gal: GalleryItem = envelope.payload;
+          if (!gal || !gal.id) return;
+          if (!this.gallery.some((g) => g.id === gal.id)) {
+            this.gallery = [gal, ...this.gallery];
+            this.saveCollection('gallery', this.gallery);
+          }
+          break;
+        }
+
+        case 'CROP_ADDED': {
+          const crop: CropItem = envelope.payload;
+          if (!crop || !crop.id) return;
+          if (!this.crops.some((c) => c.id === crop.id)) {
+            this.crops = [crop, ...this.crops];
+            this.saveCollection('crops', this.crops);
+          }
+          break;
+        }
+
+        case 'TEMPLE_ADDED': {
+          const t: TempleItem = envelope.payload;
+          if (!t || !t.id) return;
+          if (!this.temples.some((item) => item.id === t.id)) {
+            this.temples = [t, ...this.temples];
+            this.saveCollection('temples', this.temples);
+          }
+          break;
+        }
+
+        case 'TOURNAMENT_CREATED': {
+          const tourn: Tournament = envelope.payload;
+          if (!tourn || !tourn.id) return;
+          if (!this.tournaments.some((item) => item.id === tourn.id)) {
+            this.tournaments = [tourn, ...this.tournaments];
+            this.saveCollection('tournaments', this.tournaments);
+          }
+          break;
+        }
+
+        case 'MATCH_SCORE_UPDATED': {
+          const { tournamentId, matchId, updates } = envelope.payload;
+          const tourn = this.tournaments.find((t) => t.id === tournamentId);
+          if (tourn) {
+            const match = tourn.matches.find((m) => m.id === matchId);
+            if (match) {
+              Object.assign(match, updates);
+              this.saveCollection('tournaments', [...this.tournaments]);
+            }
+          }
+          break;
+        }
+
+        case 'CHAT_MESSAGE': {
+          const msg: ChatMessage = envelope.payload;
+          if (!msg || !msg.id) return;
+          if (!this.messages.some((m) => m.id === msg.id)) {
+            this.messages = [...this.messages, msg];
+            this.saveCollection('messages', this.messages);
+
+            let conv = this.conversations.find((c) => c.id === msg.conversation_id);
+            if (conv) {
+              conv.last_message_text = msg.text || (msg.media_url ? '📷 Photo' : '');
+              conv.last_message_at = msg.created_at;
+              conv.last_sender_id = msg.sender_id;
+              conv.updated_at = msg.created_at;
+              const recipientId = conv.participants.find((p) => p !== msg.sender_id);
+              if (recipientId) {
+                if (!conv.unread_counts) conv.unread_counts = {};
+                conv.unread_counts[recipientId] = (conv.unread_counts[recipientId] || 0) + 1;
+              }
+              this.saveCollection('conversations', [...this.conversations]);
+            }
+            this.emit(`messages_${msg.conversation_id}`, this.messages.filter((m) => m.conversation_id === msg.conversation_id));
+          }
+          break;
+        }
+
+        case 'SYNC_REQUEST': {
+          if (this.users.length > 0 || this.news.length > 0 || this.events.length > 0 || this.gallery.length > 0) {
+            realtimeSync.broadcast('SYNC_RESPONSE', {
+              users: this.users,
+              news: this.news,
+              events: this.events,
+              crops: this.crops,
+              temples: this.temples,
+              gallery: this.gallery,
+              tournaments: this.tournaments
+            });
+          }
+          break;
+        }
+
+        case 'SYNC_RESPONSE': {
+          const data = envelope.payload;
+          if (!data) return;
+          if (Array.isArray(data.users)) {
+            let uChanged = false;
+            data.users.forEach((remU: UserProfile) => {
+              if (!this.users.some((u) => u.uid === remU.uid)) {
+                this.users.push(remU);
+                uChanged = true;
+              }
+            });
+            if (uChanged) this.saveCollection('users', [...this.users]);
+          }
+          if (Array.isArray(data.news)) {
+            let nChanged = false;
+            data.news.forEach((remN: NewsItem) => {
+              if (!this.news.some((n) => n.id === remN.id)) {
+                this.news.push(remN);
+                nChanged = true;
+              }
+            });
+            if (nChanged) this.saveCollection('news', [...this.news]);
+          }
+          if (Array.isArray(data.events)) {
+            let eChanged = false;
+            data.events.forEach((remE: EventItem) => {
+              if (!this.events.some((e) => e.id === remE.id)) {
+                this.events.push(remE);
+                eChanged = true;
+              }
+            });
+            if (eChanged) this.saveCollection('events', [...this.events]);
+          }
+          if (Array.isArray(data.gallery)) {
+            let gChanged = false;
+            data.gallery.forEach((remG: GalleryItem) => {
+              if (!this.gallery.some((g) => g.id === remG.id)) {
+                this.gallery.push(remG);
+                gChanged = true;
+              }
+            });
+            if (gChanged) this.saveCollection('gallery', [...this.gallery]);
+          }
+          break;
+        }
+      }
+    });
   }
 
   private loadCollection<T>(key: string, defaultValue: T): T {
@@ -284,6 +496,7 @@ class DatabaseService {
 
     this.news = [newItem, ...this.news];
     this.saveCollection('news', this.news);
+    realtimeSync.broadcast('NEWS_CREATED', newItem);
     this.logAudit('CREATE_NEWS', newItem.author_id, newItem.author_name, newItem.id, 'NEWS', `Created: ${newItem.title_en}`);
     return newItem;
   }
@@ -326,6 +539,15 @@ class DatabaseService {
     }
 
     this.saveCollection('news', [...this.news]);
+    realtimeSync.broadcast('NEWS_VERIFIED', {
+      newsId,
+      status,
+      verifiedByUid,
+      verifiedByName,
+      correction,
+      correctionKn,
+      urgent
+    });
     this.logAudit('VERIFY_NEWS', verifiedByUid, verifiedByName, newsId, 'NEWS', `Set status to ${status}`);
 
     // If marked urgent or verified, trigger push notification
@@ -356,6 +578,7 @@ class DatabaseService {
     }
 
     this.saveCollection('news', [...this.news]);
+    realtimeSync.broadcast('NEWS_LIKED', { newsId, uid, isLiked: !alreadyLiked });
   }
 
   public async deleteNews(newsId: string, uid: string, role: string): Promise<boolean> {
@@ -426,6 +649,7 @@ class DatabaseService {
 
     this.events = [newEvent, ...this.events];
     this.saveCollection('events', this.events);
+    realtimeSync.broadcast('EVENT_CREATED', newEvent);
     return newEvent;
   }
 
@@ -465,6 +689,7 @@ class DatabaseService {
 
     Object.assign(match, updates, { last_updated: new Date().toISOString() });
     this.saveCollection('tournaments', [...this.tournaments]);
+    realtimeSync.broadcast('MATCH_SCORE_UPDATED', { tournamentId, matchId, updates });
   }
 
   public async addTournament(tourn: Omit<Tournament, 'id'>): Promise<Tournament> {
@@ -475,6 +700,7 @@ class DatabaseService {
     };
     this.tournaments = [newTourn, ...this.tournaments];
     this.saveCollection('tournaments', this.tournaments);
+    realtimeSync.broadcast('TOURNAMENT_CREATED', newTourn);
     return newTourn;
   }
 
@@ -491,6 +717,7 @@ class DatabaseService {
     };
     this.crops = [newCrop, ...this.crops];
     this.saveCollection('crops', this.crops);
+    realtimeSync.broadcast('CROP_ADDED', newCrop);
     return newCrop;
   }
 
@@ -507,6 +734,7 @@ class DatabaseService {
     };
     this.temples = [newTemple, ...this.temples];
     this.saveCollection('temples', this.temples);
+    realtimeSync.broadcast('TEMPLE_ADDED', newTemple);
     return newTemple;
   }
 
@@ -589,6 +817,7 @@ class DatabaseService {
     };
     this.gallery = [newItem, ...this.gallery];
     this.saveCollection('gallery', this.gallery);
+    realtimeSync.broadcast('PHOTO_ADDED', newItem);
     return newItem;
   }
 
@@ -720,6 +949,7 @@ class DatabaseService {
       this.users.push(profile);
     }
     this.saveCollection('users', [...this.users]);
+    realtimeSync.broadcast('USER_REGISTERED', profile);
   }
 
   public getUserProfile(uid: string): UserProfile | undefined {
@@ -941,6 +1171,8 @@ class DatabaseService {
       conv.unread_counts[recipientId] = (conv.unread_counts[recipientId] || 0) + 1;
     }
     this.saveCollection('conversations', [...this.conversations]);
+    realtimeSync.broadcast('CHAT_MESSAGE', newMsg, recipientId);
+    this.emit(`messages_${params.conversationId}`, this.messages.filter((m) => m.conversation_id === params.conversationId));
 
     return newMsg;
   }

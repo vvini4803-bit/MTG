@@ -3,6 +3,8 @@ import { UserProfile, UserRole } from '../types';
 import { SEED_USERS } from '../services/seedData';
 import { dbService } from '../services/dbService';
 
+import { realtimeSync } from '../services/realtimeSync';
+
 interface AuthContextType {
   currentUser: UserProfile | null;
   isAuthenticated: boolean;
@@ -15,6 +17,7 @@ interface AuthContextType {
   loginWithDemo: (role: UserRole) => void;
   loginWithEmail: (email: string) => Promise<boolean>;
   loginWithPhone: (phone: string, otp: string) => Promise<boolean>;
+  registerUser: (data: Partial<UserProfile> & { name: string; phone?: string }) => Promise<UserProfile>;
   logout: () => void;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
@@ -31,12 +34,13 @@ const AuthContext = createContext<AuthContextType>({
   loginWithDemo: () => {},
   loginWithEmail: async () => false,
   loginWithPhone: async () => false,
+  registerUser: async () => ({} as UserProfile),
   logout: () => {},
   updateProfile: async () => {}
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to Super Admin in dev so user has immediate access to test everything, or stored user
+  // Start as saved active user or null (guest) so visitors can register their own unique profile
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('gramasiri_active_user');
     if (saved) {
@@ -46,15 +50,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // fallback
       }
     }
-    return SEED_USERS[0]; // Start logged in as Basavaraj Patel (SUPER_ADMIN)
+    return null;
   });
 
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('gramasiri_active_user', JSON.stringify(currentUser));
       dbService.registerOrUpdateUser(currentUser);
+      realtimeSync.setCurrentUser(currentUser.uid);
     } else {
       localStorage.removeItem('gramasiri_active_user');
+      realtimeSync.setCurrentUser(null);
     }
   }, [currentUser]);
 
@@ -125,8 +131,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
   };
 
+  const registerUser = async (data: Partial<UserProfile> & { name: string; phone?: string }): Promise<UserProfile> => {
+    const newProfile: UserProfile = {
+      uid: data.uid || ('usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)),
+      name: data.name.trim(),
+      name_kn: data.name_kn?.trim(),
+      phone: data.phone || '',
+      email: data.email || '',
+      role: data.role || 'USER',
+      language: data.language || 'kn',
+      photoUrl: data.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(data.name)}`,
+      bio: data.bio || 'Resident of Muttagundi Village',
+      bio_kn: data.bio_kn || 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ನಿವಾಸಿ',
+      account_status: 'ACTIVE',
+      created_at: new Date().toISOString(),
+      last_login: new Date().toISOString(),
+      is_phone_verified: !!data.phone,
+      community_category: data.community_category || 'RESIDENT',
+      allow_find_me: data.allow_find_me !== false,
+      privacy_find: data.privacy_find || 'EVERYONE',
+      privacy_message: data.privacy_message || 'EVERYONE'
+    };
+    setCurrentUser(newProfile);
+    return newProfile;
+  };
+
   const updateProfile = async (data: Partial<UserProfile>) => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      if (data.name) {
+        await registerUser(data as any);
+      }
+      return;
+    }
     const updated = { ...currentUser, ...data };
     setCurrentUser(updated);
   };
@@ -145,6 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithDemo,
         loginWithEmail,
         loginWithPhone,
+        registerUser,
         logout,
         updateProfile
       }}

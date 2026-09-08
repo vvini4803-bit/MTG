@@ -36,6 +36,7 @@ import { SubmitReportModal } from './views/SubmitReportModal';
 import { CommunityPeopleView } from './views/CommunityPeopleView';
 import { ConversationsListView } from './views/ConversationsListView';
 import { ChatModal } from './components/chat/ChatModal';
+import { AuthModal } from './components/auth/AuthModal';
 
 // Icons
 import {
@@ -125,6 +126,7 @@ export const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeChatConvId, setActiveChatConvId] = useState<string>('');
   const [activeChatPartner, setActiveChatPartner] = useState<any>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubEmergency = dbService.subscribeEmergencyAlert(setEmergencyAlert);
@@ -391,6 +393,55 @@ export const App: React.FC = () => {
             >
               {isKannada ? 'English' : 'ಕನ್ನಡ'}
             </button>
+
+            {/* User Profile / Join Village Community Button */}
+            {currentUser ? (
+              <button
+                onClick={() => navigateTo('profile')}
+                style={{
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  borderRadius: '24px',
+                  padding: '4px 12px 4px 6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: '#FFFFFF',
+                  cursor: 'pointer'
+                }}
+                title={isKannada ? 'ನನ್ನ ಪ್ರೊಫೈಲ್' : 'My Profile'}
+              >
+                <img
+                  src={currentUser.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentUser.name)}`}
+                  alt={currentUser.name}
+                  style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {currentUser.name}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '24px',
+                  padding: '7px 14px',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 10px rgba(16, 185, 129, 0.35)'
+                }}
+              >
+                <User size={15} />
+                <span>{isKannada ? 'ನೋಂದಣಿ / ಲಾಗಿನ್' : 'Join / Sign In'}</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -895,9 +946,12 @@ export const App: React.FC = () => {
               </button>
             </div>
             <CommunityPeopleView
-              onOpenLogin={() => {}}
+              onOpenLogin={() => setIsAuthModalOpen(true)}
               onOpenChatWithUser={async (user) => {
-                if (!currentUser) return;
+                if (!currentUser) {
+                  setIsAuthModalOpen(true);
+                  return;
+                }
                 try {
                   const conv = await dbService.getOrCreateConversation(
                     {
@@ -957,7 +1011,7 @@ export const App: React.FC = () => {
               </button>
             </div>
             <ConversationsListView
-              onOpenLogin={() => {}}
+              onOpenLogin={() => setIsAuthModalOpen(true)}
               onOpenChat={(convId, partner) => {
                 setActiveChatConvId(convId);
                 setActiveChatPartner(partner);
@@ -974,8 +1028,8 @@ export const App: React.FC = () => {
         {currentSection === 'profile' && (
           <div>
             <UserProfileScreen
-              onOpenLogin={() => {}}
-              onOpenCreateProfile={() => {}}
+              onOpenLogin={() => setIsAuthModalOpen(true)}
+              onOpenCreateProfile={() => setIsAuthModalOpen(true)}
               onNavigateToPeople={() => navigateTo('people')}
               onNavigateToMessages={() => navigateTo('messages')}
             />
@@ -1308,6 +1362,12 @@ export const App: React.FC = () => {
           }}
         />
       )}
+
+      {/* 🔐 Resident Registration & Sign In Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
   );
 };
