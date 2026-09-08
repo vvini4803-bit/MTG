@@ -117,71 +117,29 @@ class DatabaseService {
     this.conversations = this.loadCollection('conversations', SEED_CONVERSATIONS);
     this.messages = this.loadCollection('messages', SEED_MESSAGES);
     this.userBlocks = this.loadCollection('user_blocks', []);
-    this.reports = this.loadCollection('reports', [
-      {
-        id: 'rep_1',
-        item_type: 'POST',
-        item_id: 'news_4',
-        item_title: 'Spotted Wild Boar herd near Eastern Coconut Plantations',
-        reporter_id: 'user_104',
-        reporter_name: 'Ramesh Kumar',
-        reason: 'Duplicate report submitted by mistake',
-        status: 'PENDING',
-        created_at: '2026-09-08T12:30:00.000Z'
+    this.notifications = this.loadCollection('notifications', []);
+
+    // Purge any stale demo entries from previous sessions
+    this.purgeStaleDemoData();
+  }
+
+  private purgeStaleDemoData() {
+    try {
+      const keysToClean = ['news', 'events', 'tournaments', 'crops', 'temples', 'gallery', 'achievements', 'history', 'stories', 'notifications'];
+      for (const k of keysToClean) {
+        const itemStr = localStorage.getItem(`gramasiri_${k}`);
+        if (itemStr) {
+          const parsed = JSON.parse(itemStr);
+          if (Array.isArray(parsed) && parsed.some((item: any) => item.is_demo || (item.id && typeof item.id === 'string' && (item.id.startsWith('news_') || item.id.startsWith('event_') || item.id.startsWith('crop_') || item.id.startsWith('tourn_') || item.id.startsWith('temple_') || item.id.startsWith('ach_') || item.id.startsWith('gal_'))))) {
+            localStorage.setItem(`gramasiri_${k}`, JSON.stringify([]));
+            (this as any)[k] = [];
+            this.emit(k, []);
+          }
+        }
       }
-    ]);
-    this.comments = this.loadCollection('comments', [
-      {
-        id: 'c_1',
-        post_id: 'news_1',
-        author_id: 'user_104',
-        author_name: 'Ramesh Kumar',
-        author_role: 'USER',
-        text: 'Great initiative by Grama Panchayat! Finally drinking water pressure is constant.',
-        created_at: '2026-09-07T11:00:00.000Z',
-        likes_count: 5,
-        liked_by: [],
-        reports_count: 0
-      },
-      {
-        id: 'c_2',
-        post_id: 'news_1',
-        author_id: 'sports_103',
-        author_name: 'Manjunath Gowda',
-        author_role: 'SPORTS_ORGANIZER',
-        text: 'Clean water is also reaching the sports ground water tap. Thanks to the committee.',
-        created_at: '2026-09-07T12:15:00.000Z',
-        likes_count: 3,
-        liked_by: [],
-        reports_count: 0
-      }
-    ]);
-    this.notifications = this.loadCollection('notifications', [
-      {
-        id: 'notif_1',
-        user_id: 'ALL',
-        title_en: 'Heavy Rain Catchment Advisory',
-        title_kn: 'ಭಾರಿ ಮಳೆ ಮುನ್ಸೂಚನೆ ಎಚ್ಚರಿಕೆ',
-        message_en: 'Canal road water overflow near Malleshwara gate. Please drive carefully.',
-        message_kn: 'ಮಲ್ಲೇಶ್ವರ ಗೇಟ್ ಬಳಿ ಕಾಲುವೆ ನೀರು ಹರಿಯುತ್ತಿದ್ದು ಜಾಗ್ರತೆ ವಹಿಸಿ.',
-        type: 'EMERGENCY',
-        link_tab: 'home',
-        read: false,
-        created_at: '2026-09-08T07:00:00.000Z'
-      },
-      {
-        id: 'notif_2',
-        user_id: 'ALL',
-        title_en: 'Cricket Tournament Finals Sunday',
-        title_kn: 'ಭಾನುವಾರ ಕ್ರಿಕೆಟ್ ಫೈನಲ್ ಪಂದ್ಯ',
-        message_en: 'Grama Warriors vs Cauvery Tigers at 3:30 PM.',
-        message_kn: 'ಗ್ರಾಮ ವಾರಿಯರ್ಸ್ ಮತ್ತು ಕಾವೇರಿ ಟೈಗರ್ಸ್ ನಡುವೆ ಫೈನಲ್ ಹಣಾಹಣಿ.',
-        type: 'SPORTS',
-        link_tab: 'sports',
-        read: false,
-        created_at: '2026-09-08T11:00:00.000Z'
-      }
-    ]);
+    } catch (e) {
+      console.warn('Could not purge stale demo data', e);
+    }
   }
 
   private loadCollection<T>(key: string, defaultValue: T): T {

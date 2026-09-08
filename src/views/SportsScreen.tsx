@@ -11,7 +11,9 @@ import {
   ChevronRight,
   Edit3,
   Award,
-  Users
+  Users,
+  Plus,
+  X
 } from 'lucide-react';
 
 interface SportsScreenProps {
@@ -27,10 +29,64 @@ export const SportsScreen: React.FC<SportsScreenProps> = ({
   const { isSportsOrganizer } = useAuth();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedSport, setSelectedSport] = useState<SportType | 'ALL'>('ALL');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [tournName, setTournName] = useState('');
+  const [sportType, setSportType] = useState<SportType>('CRICKET');
+  const [year, setYear] = useState(2026);
+  const [team1, setTeam1] = useState('');
+  const [team2, setTeam2] = useState('');
+  const [venue, setVenue] = useState('');
 
   useEffect(() => {
     return dbService.subscribeTournaments(setTournaments);
   }, []);
+
+  const handleCreateTournament = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tournName.trim()) return;
+
+    const t1 = team1.trim() || (isKannada ? 'ತಂಡ ೧' : 'Team A');
+    const t2 = team2.trim() || (isKannada ? 'ತಂಡ ೨' : 'Team B');
+
+    await dbService.addTournament({
+      name_en: tournName.trim(),
+      name_kn: tournName.trim(),
+      sport: sportType,
+      year: Number(year) || 2026,
+      status: 'UPCOMING',
+      teams: [
+        { id: 'team_' + Date.now() + '_1', name_en: t1, name_kn: t1, captain_en: 'Captain 1', color: '#10B981' },
+        { id: 'team_' + Date.now() + '_2', name_en: t2, name_kn: t2, captain_en: 'Captain 2', color: '#F59E0B' }
+      ],
+      points_table: [],
+      matches: [
+        {
+          id: 'match_' + Date.now(),
+          tournament_id: 'tourn_' + Date.now(),
+          sport: sportType,
+          team_a: t1,
+          team_b: t2,
+          team_a_score: '0/0',
+          team_b_score: '0/0',
+          date: new Date().toISOString().split('T')[0],
+          time: '04:00 PM',
+          venue: venue.trim() || 'Muttagundi Sports Ground',
+          is_live: false,
+          current_status_en: 'Match scheduled',
+          current_status_kn: 'ಪಂದ್ಯ ನಿಗದಿಯಾಗಿದೆ',
+          summary_en: 'Upcoming village clash',
+          summary_kn: 'ಮುಂಬರುವ ಗ್ರಾಮ ಪಂದ್ಯ',
+          last_updated: new Date().toISOString()
+        }
+      ]
+    });
+
+    setShowCreateModal(false);
+    setTournName('');
+    setTeam1('');
+    setTeam2('');
+    setVenue('');
+  };
 
   const sportsTabs: Array<{ id: SportType | 'ALL'; label_en: string; label_kn: string }> = [
     { id: 'ALL', label_en: 'All Sports', label_kn: 'ಎಲ್ಲಾ ಕ್ರೀಡೆಗಳು' },
@@ -48,15 +104,22 @@ export const SportsScreen: React.FC<SportsScreenProps> = ({
   return (
     <div className="container" style={{ padding: '24px 16px', maxWidth: '960px' }}>
       {/* Title Bar */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '6px' }}>
-          {isKannada ? 'ಗ್ರಾಮ ಕ್ರೀಡಾ ಹಬ್ & ಲೈವ್ ಸ್ಕೋರ್' : 'Village Sports & Tournaments'}
-        </h1>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-          {isKannada
-            ? 'ಗ್ರಾಮೋತ್ಸವ ಕ್ರಿಕೆಟ್ ಲೀಗ್, ಕಬಡ್ಡಿ ಪಂದ್ಯಾವಳಿ ಮತ್ತು ನೇರ ಪ್ರಸಾರ'
-            : 'Gramotsava Premier League, Kabaddi challenges, fixtures & live scoreboard'}
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '6px' }}>
+            {isKannada ? 'ಗ್ರಾಮ ಕ್ರೀಡಾ ಹಬ್ & ಲೈವ್ ಸ್ಕೋರ್' : 'Village Sports & Tournaments'}
+          </h1>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+            {isKannada
+              ? 'ಗ್ರಾಮೋತ್ಸವ ಕ್ರಿಕೆಟ್ ಲೀಗ್, ಕಬಡ್ಡಿ ಪಂದ್ಯಾವಳಿ ಮತ್ತು ನೇರ ಪ್ರಸಾರ'
+              : 'Cricket challenges, Kabaddi cups, fixtures & live ball-by-ball scoreboards'}
+          </p>
+        </div>
+
+        <button onClick={() => setShowCreateModal(true)} className="btn-primary">
+          <Plus size={18} />
+          <span>{isKannada ? 'ಪಂದ್ಯಾವಳಿ ಸೇರಿಸಿ' : 'Add Tournament'}</span>
+        </button>
       </div>
 
       {/* Sport Selector Chips */}
@@ -83,6 +146,23 @@ export const SportsScreen: React.FC<SportsScreenProps> = ({
       </div>
 
       {/* Tournaments List */}
+      {filteredTournaments.length === 0 ? (
+        <div className="glass-card" style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <Trophy size={42} color="#F59E0B" style={{ margin: '0 auto 14px', opacity: 0.8 }} />
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '6px' }}>
+            {isKannada ? 'ಯಾವುದೇ ಪಂದ್ಯಾವಳಿಗಳಿಲ್ಲ' : 'No Tournaments Scheduled Yet'}
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 20px' }}>
+            {isKannada
+              ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಕ್ರಿಕೆಟ್, ಕಬಡ್ಡಿ ಅಥವಾ ವಾಲಿಬಾಲ್ ಪಂದ್ಯಾವಳಿಗಳನ್ನು ಹೊಸದಾಗಿ ಆಯೋಜಿಸಿ.'
+              : 'Add village cricket, kabaddi, or volleyball tournaments and live ball-by-ball scoreboards.'}
+          </p>
+          <button onClick={() => setShowCreateModal(true)} className="btn-primary" style={{ display: 'inline-flex' }}>
+            <Plus size={16} />
+            <span>{isKannada ? 'ಮೊದಲ ಪಂದ್ಯಾವಳಿ ಸೇರಿಸಿ' : 'Add First Tournament'}</span>
+          </button>
+        </div>
+      ) : (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
         {filteredTournaments.map((tourn) => (
           <div key={tourn.id} className="glass-card" style={{ padding: '24px' }}>
@@ -181,6 +261,104 @@ export const SportsScreen: React.FC<SportsScreenProps> = ({
           </div>
         ))}
       </div>
+      )}
+
+      {/* Create Tournament Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
+                {isKannada ? '🏏 ಹೊಸ ಕ್ರೀಡಾ ಪಂದ್ಯಾವಳಿ ಸೇರಿಸಿ' : '🏏 Create Tournament / League'}
+              </h3>
+              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTournament}>
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ಪಂದ್ಯಾವಳಿಯ ಹೆಸರು' : 'Tournament Title *'}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  required
+                  value={tournName}
+                  onChange={(e) => setTournName(e.target.value)}
+                  placeholder="e.g. Muttagundi Cricket League 2026"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ಕ್ರೀಡೆ' : 'Sport'}</label>
+                <select
+                  className="form-select"
+                  value={sportType}
+                  onChange={(e) => setSportType(e.target.value as SportType)}
+                >
+                  <option value="CRICKET">🏏 Cricket (ಕ್ರಿಕೆಟ್)</option>
+                  <option value="KABADDI">🤼 Kabaddi (ಕಬಡ್ಡಿ)</option>
+                  <option value="VOLLEYBALL">🏐 Volleyball (ವಾಲಿಬಾಲ್)</option>
+                  <option value="FOOTBALL">⚽ Football (ಫುಟ್ಬಾಲ್)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ವರ್ಷ' : 'Year'}</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={year}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-group">
+                  <label className="form-label">{isKannada ? 'ತಂಡ ೧' : 'Team 1'}</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={team1}
+                    onChange={(e) => setTeam1(e.target.value)}
+                    placeholder="e.g. Muttagundi Warriors"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">{isKannada ? 'ತಂಡ ೨' : 'Team 2'}</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={team2}
+                    onChange={(e) => setTeam2(e.target.value)}
+                    placeholder="e.g. Chitradurga Tigers"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ಕ್ರೀಡಾಂಗಣ / ಸ್ಥಳ' : 'Venue / Ground'}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={venue}
+                  onChange={(e) => setVenue(e.target.value)}
+                  placeholder="e.g. Muttagundi High School Playground"
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary">
+                  {isKannada ? 'ರದ್ದುಮಾಡಿ' : 'Cancel'}
+                </button>
+                <button type="submit" className="btn-primary">
+                  {isKannada ? 'ಪಂದ್ಯಾವಳಿ ಉಳಿಸಿ' : 'Save Tournament'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

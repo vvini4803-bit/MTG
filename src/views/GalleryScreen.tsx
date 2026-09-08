@@ -49,29 +49,28 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || !uploadPhotoData || !uploadTitle.trim()) return;
+    if (!uploadPhotoData || !uploadTitle.trim()) return;
 
     setIsUploading(true);
+    const authorId = currentUser ? currentUser.uid : 'resident_anon';
+    const authorName = currentUser ? currentUser.name : (isKannada ? 'ಗ್ರಾಮಸ್ಥರು' : 'Muttagundi Resident');
+
     await dbService.addGalleryItem({
       title_en: uploadTitle.trim(),
       title_kn: uploadTitle.trim(),
       category: uploadCat,
       url: uploadPhotoData,
       media_type: 'IMAGE',
-      author_id: currentUser.uid,
-      author_name: currentUser.name,
-      approved: isModerator ? true : false
+      author_id: authorId,
+      author_name: authorName,
+      approved: true
     });
 
     setIsUploading(false);
     setShowUploadModal(false);
     setUploadTitle('');
     setUploadPhotoData(null);
-    alert(
-      isModerator
-        ? 'Photo published to official gallery!'
-        : 'Photo submitted! It will appear after moderator review.'
-    );
+    alert(isKannada ? 'ಭಾವಚಿತ್ರ ಗ್ಯಾಲರಿಗೆ ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ!' : 'Photo added to village gallery!');
   };
 
   const filtered = gallery.filter((g) => {
@@ -130,6 +129,23 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
       </div>
 
       {/* Masonry / Responsive Photo Grid */}
+      {filtered.length === 0 ? (
+        <div className="glass-card" style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <ImageIcon size={42} color="#06B6D4" style={{ margin: '0 auto 14px', opacity: 0.8 }} />
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '6px' }}>
+            {isKannada ? 'ಯಾವುದೇ ಫೋಟೋಗಳಿಲ್ಲ' : 'No Village Photos Yet'}
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 20px' }}>
+            {isKannada
+              ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಪ್ರಕೃತಿ, ಕೃಷಿ, ದೇವಾಲಯ ಅಥವಾ ಹಬ್ಬಗಳ ಸುಂದರ ಚಿತ್ರಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.'
+              : 'Upload real photos of Muttagundi village — temples, festivals, nature, and community life.'}
+          </p>
+          <button onClick={() => setShowUploadModal(true)} className="btn-primary" style={{ display: 'inline-flex' }}>
+            <Camera size={16} />
+            <span>{isKannada ? 'ಮೊದಲ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ' : 'Upload First Photo'}</span>
+          </button>
+        </div>
+      ) : (
       <div
         style={{
           display: 'grid',
@@ -175,6 +191,7 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
           </div>
         ))}
       </div>
+      )}
 
       {/* Upload Modal */}
       {showUploadModal && (

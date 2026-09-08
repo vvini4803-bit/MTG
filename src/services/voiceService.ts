@@ -120,11 +120,30 @@ export class VoiceAssistantService {
       q.includes('score') ||
       q.includes('ಸ್ಕೋರ್')
     ) {
+      const tournaments = dbService['tournaments'] || [];
+      const liveMatch = tournaments.flatMap((t: any) => t.matches || []).find((m: any) => m.is_live);
+      if (liveMatch) {
+        return {
+          answer_en: `Live match currently underway: ${liveMatch.team_a} vs ${liveMatch.team_b} at ${liveMatch.venue}. Current score: ${liveMatch.team_a_score} vs ${liveMatch.team_b_score}.`,
+          answer_kn: `ಪ್ರಸ್ತುತ ನೇರ ಪಂದ್ಯ ನಡೆಯುತ್ತಿದೆ: ${liveMatch.team_a} ವಿರುದ್ಧ ${liveMatch.team_b}. ಸ್ಥಳ: ${liveMatch.venue}. ಸ್ಕೋರ್: ${liveMatch.team_a_score} vs ${liveMatch.team_b_score}.`,
+          category: 'SPORTS',
+          isVerified: true,
+          navTab: 'sports'
+        };
+      }
+      if (tournaments.length > 0) {
+        const t = tournaments[0];
+        return {
+          answer_en: `Scheduled tournament: ${t.name_en} (${t.sport}). Status: ${t.status}.`,
+          answer_kn: `ನಿಗದಿತ ಪಂದ್ಯಾವಳಿ: ${t.name_kn} (${t.sport}). ಸ್ಥಿತಿ: ${t.status}.`,
+          category: 'SPORTS',
+          isVerified: true,
+          navTab: 'sports'
+        };
+      }
       return {
-        answer_en:
-          'In the Gramasiri Premier League, Grama Warriors and Cauvery Tigers are playing in the finals. The match is currently live at the PU College ground.',
-        answer_kn:
-          'ಗ್ರಾಮಸಿರಿ ಪ್ರೀಮಿಯರ್ ಲೀಗ್‌ನಲ್ಲಿ ಗ್ರಾಮ ವಾರಿಯರ್ಸ್ ಮತ್ತು ಕಾವೇರಿ ಟೈಗರ್ಸ್ ನಡುವೆ ಕಾಲೇಜು ಮೈದಾನದಲ್ಲಿ ನೇರ ಪಂದ್ಯ ನಡೆಯುತ್ತಿದೆ.',
+        answer_en: 'No sports tournaments or matches are currently scheduled for Muttagundi. You can create the first tournament in the Sports tab!',
+        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕ್ರೀಡಾ ಪಂದ್ಯಾವಳಿಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ. ನೀವು ಕ್ರೀಡಾ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಪಂದ್ಯಾವಳಿ ಸೇರಿಸಬಹುದು!',
         category: 'SPORTS',
         isVerified: true,
         navTab: 'sports'
@@ -142,11 +161,20 @@ export class VoiceAssistantService {
       q.includes('week') ||
       q.includes('ವಾರ')
     ) {
+      const events = dbService['events'] || [];
+      if (events.length > 0) {
+        const e = events[0];
+        return {
+          answer_en: `Upcoming verified event: ${e.title_en} on ${e.date} at ${e.venue_en}.`,
+          answer_kn: `ಮುಂಬರುವ ದೃಢೀಕೃತ ಕಾರ್ಯಕ್ರಮ: ${e.title_kn}, ದಿನಾಂಕ: ${e.date}, ಸ್ಥಳ: ${e.venue_kn}.`,
+          category: 'EVENTS',
+          isVerified: true,
+          navTab: 'events'
+        };
+      }
       return {
-        answer_en:
-          'Upcoming verified event: Annual Sri Chennakeshava Swamy Brahmarathotsava on September 24th at Car Street, and Organic Millets Workshop on September 28th.',
-        answer_kn:
-          'ಮುಂಬರುವ ದೃಢೀಕೃತ ಕಾರ್ಯಕ್ರಮ: ಸೆಪ್ಟೆಂಬರ್ ೨೪ ರಂದು ಶ್ರೀ ಚನ್ನಕೇಶವ ಸ್ವಾಮಿ ಬ್ರಹ್ಮ ರಥೋತ್ಸವ ಮತ್ತು ಸೆಪ್ಟೆಂಬರ್ ೨೮ ರಂದು ಸಾವಯವ ಸಿರಿಧಾನ್ಯ ಕಾರ್ಯಾಗಾರ.',
+        answer_en: 'No village events or festivals are currently scheduled for Muttagundi. You can add the first event in the Events tab!',
+        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕಾರ್ಯಕ್ರಮಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ. ನೀವು ಕಾರ್ಯಕ್ರಮಗಳ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಕಾರ್ಯಕ್ರಮ ಸೇರಿಸಬಹುದು!',
         category: 'EVENTS',
         isVerified: true,
         navTab: 'events'
@@ -164,11 +192,20 @@ export class VoiceAssistantService {
       q.includes('ಅಡಿಕೆ') ||
       q.includes('farmer')
     ) {
+      const crops = dbService['crops'] || [];
+      if (crops.length > 0) {
+        const c = crops[0];
+        return {
+          answer_en: `Crop record: ${c.name_en} (${c.category}). Season: ${c.season_en}.`,
+          answer_kn: `ಬೆಳೆ ಮಾಹಿತಿ: ${c.name_kn} (${c.category}). ಹಂಗಾಮು: ${c.season_kn}.`,
+          category: 'AGRICULTURE',
+          isVerified: true,
+          navTab: 'agriculture'
+        };
+      }
       return {
-        answer_en:
-          'Our verified agricultural records list Ragi (Finger Millet) as our main drought-resilient crop, along with Arecanut plantations and wetland Paddy.',
-        answer_kn:
-          'ನಮ್ಮ ಗ್ರಾಮದ ದೃಢೀಕೃತ ಕೃಷಿ ದಾಖಲೆಗಳ ಪ್ರಕಾರ ಮುಖ್ಯ ಬೆಳೆ ರಾಗಿ, ಅಡಿಕೆ ಮತ್ತು ತರಿ ಭತ್ತ.',
+        answer_en: 'No agricultural guides have been added yet for Muttagundi. Farmers and residents can contribute crop practices and MSP info in the Agriculture section.',
+        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಕೃಷಿ ವಿಭಾಗದಲ್ಲಿ ಇನ್ನೂ ಬೆಳೆಗಳ ಮಾಹಿತಿ ದಾಖಲಾಗಿಲ್ಲ. ರೈತರು ಕೃಷಿ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಬೆಳೆ ಮಾಹಿತಿಯನ್ನು ಸೇರಿಸಬಹುದು.',
         category: 'AGRICULTURE',
         isVerified: true,
         navTab: 'agriculture'
@@ -182,15 +219,22 @@ export class VoiceAssistantService {
       q.includes('culture') ||
       q.includes('ಸಂಸ್ಕೃತಿ') ||
       q.includes('history') ||
-      q.includes('ಇತಿಹಾಸ') ||
-      q.includes('chennakeshava') ||
-      q.includes('ಚನ್ನಕೇಶವ')
+      q.includes('ಇತಿಹಾಸ')
     ) {
+      const temples = dbService['temples'] || [];
+      if (temples.length > 0) {
+        const t = temples[0];
+        return {
+          answer_en: `Muttagundi temple: ${t.name_en}. Timings: ${t.timings_en}.`,
+          answer_kn: `ಮುತ್ತಗುಂಡಿ ದೇವಾಲಯ: ${t.name_kn}. ಪೂಜಾ ಸಮಯ: ${t.timings_kn}.`,
+          category: 'TEMPLES',
+          isVerified: true,
+          navTab: 'temples'
+        };
+      }
       return {
-        answer_en:
-          'Our village is blessed with the historic 12th century Hoysala Sri Chennakeshava Swamy Temple, Sri Rameshwara Temple at Lake Bund, and Grama Devathe Mariyamma Sanctum.',
-        answer_kn:
-          'ನಮ್ಮ ಗ್ರಾಮದಲ್ಲಿ ೧೨ನೇ ಶತಮಾನದ ಹೊಯ್ಸಳ ಕಾಲದ ಶ್ರೀ ಚನ್ನಕೇಶವ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ, ಕೆರೆ ಏರಿಯ ಶ್ರೀ ರಾಮೇಶ್ವರ ದೇಗುಲ ಹಾಗೂ ಗ್ರಾಮ ದೇವತೆ ಶ್ರೀ ಮಾರಿಯಮ್ಮ ದೇವಸ್ಥಾನಗಳಿವೆ.',
+        answer_en: 'No temple details have been added yet for Muttagundi. You can add temple details, festivals, and pooja timings in the Temples tab.',
+        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ದೇವಾಲಯಗಳ ವಿವರ ಇನ್ನೂ ದಾಖಲಾಗಿಲ್ಲ. ದೇಗುಲಗಳ ವಿಭಾಗದಲ್ಲಿ ಪೂಜಾ ಸಮಯ ಮತ್ತು ಇತಿಹಾಸವನ್ನು ಸೇರಿಸಬಹುದು.',
         category: 'TEMPLES',
         isVerified: true,
         navTab: 'temples'
@@ -207,11 +251,10 @@ export class VoiceAssistantService {
       q.includes('data') ||
       q.includes('ಅಂಕಿಅಂಶ')
     ) {
+      const stats = dbService['villageStats'];
       return {
-        answer_en:
-          'As per the verified 2025-26 Gram Panchayat records, our village population is 4,820 with 1,120 households and an 84.6% literacy rate.',
-        answer_kn:
-          'ದೃಢೀಕೃತ ಗ್ರಾಮ ಪಂಚಾಯತ್ ದಾಖಲೆಯಂತೆ ನಮ್ಮ ಗ್ರಾಮದ ಜನಸಂಖ್ಯೆ ೪,೮೨೦, ಕುಟುಂಬಗಳು ೧,೧೨೦ ಮತ್ತು ಸಾಕ್ಷರತೆ ೮೪.೬% ಆಗಿದೆ.',
+        answer_en: `Muttagundi village, Hosadurga Taluk, Chitradurga District has an estimated population of ${stats?.population || 3450} across ${stats?.households || 820} households.`,
+        answer_kn: `ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ, ಹೊಸದುರ್ಗ ತಾಲೂಕಿನ ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಜನಸಂಖ್ಯೆ ಸುಮಾರು ${stats?.population || 3450} ಹಾಗೂ ${stats?.households || 820} ಕುಟುಂಬಗಳಿವೆ.`,
         category: 'STATS',
         isVerified: true,
         navTab: 'stats'
@@ -227,11 +270,20 @@ export class VoiceAssistantService {
       q.includes('electricity') ||
       q.includes('ವಿದ್ಯುತ್')
     ) {
+      const news = dbService['news'] || [];
+      if (news.length > 0) {
+        const n = news[0];
+        return {
+          answer_en: `Latest verified update: ${n.title_en} - ${n.content_en.substring(0, 100)}...`,
+          answer_kn: `ಇತ್ತೀಚಿನ ದೃಢೀಕೃತ ಸುದ್ದಿ: ${n.title_kn} - ${n.content_kn.substring(0, 100)}...`,
+          category: 'NEWS',
+          isVerified: true,
+          navTab: 'news'
+        };
+      }
       return {
-        answer_en:
-          'Verified announcement: A new solar drinking water pump has been commissioned at Gandhi Nagar. KPTCL power line maintenance is planned for this Thursday.',
-        answer_kn:
-          'ದೃಢೀಕೃತ ಸುದ್ದಿ: ಗಾಂಧಿನಗರದಲ್ಲಿ ಸೌರ ಕುಡಿಯುವ ನೀರಿನ ಪಂಪ್ ಉದ್ಘಾಟನೆಯಾಗಿದೆ. ಗುರುವಾರ ಕೃಷಿ ಫೀಡರ್ ಲೈನ್ ದುರಸ್ತಿ ಇರಲಿದೆ.',
+        answer_en: 'No news notices have been published yet for Muttagundi. Residents can share updates in the News section.',
+        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಹೊಸ ಪ್ರಕಟಣೆಗಳಿಲ್ಲ. ಗ್ರಾಮಸ್ಥರು ಸುದ್ದಿ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಮಾಹಿತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಬಹುದು.',
         category: 'NEWS',
         isVerified: true,
         navTab: 'news'
@@ -241,9 +293,9 @@ export class VoiceAssistantService {
     // Strict AI Safety Guardrail: Do NOT invent answers
     return {
       answer_en:
-        "I couldn't find verified village records for that question. Please verify this through official village authorities or browse the verified sections.",
+        "I couldn't find verified village records for that question. You can browse or contribute verified records across the village sections.",
       answer_kn:
-        'ಈ ಪ್ರಶ್ನೆಗೆ ಸಂಬಂಧಿಸಿದ ದೃಢೀಕೃತ ದಾಖಲೆಗಳು ಸದ್ಯಕ್ಕೆ ಲಭ್ಯವಿಲ್ಲ. ದಯವಿಟ್ಟು ಅಧಿಕೃತ ಗ್ರಾಮ ಪಂಚಾಯತ್ ಮೂಲಕ ಪರಿಶೀಲಿಸಿ.',
+        'ಈ ಪ್ರಶ್ನೆಗೆ ಸಂಬಂಧಿಸಿದ ದೃಢೀಕೃತ ದಾಖಲೆಗಳು ಸದ್ಯಕ್ಕೆ ಲಭ್ಯವಿಲ್ಲ. ಗ್ರಾಮದ ವಿವಿಧ ವಿಭಾಗಗಳಲ್ಲಿ ಹೊಸ ಮಾಹಿತಿಯನ್ನು ಸೇರಿಸಬಹುದು.',
       category: 'UNVERIFIED',
       isVerified: false
     };

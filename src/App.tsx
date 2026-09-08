@@ -278,7 +278,7 @@ export const App: React.FC = () => {
             </div>
             <div>
               <h1 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
-                {isKannada ? 'ನಮ್ಮ ಗ್ರಾಮಸಿರಿ' : 'Gramasiri'}
+                {isKannada ? 'ನಮ್ಮ ಮುತ್ತಗುಂಡಿ' : 'Muttagundi'}
               </h1>
               <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 600 }}>
                 {isKannada ? 'ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್' : 'Digital Village Portal'}
@@ -721,11 +721,11 @@ export const App: React.FC = () => {
                   </strong>
                   <p style={{ margin: '0 0 10px 0' }}>
                     {isKannada
-                      ? 'ನಮ್ಮ ಗ್ರಾಮವು ಕ್ರಿ.ಶ. 11ನೇ ಶತಮಾನದ ಹೊಯ್ಸಳ ಕಾಲದ ಪ್ರಾಚೀನ ಇತಿಹಾಸವನ್ನು ಹೊಂದಿದೆ. ಶ್ರೀ ರಂಗನಾಥ ಸ್ವಾಮಿ ದೇವಾಲಯದ ಶಾಸನದಲ್ಲಿ ಗ್ರಾಮದ ಕಲ್ಯಾಣಿ ಹಾಗೂ ಕೃಷಿ ಕಾಲುವೆಗಳ ಉಲ್ಲೇಖವಿದೆ.'
-                      : 'Gramasiri dates back to the 11th century Hoysala period. Inscriptions at the Sri Ranganatha Swamy Temple detail ancient water canals and agricultural patronage.'}
+                      ? 'ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ, ಹೊಸದುರ್ಗ ತಾಲೂಕಿನ ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮವು ಕೃಷಿ, ಧಾರ್ಮಿಕ ಪರಂಪರೆ ಮತ್ತು ಬಾಂಧವ್ಯದ ಹೆಮ್ಮೆಯ ಇತಿಹಾಸವನ್ನು ಹೊಂದಿದೆ.'
+                      : 'Muttagundi village in Hosadurga Taluk, Chitradurga District is recognized for its agrarian traditions, sacred heritage, and strong community unity.'}
                   </p>
                   <span style={{ fontSize: '0.72rem', color: '#10B981', background: 'rgba(16,185,129,0.15)', padding: '2px 8px', borderRadius: '4px' }}>
-                    🟢 HISTORICAL FACT
+                    🟢 MUTTAGUNDI HERITAGE
                   </span>
                 </div>
               )}
@@ -733,29 +733,16 @@ export const App: React.FC = () => {
               {/* Accordion Content 3: Achievers */}
               {openHeritageTab === 'ACHIEVERS' && (
                 <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <strong style={{ fontSize: '0.94rem', color: '#FFFFFF' }}>
-                          {isKannada ? 'ಶ್ರೀ ತಿಮ್ಮಪ್ಪ ಗೌಡ' : 'Sri Thimmappa Gowda'}
-                        </strong>
-                        <span style={{ fontSize: '0.78rem', color: '#94A3B8', display: 'block' }}>
-                          {isKannada ? 'ಪ್ರಗತಿಪರ ಸಾವಯವ ಕೃಷಿಕ • ಕೃಷಿ ರತ್ನ ಪ್ರಶಸ್ತಿ' : 'Progressive Organic Farmer • Krishi Ratna Award'}
-                        </span>
-                      </div>
-                      <span style={{ fontSize: '1.4rem' }}>🌾</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <strong style={{ fontSize: '0.94rem', color: '#FFFFFF' }}>
-                          {isKannada ? 'ಕುಮಾರಿ ದೀಪಿಕಾ ಆರ್.' : 'Kumari Deepika R.'}
-                        </strong>
-                        <span style={{ fontSize: '0.78rem', color: '#94A3B8', display: 'block' }}>
-                          {isKannada ? 'ರಾಜ್ಯ ಮಟ್ಟದ ಕಬಡ್ಡಿ ಆಟಗಾರ್ತಿ' : 'State Level Kabaddi Athlete'}
-                        </span>
-                      </div>
-                      <span style={{ fontSize: '1.4rem' }}>🤼</span>
-                    </div>
+                  <div style={{ textAlign: 'center', padding: '16px 12px', color: '#94A3B8', fontSize: '0.86rem' }}>
+                    <span style={{ fontSize: '1.8rem', display: 'block', marginBottom: '8px' }}>🏅</span>
+                    <strong style={{ color: '#FFFFFF', display: 'block', marginBottom: '4px' }}>
+                      {isKannada ? 'ಗ್ರಾಮದ ಸಾಧಕರ ನಾಮನಿರ್ದೇಶನ' : 'Village Achievers & Pride'}
+                    </strong>
+                    <span>
+                      {isKannada
+                        ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಕೃಷಿ, ಕ್ರೀಡೆ ಅಥವಾ ಶಿಕ್ಷಣ ಕ್ಷೇತ್ರದಲ್ಲಿ ಸಾಧನೆ ಮಾಡಿದವರ ವಿವರಗಳನ್ನು ಶೀಘ್ರದಲ್ಲೇ ಇಲ್ಲಿ ಪ್ರಕಟಿಸಲಾಗುತ್ತದೆ.'
+                        : 'Nominations and profiles of achievers from Muttagundi in agriculture, sports, and education will be listed here.'}
+                    </span>
                   </div>
                 </div>
               )}

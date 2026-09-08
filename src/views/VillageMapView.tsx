@@ -47,159 +47,37 @@ export interface MapLocationItem {
   verified: boolean;
 }
 
-export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
-  {
-    id: 'loc_1',
-    name_en: 'Gram Panchayat Administrative Office',
-    name_kn: 'ಗ್ರಾಮ ಪಂಚಾಯತಿ ಕಚೇರಿ',
-    category: 'HALL',
-    icon: '🏛️',
-    color: '#10B981',
-    desc_en: 'Main village administrative office, meeting hall, and citizen service desk.',
-    desc_kn: 'ಗ್ರಾಮ ಪಂಚಾಯತಿ ಮುಖ್ಯ ಕಚೇರಿ, ಸಭಾ ಭವನ ಮತ್ತು ನಾಗರಿಕ ಸೇವಾ ಕೇಂದ್ರ.',
-    distance_en: '0.1 km from Center',
-    distance_kn: 'ಗ್ರಾಮ ಕೇಂದ್ರದಿಂದ 0.1 ಕಿ.ಮೀ',
-    timings_en: 'Mon–Sat: 9:30 AM – 5:30 PM',
-    timings_kn: 'ಸೋಮ–ಶನಿ: ಬೆಳಗ್ಗೆ 9:30 – ಸಂಜೆ 5:30',
-    phone: '9845012345',
-    coords: { lat: 13.9299, lng: 75.5681 },
-    verified: true
-  },
-  {
-    id: 'loc_2',
-    name_en: 'Sri Ranganatha Swamy Temple',
-    name_kn: 'ಶ್ರೀ ರಂಗನಾಥ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ',
-    category: 'TEMPLE',
-    icon: '🛕',
-    color: '#F59E0B',
-    desc_en: 'Ancient stone temple with sacred Kalyani pond and annual Rathotsava festival ground.',
-    desc_kn: 'ಪ್ರಾಚೀನ ಶಿಲಾ ದೇವಾಲಯ, ಪವಿತ್ರ ಕಲ್ಯಾಣಿ ಹಾಗೂ ವಾರ್ಷಿಕ ರಥೋತ್ಸವ ಕ್ಷೇತ್ರ.',
-    distance_en: '0.4 km (East)',
-    distance_kn: 'ಪೂರ್ವಕ್ಕೆ 0.4 ಕಿ.ಮೀ',
-    timings_en: '6:00 AM – 12:30 PM & 5:00 PM – 8:30 PM',
-    timings_kn: 'ಬೆಳಗ್ಗೆ 6:00 – ಮಧ್ಯಾಹ್ನ 12:30 & ಸಂಜೆ 5:00 – ರಾತ್ರಿ 8:30',
-    phone: '9845055667',
-    coords: { lat: 13.9312, lng: 75.5714 },
-    verified: true
-  },
-  {
-    id: 'loc_3',
-    name_en: 'Government Primary & High School',
-    name_kn: 'ಸರ್ಕಾರಿ ಪ್ರಾಥಮಿಕ ಮತ್ತು ಪ್ರೌಢಶಾಲೆ',
-    category: 'SCHOOL',
-    icon: '🏫',
-    color: '#3B82F6',
-    desc_en: 'Established 1968. Co-education with mid-day meal hall and science laboratory.',
-    desc_kn: '1968 ರಲ್ಲಿ ಸ್ಥಾಪಿತ. ಬಿಸಿಯೂಟ ಭವನ, ವಿಜ್ಞಾನ ಪ್ರಯೋಗಾಲಯ ಮತ್ತು ಕ್ರೀಡಾಂಗಣ.',
-    distance_en: '0.3 km (North)',
-    distance_kn: 'ಉತ್ತರಕ್ಕೆ 0.3 ಕಿ.ಮೀ',
-    timings_en: '9:30 AM – 4:30 PM',
-    timings_kn: 'ಬೆಳಗ್ಗೆ 9:30 – ಸಂಜೆ 4:30',
-    phone: '9845022334',
-    coords: { lat: 13.9325, lng: 75.5675 },
-    verified: true
-  },
-  {
-    id: 'loc_4',
-    name_en: 'Primary Health Center (PHC)',
-    name_kn: 'ಪ್ರಾಥಮಿಕ ಆರೋಗ್ಯ ಕೇಂದ್ರ',
-    category: 'HEALTH',
-    icon: '🏥',
-    color: '#EF4444',
-    desc_en: '24/7 medical emergency care, maternity ward, pharmacy, and ambulance service.',
-    desc_kn: '24/7 ತುರ್ತು ಚಿಕಿತ್ಸೆ, ಹೆರಿಗೆ ವಾರ್ಡ್, ಉಚಿತ ಔಷಧಿ ವಿತರಣೆ ಮತ್ತು ಆಂಬ್ಯುಲೆನ್ಸ್.',
-    distance_en: '0.5 km (West)',
-    distance_kn: 'ಪಶ್ಚಿಮಕ್ಕೆ 0.5 ಕಿ.ಮೀ',
-    timings_en: 'Open 24 Hours Emergency | OPD 9:00 AM – 4:00 PM',
-    timings_kn: 'ತುರ್ತು ಚಿಕಿತ್ಸೆ 24 ಗಂಟೆ | ತಪಾಸಣೆ ಬೆಳಗ್ಗೆ 9:00 – ಸಂಜೆ 4:00',
-    phone: '108',
-    coords: { lat: 13.9288, lng: 75.5632 },
-    verified: true
-  },
-  {
-    id: 'loc_5',
-    name_en: 'Gramasiri Sports Playground',
-    name_kn: 'ಗ್ರಾಮಸಿರಿ ಕ್ರೀಡಾಂಗಣ',
-    category: 'SPORTS',
-    icon: '🏏',
-    color: '#8B5CF6',
-    desc_en: 'Cricket pitch, floodlit Kabaddi court, running track, and open gym.',
-    desc_kn: 'ಕ್ರಿಕೆಟ್ ಮೈದಾನ, ಕಬಡ್ಡಿ ಅಂಕಣ, ರನ್ನಿಂಗ್ ಟ್ರ್ಯಾಕ್ ಮತ್ತು ಮುಕ್ತ ವ್ಯಾಯಾಮಶಾಲೆ.',
-    distance_en: '0.6 km (South)',
-    distance_kn: 'ದಕ್ಷಿಣಕ್ಕೆ 0.6 ಕಿ.ಮೀ',
-    timings_en: '5:30 AM – 7:30 PM',
-    timings_kn: 'ಬೆಳಗ್ಗೆ 5:30 – ಸಂಜೆ 7:30',
-    phone: '9845088990',
-    coords: { lat: 13.9255, lng: 75.5695 },
-    verified: true
-  },
-  {
-    id: 'loc_6',
-    name_en: 'Main Bus Stop & Auto Stand',
-    name_kn: 'ಮುಖ್ಯ ಬಸ್ ನಿಲ್ದಾಣ & ಆಟೋ ನಿಲ್ದಾಣ',
-    category: 'BUS',
-    icon: '🚌',
-    color: '#EC4899',
-    desc_en: 'KSRTC bus connections to Shivamogga city every 30 minutes. Passenger shelter.',
-    desc_kn: 'ಶಿವಮೊಗ್ಗ ನಗರಕ್ಕೆ ಪ್ರತಿ 30 ನಿಮಿಷಕ್ಕೊಮ್ಮೆ ಬಸ್ ಸಂಪರ್ಕ. ಪ್ರಯಾಣಿಕರ ತಂಗುದಾಣ.',
-    distance_en: '0.2 km from Center',
-    distance_kn: 'ಗ್ರಾಮ ಕೇಂದ್ರದಿಂದ 0.2 ಕಿ.ಮೀ',
-    timings_en: 'Bus Services: 6:00 AM – 9:30 PM',
-    timings_kn: 'ಬಸ್ ಸೇವೆ: ಬೆಳಗ್ಗೆ 6:00 – ರಾತ್ರಿ 9:30',
-    coords: { lat: 13.9292, lng: 75.5688 },
-    verified: true
-  },
-  {
-    id: 'loc_7',
-    name_en: 'Community Pure Drinking Water RO Plant',
-    name_kn: 'ಶುದ್ಧ ಕುಡಿಯುವ ನೀರಿನ ಘಟಕ (RO)',
-    category: 'WATER',
-    icon: '💧',
-    color: '#06B6D4',
-    desc_en: 'Clean mineral drinking water dispenser. 20 Liters for ₹5 with smart card / coins.',
-    desc_kn: 'ಶುದ್ಧ ಖನಿಜಯುಕ್ತ ಕುಡಿಯುವ ನೀರು. ₹5 ಕ್ಕೆ 20 ಲೀಟರ್ ಕ್ಯಾನ್ ನೀರು ಲಭ್ಯ.',
-    distance_en: '0.15 km from Panchayat',
-    distance_kn: 'ಪಂಚಾಯತಿ ಬಳಿ 0.15 ಕಿ.ಮೀ',
-    timings_en: '24 Hours Dispenser',
-    timings_kn: '24 ಗಂಟೆ ಲಭ್ಯ',
-    coords: { lat: 13.9304, lng: 75.5678 },
-    verified: true
-  },
-  {
-    id: 'loc_8',
-    name_en: 'Karnataka Bank Branch & 24/7 ATM',
-    name_kn: 'ಕರ್ನಾಟಕ ಬ್ಯಾಂಕ್ ಶಾಖೆ & ATM',
-    category: 'BANK',
-    icon: '🏦',
-    color: '#6366F1',
-    desc_en: 'Agricultural loans, farmer credit card, cash deposit, and 24/7 ATM kiosk.',
-    desc_kn: 'ಕೃಷಿ ಸಾಲ, ಕಿಸಾನ್ ಕ್ರೆಡಿಟ್ ಕಾರ್ಡ್, ಹಣ ಜಮೆ ಮತ್ತು 24/7 ಎಟಿಎಂ ಸೇವೆ.',
-    distance_en: '0.25 km from Market',
-    distance_kn: 'ಮಾರುಕಟ್ಟೆಯಿಂದ 0.25 ಕಿ.ಮೀ',
-    timings_en: 'Banking: 10:00 AM – 4:00 PM | ATM: 24 Hours',
-    timings_kn: 'ಬ್ಯಾಂಕ್: ಬೆಳಗ್ಗೆ 10:00 – ಸಂಜೆ 4:00 | ATM: 24 ಗಂಟೆ',
-    phone: '9845033445',
-    coords: { lat: 13.9285, lng: 75.5698 },
-    verified: true
-  },
-  {
-    id: 'loc_9',
-    name_en: 'Village Police Outpost',
-    name_kn: 'ಗ್ರಾಮೀಣ ಪೊಲೀಸ್ ಹೊರಠಾಣೆ',
-    category: 'EMERGENCY',
-    icon: '🚨',
-    color: '#DC2626',
-    desc_en: 'Community policing, beat officer patrol, and 24/7 resident safety helpline.',
-    desc_kn: 'ಗ್ರಾಮೀಣ ಸುರಕ್ಷತೆ, ಬೀಟ್ ಪೊಲೀಸ್ ಕಾವಲು ಮತ್ತು 24/7 ತುರ್ತು ಸಹಾಯ.',
-    distance_en: '0.35 km',
-    distance_kn: '0.35 ಕಿ.ಮೀ',
-    timings_en: '24 Hours Emergency Dial 112',
-    timings_kn: '24 ಗಂಟೆ ತುರ್ತು ಕರೆ 112',
-    phone: '112',
-    coords: { lat: 13.9318, lng: 75.5662 },
-    verified: true
+export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [];
+
+export function getCategoryIcon(cat: string): string {
+  switch (cat) {
+    case 'TEMPLE': return '🛕';
+    case 'SCHOOL': return '🏫';
+    case 'HEALTH': return '🏥';
+    case 'SPORTS': return '🏏';
+    case 'BUS': return '🚌';
+    case 'WATER': return '💧';
+    case 'BANK': return '🏦';
+    case 'HALL': return '🏛️';
+    case 'EMERGENCY': return '🚨';
+    default: return '📍';
   }
-];
+}
+
+export function getCategoryColor(cat: string): string {
+  switch (cat) {
+    case 'TEMPLE': return '#F59E0B';
+    case 'SCHOOL': return '#3B82F6';
+    case 'HEALTH': return '#EF4444';
+    case 'SPORTS': return '#8B5CF6';
+    case 'BUS': return '#EC4899';
+    case 'WATER': return '#06B6D4';
+    case 'BANK': return '#6366F1';
+    case 'HALL': return '#10B981';
+    case 'EMERGENCY': return '#DC2626';
+    default: return '#10B981';
+  }
+}
 
 // Haversine formula for exact distance in kilometers
 function calculateHaversineDistanceKm(
@@ -224,8 +102,23 @@ function calculateHaversineDistanceKm(
 export const VillageMapView: React.FC = () => {
   const { isKannada } = useLanguage();
 
+  const [locations, setLocations] = useState<MapLocationItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('muttagundi_map_locations');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Discard any stale demo mock items
+          const cleaned = parsed.filter((p: any) => !p.name_en?.includes('Gramasiri') && !p.name_en?.includes('Shivamogga'));
+          return cleaned;
+        }
+      }
+    } catch {}
+    return [];
+  });
+
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [selectedLocation, setSelectedLocation] = useState<MapLocationItem>(VERIFIED_VILLAGE_LOCATIONS[0]);
+  const [selectedLocation, setSelectedLocation] = useState<MapLocationItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // User Device Location State
@@ -239,7 +132,16 @@ export const VillageMapView: React.FC = () => {
   const [suggestName, setSuggestName] = useState('');
   const [suggestCategory, setSuggestCategory] = useState('TEMPLE');
   const [suggestDesc, setSuggestDesc] = useState('');
+  const [suggestPhone, setSuggestPhone] = useState('');
+  const [suggestTimings, setSuggestTimings] = useState('');
   const [suggestSubmitted, setSuggestSubmitted] = useState(false);
+
+  // Update selected location when locations change
+  useEffect(() => {
+    if (locations.length > 0 && !selectedLocation) {
+      setSelectedLocation(locations[0]);
+    }
+  }, [locations]);
 
   // Detect GPS Device Location
   const handleDetectLocation = () => {
@@ -295,7 +197,7 @@ export const VillageMapView: React.FC = () => {
   ];
 
   // Calculate live distance for each location
-  const locationsWithExactDistance = VERIFIED_VILLAGE_LOCATIONS.map((loc) => {
+  const locationsWithExactDistance = locations.map((loc) => {
     if (!userCoords) return { ...loc, exactKm: null, formattedDistance: null };
     const km = calculateHaversineDistanceKm(userCoords.lat, userCoords.lng, loc.coords.lat, loc.coords.lng);
     let formatted = '';
@@ -334,13 +236,39 @@ export const VillageMapView: React.FC = () => {
   const handleSuggestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!suggestName.trim()) return;
+
+    const newLoc: MapLocationItem = {
+      id: 'loc_' + Date.now(),
+      name_en: suggestName.trim(),
+      name_kn: suggestName.trim(),
+      category: suggestCategory as any,
+      icon: getCategoryIcon(suggestCategory),
+      color: getCategoryColor(suggestCategory),
+      desc_en: suggestDesc.trim() || 'Verified landmark in Muttagundi',
+      desc_kn: suggestDesc.trim() || 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಸಾರ್ವಜನಿಕ ಸ್ಥಳ',
+      distance_en: 'Muttagundi',
+      distance_kn: 'ಮುಟ್ಟಗುಂಡಿ',
+      timings_en: suggestTimings.trim() || undefined,
+      timings_kn: suggestTimings.trim() || undefined,
+      phone: suggestPhone.trim() || undefined,
+      coords: userCoords ? { lat: userCoords.lat, lng: userCoords.lng } : { lat: 13.9299, lng: 75.5681 },
+      verified: true
+    };
+
+    const updated = [newLoc, ...locations];
+    setLocations(updated);
+    setSelectedLocation(newLoc);
+    localStorage.setItem('muttagundi_map_locations', JSON.stringify(updated));
+
     setSuggestSubmitted(true);
     setTimeout(() => {
       setSuggestSubmitted(false);
       setShowSuggestModal(false);
       setSuggestName('');
       setSuggestDesc('');
-    }, 1800);
+      setSuggestPhone('');
+      setSuggestTimings('');
+    }, 1200);
   };
 
   return (
@@ -676,68 +604,86 @@ export const VillageMapView: React.FC = () => {
         </div>
       )}
 
-      {/* Locations Cards Grid (Large, Easy to Tap) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-        {filtered.map((loc) => {
-          const isSelected = selectedLocation?.id === loc.id;
-          return (
-            <div
-              key={loc.id}
-              onClick={() => setSelectedLocation(loc)}
-              style={{
-                background: isSelected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.04)',
-                border: `1px solid ${isSelected ? loc.color : 'rgba(255, 255, 255, 0.08)'}`,
-                borderRadius: '16px',
-                padding: '16px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: isSelected ? `0 4px 20px ${loc.color}22` : 'none'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '1.8rem' }}>{loc.icon}</span>
-                  <div>
-                    <h4 style={{ fontSize: '0.98rem', fontWeight: 800, margin: '0 0 2px 0', color: '#FFFFFF' }}>
-                      {isKannada ? loc.name_kn : loc.name_en}
-                    </h4>
-                    <span style={{ fontSize: '0.76rem', color: userCoords ? '#34D399' : '#94A3B8', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
-                      <MapPin size={12} color={loc.color} />
-                      {userCoords
-                        ? `${loc.formattedDistance || loc.distance_en} ${isKannada ? 'ನಿಮ್ಮಿಂದ' : 'from you'}`
-                        : (isKannada ? loc.distance_kn : loc.distance_en)}
-                    </span>
+      {/* Locations Cards Grid (Large, Easy to Tap) or Empty State */}
+      {filtered.length === 0 ? (
+        <div className="glass-card" style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <MapPin size={42} color="#10B981" style={{ margin: '0 auto 14px', opacity: 0.8 }} />
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '6px' }}>
+            {isKannada ? 'ಯಾವುದೇ ಸ್ಥಳಗಳಿಲ್ಲ' : 'No Village Places Added Yet'}
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 20px' }}>
+            {isKannada
+              ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ದೇವಸ್ಥಾನ, ಶಾಲೆ, ಆಸ್ಪತ್ರೆ, ನೀರಿನ ಘಟಕ ಅಥವಾ ಸಾರ್ವಜನಿಕ ಸ್ಥಳಗಳನ್ನು ಹೊಸದಾಗಿ ಸೇರಿಸಿ.'
+              : 'Be the first to mark a temple, school, health clinic, RO water plant, or landmark on the Muttagundi map.'}
+          </p>
+          <button onClick={() => setShowSuggestModal(true)} className="btn-primary" style={{ display: 'inline-flex' }}>
+            <Plus size={16} />
+            <span>{isKannada ? 'ಮೊದಲ ಸ್ಥಳ ಸೇರಿಸಿ' : 'Add First Landmark'}</span>
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+          {filtered.map((loc) => {
+            const isSelected = selectedLocation?.id === loc.id;
+            return (
+              <div
+                key={loc.id}
+                onClick={() => setSelectedLocation(loc)}
+                style={{
+                  background: isSelected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+                  border: `1px solid ${isSelected ? loc.color : 'rgba(255, 255, 255, 0.08)'}`,
+                  borderRadius: '16px',
+                  padding: '16px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isSelected ? `0 4px 20px ${loc.color}22` : 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '1.8rem' }}>{loc.icon}</span>
+                    <div>
+                      <h4 style={{ fontSize: '0.98rem', fontWeight: 800, margin: '0 0 2px 0', color: '#FFFFFF' }}>
+                        {isKannada ? loc.name_kn : loc.name_en}
+                      </h4>
+                      <span style={{ fontSize: '0.76rem', color: userCoords ? '#34D399' : '#94A3B8', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+                        <MapPin size={12} color={loc.color} />
+                        {userCoords
+                          ? `${loc.formattedDistance || loc.distance_en} ${isKannada ? 'ನಿಮ್ಮಿಂದ' : 'from you'}`
+                          : (isKannada ? loc.distance_kn : loc.distance_en)}
+                      </span>
+                    </div>
                   </div>
+
+                  <a
+                    href={getDirectionsUrl(loc)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: '#CBD5E1',
+                      borderRadius: '50%',
+                      width: '34px',
+                      height: '34px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textDecoration: 'none',
+                      flexShrink: 0
+                    }}
+                    title="Open GPS Navigation"
+                  >
+                    <Navigation size={15} />
+                  </a>
                 </div>
-
-                <a
-                  href={getDirectionsUrl(loc)}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    color: '#CBD5E1',
-                    borderRadius: '50%',
-                    width: '34px',
-                    height: '34px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textDecoration: 'none',
-                    flexShrink: 0
-                  }}
-                  title="Open GPS Navigation"
-                >
-                  <Navigation size={15} />
-                </a>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
-      {/* Suggest Place Modal */}
+      {/* Suggest / Add Place Modal */}
       {showSuggestModal && (
         <div className="modal-overlay" onClick={() => setShowSuggestModal(false)}>
           <div
@@ -747,7 +693,7 @@ export const VillageMapView: React.FC = () => {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
-                {isKannada ? '📍 ಹೊಸ ಸಾರ್ವಜನಿಕ ಸ್ಥಳ ಸೂಚಿಸಿ' : '📍 Suggest Public Place'}
+                {isKannada ? '📍 ಹೊಸ ಸಾರ್ವಜನಿಕ ಸ್ಥಳ ಸೇರಿಸಿ' : '📍 Add Public Place / Landmark'}
               </h3>
               <button
                 onClick={() => setShowSuggestModal(false)}
@@ -761,12 +707,12 @@ export const VillageMapView: React.FC = () => {
               <div style={{ textAlign: 'center', padding: '24px' }}>
                 <CheckCircle2 size={40} color="#10B981" style={{ margin: '0 auto 12px' }} />
                 <h4 style={{ fontSize: '1.1rem', fontWeight: 800 }}>
-                  {isKannada ? 'ಸ್ಥಳ ಸೂಚನೆ ಸಲ್ಲಿಕೆಯಾಗಿದೆ!' : 'Location Submitted!'}
+                  {isKannada ? 'ಸ್ಥಳ ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ!' : 'Landmark Successfully Added!'}
                 </h4>
                 <p style={{ fontSize: '0.84rem', color: '#94A3B8' }}>
                   {isKannada
-                    ? 'ಗ್ರಾಮ ಪಂಚಾಯತಿ ಅಧಿಕಾರಿಗಳು ಪರಿಶೀಲಿಸಿ ಅಧಿಕೃತ ನಕ್ಷೆಗೆ ಸೇರಿಸುತ್ತಾರೆ.'
-                    : 'Village moderators will review and add this official landmark.'}
+                    ? 'ಹೊಸ ಸ್ಥಳವನ್ನು ಗ್ರಾಮದ ಅಧಿಕೃತ ನಕ್ಷೆಗೆ ಸೇರಿಸಲಾಗಿದೆ.'
+                    : 'This landmark has been marked on the village map.'}
                 </p>
               </div>
             ) : (
@@ -780,7 +726,7 @@ export const VillageMapView: React.FC = () => {
                     required
                     value={suggestName}
                     onChange={(e) => setSuggestName(e.target.value)}
-                    placeholder={isKannada ? 'ಉದಾ: ಹೊಸ ಕಲ್ಯಾಣ ಮಂಟಪ...' : 'e.g., New Community Hall...'}
+                    placeholder={isKannada ? 'ಉದಾ: ಶ್ರೀ ರಂಗನಾಥ ಸ್ವಾಮಿ ದೇವಾಲಯ / ಪ್ರಾಥಮಿಕ ಶಾಲೆ...' : 'e.g., Primary Health Center / High School...'}
                     style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px 12px', color: '#FFFFFF' }}
                   />
                 </div>
@@ -800,7 +746,49 @@ export const VillageMapView: React.FC = () => {
                     <option value="WATER">Water Point / ನೀರಿನ ಘಟಕ</option>
                     <option value="BUS">Bus Stop / ಬಸ್ ನಿಲ್ದಾಣ</option>
                     <option value="HALL">Community Hall / ಸಭಾ ಭವನ</option>
+                    <option value="SPORTS">Sports Ground / ಮೈದಾನ</option>
+                    <option value="EMERGENCY">Emergency / ತುರ್ತು</option>
                   </select>
+                </div>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: '4px' }}>
+                    {isKannada ? 'ವಿವರಣೆ' : 'Description'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={suggestDesc}
+                    onChange={(e) => setSuggestDesc(e.target.value)}
+                    placeholder={isKannada ? 'ಸ್ಥಳದ ಬಗ್ಗೆ ಸಂಕ್ಷಿಪ್ತ ಮಾಹಿತಿ...' : 'Brief details about this landmark...'}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px 12px', color: '#FFFFFF' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: '4px' }}>
+                      {isKannada ? 'ಸಮಯ (ಐಚ್ಛಿಕ)' : 'Timings (Optional)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={suggestTimings}
+                      onChange={(e) => setSuggestTimings(e.target.value)}
+                      placeholder="e.g. 9:00 AM - 5:00 PM"
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '8px 10px', color: '#FFFFFF', fontSize: '0.82rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: '4px' }}>
+                      {isKannada ? 'ಸಂಪರ್ಕ (ಐಚ್ಛಿಕ)' : 'Phone (Optional)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={suggestPhone}
+                      onChange={(e) => setSuggestPhone(e.target.value)}
+                      placeholder="e.g. 9845012345"
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '8px 10px', color: '#FFFFFF', fontSize: '0.82rem' }}
+                    />
+                  </div>
                 </div>
 
                 {/* GPS Capture Button */}
@@ -821,7 +809,7 @@ export const VillageMapView: React.FC = () => {
                   style={{ width: '100%', background: '#10B981', color: '#FFFFFF', border: 'none', borderRadius: '12px', padding: '12px', fontWeight: 800, fontSize: '0.92rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
                   <Send size={16} />
-                  <span>{isKannada ? 'ಸೂಚನೆ ಸಲ್ಲಿಸಿ (SUBMIT)' : 'SUBMIT SUGGESTION'}</span>
+                  <span>{isKannada ? 'ಸ್ಥಳ ಸೇರಿಸಿ (ADD LANDMARK)' : 'SAVE LANDMARK TO MAP'}</span>
                 </button>
               </form>
             )}

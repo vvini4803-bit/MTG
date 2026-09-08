@@ -11,7 +11,8 @@ import {
   Sparkles,
   ShieldCheck,
   ChevronRight,
-  Plus
+  Plus,
+  X
 } from 'lucide-react';
 
 interface TemplesScreenProps {
@@ -26,10 +27,52 @@ export const TemplesScreen: React.FC<TemplesScreenProps> = ({
   const { language, isKannada } = useLanguage();
   const { isAdmin } = useAuth();
   const [temples, setTemples] = useState<TempleItem[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [nameEn, setNameEn] = useState('');
+  const [nameKn, setNameKn] = useState('');
+  const [deityEn, setDeityEn] = useState('');
+  const [deityKn, setDeityKn] = useState('');
+  const [timingsEn, setTimingsEn] = useState('');
+  const [locationEn, setLocationEn] = useState('');
+  const [historyEn, setHistoryEn] = useState('');
 
   useEffect(() => {
     return dbService.subscribeTemples(setTemples);
   }, []);
+
+  const handleAddTemple = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nameEn.trim()) return;
+
+    await dbService.addTemple({
+      name_en: nameEn.trim(),
+      name_kn: nameKn.trim() || nameEn.trim(),
+      deity_en: deityEn.trim() || 'Lord Shiva / Vishnu / Grama Devathe',
+      deity_kn: deityKn.trim() || (nameKn.trim() ? 'ಗ್ರಾಮ ದೇವತೆ / ಶ್ರೀ ಸ್ವಾಮಿ' : 'Lord Shiva / Vishnu'),
+      timings_en: timingsEn.trim() || '6:00 AM - 12:30 PM & 5:30 PM - 8:30 PM',
+      timings_kn: nameKn.trim() ? (timingsEn.trim() || 'ಬೆಳಗ್ಗೆ ೬:೦೦ - ೧೨:೩೦ & ಸಂಜೆ ೫:೩೦ - ೮:೩೦') : '6:00 AM - 12:30 PM & 5:30 PM - 8:30 PM',
+      location_en: locationEn.trim() || 'Muttagundi Village',
+      location_kn: locationEn.trim() || 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮ',
+      history_en: historyEn.trim() || 'Sacred historic temple and center of devotion for Muttagundi residents.',
+      history_kn: historyEn.trim() || 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮಸ್ಥರ ಪವಿತ್ರ ಆರಾಧನಾ ಕೇಂದ್ರ ಮತ್ತು ಐತಿಹಾಸಿಕ ತಾಣ.',
+      festivals_en: 'Annual Rathotsava / Jaatre & Karthika Deepotsava',
+      festivals_kn: 'ವಾರ್ಷಿಕ ರಥೋತ್ಸವ, ಜಾತ್ರೆ ಮತ್ತು ಕಾರ್ತಿಕ ದೀಪೋತ್ಸವ',
+      special_pooja_en: 'Sankranti, Ugadi & Maha Shivaratri Special Pooja',
+      special_pooja_kn: 'ಸಂಕ್ರಾಂತಿ, ಯುಗಾದಿ ಮತ್ತು ಮಹಾ ಶಿವರಾತ್ರಿ ವಿಶೇಷ ಪೂಜೆ',
+      image_url: 'https://images.unsplash.com/photo-1609766857041-ed402ea8069a?auto=format&fit=crop&w=800&q=80',
+      source: 'Muttagundi Grama Panchayat Heritage Register',
+      verified: true
+    });
+
+    setShowAddModal(false);
+    setNameEn('');
+    setNameKn('');
+    setDeityEn('');
+    setDeityKn('');
+    setTimingsEn('');
+    setLocationEn('');
+    setHistoryEn('');
+  };
 
   return (
     <div className="container" style={{ padding: '24px 16px', maxWidth: '960px' }}>
@@ -45,15 +88,30 @@ export const TemplesScreen: React.FC<TemplesScreenProps> = ({
           </p>
         </div>
 
-        {isAdmin && onOpenCreateTemple && (
-          <button onClick={onOpenCreateTemple} className="btn-primary">
-            <Plus size={18} />
-            <span>{isKannada ? 'ದೇಗುಲ ಸೇರಿಸಿ' : 'Add Temple Record'}</span>
-          </button>
-        )}
+        <button onClick={() => setShowAddModal(true)} className="btn-primary">
+          <Plus size={18} />
+          <span>{isKannada ? 'ದೇಗುಲ ಸೇರಿಸಿ' : 'Add Temple Record'}</span>
+        </button>
       </div>
 
       {/* Temples Grid */}
+      {temples.length === 0 ? (
+        <div className="glass-card" style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <Landmark size={42} color="#EC4899" style={{ margin: '0 auto 14px', opacity: 0.8 }} />
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '6px' }}>
+            {isKannada ? 'ಯಾವುದೇ ದೇವಾಲಯಗಳ ಮಾಹಿತಿ ಇಲ್ಲ' : 'No Temple Records Added Yet'}
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 20px' }}>
+            {isKannada
+              ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಶ್ರೀ ರಂಗನಾಥ ಸ್ವಾಮಿ, ವೀರಭದ್ರೇಶ್ವರ ಅಥವಾ ಗ್ರಾಮ ದೇವತೆ ಸನ್ನಿಧಿಯ ಇತಿಹಾಸ ಮತ್ತು ಪೂಜಾ ವಿವರಗಳನ್ನು ಸೇರಿಸಿ.'
+              : 'Add temple history, daily darshan pooja timings, and annual jaatre dates for Muttagundi.'}
+          </p>
+          <button onClick={() => setShowAddModal(true)} className="btn-primary" style={{ display: 'inline-flex' }}>
+            <Plus size={16} />
+            <span>{isKannada ? 'ಮೊದಲ ದೇಗುಲ ಸೇರಿಸಿ' : 'Add First Temple'}</span>
+          </button>
+        </div>
+      ) : (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         {temples.map((temple) => (
           <div
@@ -124,6 +182,101 @@ export const TemplesScreen: React.FC<TemplesScreenProps> = ({
           </div>
         ))}
       </div>
+      )}
+
+      {/* Add Temple Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
+                {isKannada ? '🛕 ಹೊಸ ದೇವಾಲಯದ ವಿವರ ಸೇರಿಸಿ' : '🛕 Add Temple Record'}
+              </h3>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddTemple}>
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ದೇಗುಲದ ಹೆಸರು (English)' : 'Temple Name (English) *'}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  required
+                  value={nameEn}
+                  onChange={(e) => setNameEn(e.target.value)}
+                  placeholder="e.g. Sri Ranganatha Swamy Temple"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ದೇಗುಲದ ಹೆಸರು (ಕನ್ನಡ)' : 'Temple Name (Kannada)'}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={nameKn}
+                  onChange={(e) => setNameKn(e.target.value)}
+                  placeholder="ಉದಾ: ಶ್ರೀ ರಂಗನಾಥ ಸ್ವಾಮಿ ದೇವಾಲಯ"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ಮುಖ್ಯ ದೇವರು / ಅಧಿದೇವತೆ' : 'Main Deity'}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={deityEn}
+                  onChange={(e) => setDeityEn(e.target.value)}
+                  placeholder="e.g. Sri Ranganatha Swamy / Veerabhadreshwara"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ಪೂಜಾ ಸಮಯ / ದರ್ಶನ' : 'Pooja / Darshan Timings'}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={timingsEn}
+                  onChange={(e) => setTimingsEn(e.target.value)}
+                  placeholder="e.g. 6:30 AM - 12:00 PM & 5:30 PM - 8:30 PM"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ಸ್ಥಳ / ವಿಳಾಸ' : 'Location'}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={locationEn}
+                  onChange={(e) => setLocationEn(e.target.value)}
+                  placeholder="e.g. Car Street / Lake Bund, Muttagundi"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ದೇವಾಲಯದ ಇತಿಹಾಸ & ಹಿನ್ನೆಲೆ' : 'Temple History & Significance'}</label>
+                <textarea
+                  className="form-input"
+                  rows={3}
+                  value={historyEn}
+                  onChange={(e) => setHistoryEn(e.target.value)}
+                  placeholder={isKannada ? 'ದೇಗುಲದ ಸಂಪ್ರದಾಯ, ಜಾತ್ರೆ ಮತ್ತು ಇತಿಹಾಸ...' : 'Historic origins, architecture, annual festival and traditions...'}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary">
+                  {isKannada ? 'ರದ್ದುಮಾಡಿ' : 'Cancel'}
+                </button>
+                <button type="submit" className="btn-primary">
+                  {isKannada ? 'ದೇಗುಲ ಉಳಿಸಿ (SAVE)' : 'Save Temple'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

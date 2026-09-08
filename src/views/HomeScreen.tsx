@@ -378,6 +378,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </button>
           </div>
 
+          {newsList.length === 0 ? (
+            <div className="glass-card" style={{ padding: '36px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '0.92rem', color: '#CBD5E1', marginBottom: '14px' }}>
+                {isKannada ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಇನ್ನೂ ಯಾವುದೇ ಸುದ್ದಿ ಪ್ರಕಟವಾಗಿಲ್ಲ. ಮೊದಲ ಅಧಿಕೃತ ಸುದ್ದಿ ಅಥವಾ ಮಾಹಿತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಿ!' : 'No news published yet for Muttagundi. Be the first to share an update!'}
+              </p>
+              <button onClick={() => onNavigateTab('news')} className="btn-primary" style={{ display: 'inline-flex' }}>
+                <span>{isKannada ? 'ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಿ' : 'Share News'}</span>
+              </button>
+            </div>
+          ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
             {newsList.map((item) => (
               <div
@@ -459,6 +469,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </div>
             ))}
           </div>
+          )}
         </section>
 
         {/* 📅 UPCOMING EVENTS SECTION */}
@@ -491,6 +502,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </button>
           </div>
 
+          {eventsList.length === 0 ? (
+            <div className="glass-card" style={{ padding: '36px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '0.92rem', color: '#CBD5E1', marginBottom: '14px' }}>
+                {isKannada ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕಾರ್ಯಕ್ರಮಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ.' : 'No events scheduled yet for Muttagundi.'}
+              </p>
+              <button onClick={() => onNavigateTab('events')} className="btn-primary" style={{ display: 'inline-flex' }}>
+                <span>{isKannada ? 'ಕಾರ್ಯಕ್ರಮ ಸೇರಿಸಿ' : 'Schedule Event'}</span>
+              </button>
+            </div>
+          ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
             {eventsList.map((event) => (
               <div
@@ -552,6 +573,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </div>
             ))}
           </div>
+          )}
         </section>
 
         {/* 🌾 AGRICULTURE & 🛕 TEMPLES TWO-COLUMN SPOTLIGHT */}
@@ -574,36 +596,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {crops.map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => onOpenCropDetail(c)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '10px',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'rgba(255,255,255,0.03)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <img
-                    src={c.image_url}
-                    alt={c.name_en}
-                    style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>
-                      {isKannada ? c.name_kn : c.name_en}
-                    </h4>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {isKannada ? c.season_kn : c.season_en}
-                    </span>
-                  </div>
-                  <ChevronRight size={16} color="var(--text-muted)" />
+              {crops.length === 0 ? (
+                <div style={{ padding: '24px 16px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)' }}>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                    {isKannada ? 'ಯಾವುದೇ ಬೆಳೆ ಮಾಹಿತಿ ದಾಖಲಾಗಿಲ್ಲ.' : 'No crop cultivation guides added yet.'}
+                  </p>
+                  <button 
+                    onClick={() => onNavigateTab('agriculture')}
+                    className="btn-primary" 
+                    style={{ fontSize: '0.78rem', padding: '6px 14px' }}
+                  >
+                    {isKannada ? '+ ಬೆಳೆ ಮಾಹಿತಿ ಸೇರಿಸಿ' : '+ Add Crop Guide'}
+                  </button>
                 </div>
-              ))}
+              ) : (
+                crops.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => onOpenCropDetail(c)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '10px',
+                      borderRadius: 'var(--radius-md)',
+                      background: 'rgba(255,255,255,0.03)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <img
+                      src={c.image_url}
+                      alt={c.name_en}
+                      style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>
+                        {isKannada ? c.name_kn : c.name_en}
+                      </h4>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {isKannada ? c.season_kn : c.season_en}
+                      </span>
+                    </div>
+                    <ChevronRight size={16} color="var(--text-muted)" />
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -625,36 +662,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {temples.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => onOpenTempleDetail(t)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '10px',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'rgba(255,255,255,0.03)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <img
-                    src={t.image_url}
-                    alt={t.name_en}
-                    style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>
-                      {isKannada ? t.name_kn : t.name_en}
-                    </h4>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {isKannada ? t.timings_kn : t.timings_en}
-                    </span>
-                  </div>
-                  <ChevronRight size={16} color="var(--text-muted)" />
+              {temples.length === 0 ? (
+                <div style={{ padding: '24px 16px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)' }}>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                    {isKannada ? 'ಯಾವುದೇ ದೇವಾಲಯಗಳ ವಿವರ ದಾಖಲಾಗಿಲ್ಲ.' : 'No temples or sacred places registered yet.'}
+                  </p>
+                  <button 
+                    onClick={() => onNavigateTab('temples')}
+                    className="btn-primary" 
+                    style={{ fontSize: '0.78rem', padding: '6px 14px', background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}
+                  >
+                    {isKannada ? '+ ದೇಗುಲ ಸೇರಿಸಿ' : '+ Add Temple Info'}
+                  </button>
                 </div>
-              ))}
+              ) : (
+                temples.map((t) => (
+                  <div
+                    key={t.id}
+                    onClick={() => onOpenTempleDetail(t)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '10px',
+                      borderRadius: 'var(--radius-md)',
+                      background: 'rgba(255,255,255,0.03)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <img
+                      src={t.image_url}
+                      alt={t.name_en}
+                      style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>
+                        {isKannada ? t.name_kn : t.name_en}
+                      </h4>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {isKannada ? t.timings_kn : t.timings_en}
+                      </span>
+                    </div>
+                    <ChevronRight size={16} color="var(--text-muted)" />
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -685,40 +737,55 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-            {gallery.map((g) => (
-              <div
-                key={g.id}
-                onClick={() => onOpenGalleryDetail(g)}
-                className="glass-card glass-card-interactive"
-                style={{
-                  height: '160px',
-                  borderRadius: 'var(--radius-md)',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  cursor: 'pointer'
-                }}
+          {gallery.length === 0 ? (
+            <div className="glass-card" style={{ padding: '36px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
+                {isKannada ? 'ಗ್ರಾಮದ ಆಲ್ಬಂನಲ್ಲಿ ಇನ್ನೂ ಫೋಟೋಗಳಿಲ್ಲ. ಹಬ್ಬ ಮತ್ತು ಸುಗ್ಗಿ ನೆನಪುಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಿ!' : 'No photos added to the village album yet. Share festival, harvest or scenic pictures!'}
+              </p>
+              <button 
+                onClick={() => onNavigateTab('gallery')}
+                className="btn-primary" 
+                style={{ fontSize: '0.85rem', padding: '8px 18px' }}
               >
-                <img
-                  src={g.url}
-                  alt={g.title_en}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-                <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%)',
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  padding: '12px'
-                }}>
-                  <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 600 }}>
-                    {isKannada ? g.title_kn : g.title_en}
-                  </span>
+                {isKannada ? '📸 ಮೊದಲ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ' : '📸 Upload First Photo'}
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+              {gallery.map((g) => (
+                <div
+                  key={g.id}
+                  onClick={() => onOpenGalleryDetail(g)}
+                  className="glass-card glass-card-interactive"
+                  style={{
+                    height: '160px',
+                    borderRadius: 'var(--radius-md)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <img
+                    src={g.url}
+                    alt={g.title_en}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%)',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    padding: '12px'
+                  }}>
+                    <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 600 }}>
+                      {isKannada ? g.title_kn : g.title_en}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* 🏆 ACHIEVEMENTS BANNER */}
@@ -746,40 +813,55 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-              {achievements.map((ach) => (
-                <div
-                  key={ach.id}
+            {achievements.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                  {isKannada ? 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಸಾಧಕರ ವಿವರಗಳನ್ನು ಶೀಘ್ರದಲ್ಲೇ ದಾಖಲಿಸಲಾಗುತ್ತದೆ.' : 'Muttagundi achiever nominations in sports, education and farming can be registered here.'}
+                </p>
+                <button 
                   onClick={() => onNavigateTab('achievements')}
-                  style={{
-                    background: 'rgba(0,0,0,0.3)',
-                    padding: '14px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--glass-border)',
-                    cursor: 'pointer'
-                  }}
+                  className="btn-secondary" 
+                  style={{ fontSize: '0.8rem', padding: '6px 14px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <img
-                      src={ach.photo_url}
-                      alt={ach.person_name_en}
-                      style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                    <div>
-                      <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF' }}>
-                        {isKannada ? ach.person_name_kn : ach.person_name_en}
-                      </h4>
-                      <span style={{ fontSize: '0.72rem', color: '#F472B6', fontWeight: 600 }}>
-                        {ach.category} • {ach.year}
-                      </span>
+                  {isKannada ? 'ಸಾಧಕರ ವಿಭಾಗ ನೋಡಿ' : 'Explore Achievers'}
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                {achievements.map((ach) => (
+                  <div
+                    key={ach.id}
+                    onClick={() => onNavigateTab('achievements')}
+                    style={{
+                      background: 'rgba(0,0,0,0.3)',
+                      padding: '14px',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--glass-border)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                      <img
+                        src={ach.photo_url}
+                        alt={ach.person_name_en}
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                      <div>
+                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF' }}>
+                          {isKannada ? ach.person_name_kn : ach.person_name_en}
+                        </h4>
+                        <span style={{ fontSize: '0.72rem', color: '#F472B6', fontWeight: 600 }}>
+                          {ach.category} • {ach.year}
+                        </span>
+                      </div>
                     </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      {isKannada ? ach.title_kn : ach.title_en}
+                    </p>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    {isKannada ? ach.title_kn : ach.title_en}
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>
