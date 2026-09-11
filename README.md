@@ -1,6 +1,11 @@
 # 🌾 BUILD MY DIGITAL VILLAGE SUPER APP (ನಮ್ಮ ಗ್ರಾಮಸಿರಿ)
 
-Build a **real, beautiful, production-ready Digital Village Super App + responsive website** for my village.
+[![Live App](https://img.shields.io/badge/Live_App-mtg--swart.vercel.app-10B981?style=for-the-badge&logo=vercel&logoColor=white)](https://mtg-swart.vercel.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-3B82F6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vvini4803-bit/MTG)
+
+🌐 **Live Production App**: **[https://mtg-swart.vercel.app/](https://mtg-swart.vercel.app/)**
+
+Build a **real, beautiful, production-ready Digital Village Super App + responsive website** for my village (Muttagundi, Hosadurga Taluk, Chitradurga District).
 
 The app feels like a premium modern 2026 application with beautiful animations, but is **extremely simple to use**.
 
