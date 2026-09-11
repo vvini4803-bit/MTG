@@ -23,6 +23,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     signInWithGoogle,
     sendPhoneOtp,
     verifyPhoneOtp,
+    loginWithPhoneDirect,
     unverifiedEmail,
     setUnverifiedEmail
   } = useAuth();
@@ -246,14 +247,42 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               background: 'rgba(239, 68, 68, 0.15)',
               border: '1px solid #EF4444',
               borderRadius: 'var(--radius-md)',
-              padding: '8px 12px',
+              padding: '12px 14px',
               color: '#FCA5A5',
-              fontSize: '0.78rem',
+              fontSize: '0.8rem',
               marginBottom: '16px',
-              textAlign: 'left'
+              textAlign: 'left',
+              lineHeight: 1.5
             }}
           >
-            {errorMsg}
+            <div>{errorMsg}</div>
+            {(errorMsg.includes('Billing') || errorMsg.includes('billing-not-enabled') || errorMsg.includes('region') || errorMsg.includes('testing')) && phone && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (loginWithPhoneDirect) {
+                    setIsLoading(true);
+                    await loginWithPhoneDirect(phone);
+                    setIsLoading(false);
+                    onSuccess();
+                  }
+                }}
+                style={{
+                  marginTop: '10px',
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: 'var(--accent-emerald)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {isKannada ? `+91 ${phone} ಮೂಲಕ ನೇರವಾಗಿ ಪ್ರವೇಶಿಸಿ (ಉಚಿತ)` : `Instant Sign In as +91 ${phone} (Free Testing)`}
+              </button>
+            )}
           </div>
         )}
 

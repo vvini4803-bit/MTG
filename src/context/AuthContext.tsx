@@ -38,6 +38,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<AuthResult>;
   sendPhoneOtp: (phone: string, containerId?: string) => Promise<AuthResult>;
   verifyPhoneOtp: (otp: string) => Promise<AuthResult>;
+  loginWithPhoneDirect?: (phone: string) => Promise<AuthResult>;
   confirmationResult: ConfirmationResult | null;
   loginWithEmail: (email: string, password?: string) => Promise<boolean>;
   loginWithPhone: (phone: string, otp: string) => Promise<boolean>;
@@ -63,6 +64,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => ({ success: false }),
   sendPhoneOtp: async () => ({ success: false }),
   verifyPhoneOtp: async () => ({ success: false }),
+  loginWithPhoneDirect: async () => ({ success: false }),
   confirmationResult: null,
   loginWithEmail: async () => false,
   loginWithPhone: async () => false,
@@ -322,10 +324,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     } catch (err: any) {
       console.warn('Firebase sendPhoneOtp error:', err?.code, err?.message);
+      if (err?.code === 'auth/billing-not-enabled') {
+        return {
+          success: false,
+          error: 'Firebase requires Billing (Blaze Plan) to send real SMS. To test for FREE without billing: Add your number (+91 ' + cleanPhone.slice(-10) + ') under "Phone numbers for testing" in Firebase Console > Authentication > Sign-in method > Phone (with code 123456).'
+        };
+      }
       if (err?.code === 'auth/operation-not-allowed') {
         return {
           success: false,
-          error: 'SMS for this region is not enabled in Firebase Console. Go to Firebase Console > Authentication > Settings > SMS Region Policy and enable India (+91), or add your number under "Phone numbers for testing".'
+          error: 'Phone authentication or SMS for this region is not enabled in Firebase Console. Go to Firebase Console > Authentication > Settings > SMS Region Policy and enable India (+91), or add your number under "Phone numbers for testing".'
         };
       }
       if (err?.code === 'auth/invalid-phone-number') {
@@ -420,6 +428,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
+  const loginWithPhoneDirect = async (phone: string): Promise<AuthResult> => {
+    const cleanDigits = phone.replace(/\D/g, '').slice(-10);
+    const uid = 'phone_' + cleanDigits;
+    const profile: UserProfile = {
+      uid,
+      name: 'Resident (+91 ' + cleanDigits + ')',
+      name_kn: 'ಗ್ರಾಮ ನಿವಾಸಿ (+91 ' + cleanDigits + ')',
+      phone: '+91' + cleanDigits,
+      email: '',
+      role: 'USER',
+      language: 'kn',
+      photoUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanDigits}`,
+      bio: 'Resident of Muttagundi Village',
+      bio_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ನಿವಾಸಿ',
+      account_status: 'ACTIVE',
+      created_at: new Date().toISOString(),
+      last_login: new Date().toISOString(),
+      is_phone_verified: true,
+      community_category: 'RESIDENT',
+      allow_find_me: true
+    };
+    if (db) {
+      try {
+        await setDoc(doc(db, 'users', uid), profile, { merge: true });
+      } catch (e) {}
+    }
+    setCurrentUser(profile);
+    return { success: true };
+  };
+
   const loginWithDemo = (demoRole: UserRole) => {
     const matched = SEED_USERS.find((u) => u.role === demoRole) || SEED_USERS[0];
     setCurrentUser(matched);
@@ -491,6 +529,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         sendPhoneOtp,
         verifyPhoneOtp,
+        loginWithPhoneDirect,
         confirmationResult,
         loginWithEmail,
         loginWithPhone,
