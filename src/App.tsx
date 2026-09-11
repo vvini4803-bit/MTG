@@ -1248,6 +1248,18 @@ export const App: React.FC = () => {
         </button>
       </nav>
 
+      {/* 🎙️ Global Floating Voice Assistant Trigger (FAB) */}
+      {currentSection !== 'ask' && !isVoiceModalOpen && (
+        <button
+          className="voice-fab"
+          onClick={() => setIsVoiceModalOpen(true)}
+          title={isKannada ? 'ಗ್ರಾಮ ಧ್ವನಿ ಸಹಾಯಕ (AI Voice Assistant)' : 'Village Voice Assistant (AI)'}
+          aria-label="Open Voice Assistant"
+        >
+          <Mic size={28} />
+        </button>
+      )}
+
       {/* 5. MODALS */}
       {/* ➕ Share Update Modal (SPEAK, PHOTO, TYPE) */}
       <ShareUpdateModal

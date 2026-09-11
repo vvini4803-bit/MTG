@@ -29,6 +29,15 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
   const [response, setResponse] = useState<VoiceQueryResponse | null>(null);
   const [isSpeechMuted, setIsSpeechMuted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showOtherLang, setShowOtherLang] = useState(false);
+
+  React.useEffect(() => {
+    return () => {
+      voiceAssistant.stopSpeaking();
+      setIsSpeaking(false);
+      setIsListening(false);
+    };
+  }, []);
 
   const handleStartListening = () => {
     setErrorMessage(null);
@@ -66,9 +75,31 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
     if (!isSpeechMuted) {
       const speechAnswer = language === 'kn' ? res.answer_kn : res.answer_en;
       setIsSpeaking(true);
-      voiceAssistant.speak(speechAnswer, language);
-      setTimeout(() => setIsSpeaking(false), 5000);
+      voiceAssistant.speak(
+        speechAnswer,
+        language,
+        () => setIsSpeaking(false),
+        () => setIsSpeaking(false)
+      );
     }
+  };
+
+  const handlePlayAudio = (lang: 'kn' | 'en') => {
+    if (!response) return;
+    voiceAssistant.stopSpeaking();
+    const textToSpeak = lang === 'kn' ? response.answer_kn : response.answer_en;
+    setIsSpeaking(true);
+    voiceAssistant.speak(
+      textToSpeak,
+      lang,
+      () => setIsSpeaking(false),
+      () => setIsSpeaking(false)
+    );
+  };
+
+  const handleStopAudio = () => {
+    voiceAssistant.stopSpeaking();
+    setIsSpeaking(false);
   };
 
   const samplePrompts = isKannada
@@ -216,7 +247,9 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
             padding: '24px',
             textAlign: 'left',
             marginBottom: '24px',
-            border: response.isVerified ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(245, 158, 11, 0.4)'
+            border: response.isVerified ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(245, 158, 11, 0.4)',
+            borderRadius: '20px',
+            background: 'rgba(15, 23, 42, 0.75)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -226,30 +259,137 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
             {response.isVerified ? (
               <span className="badge badge-verified">
                 <ShieldCheck size={12} />
-                VERIFIED
+                {isKannada ? 'ದೃಢೀಕೃತ ಗ್ರಾಮ ಮಾಹಿತಿ' : 'VERIFIED RECORD'}
               </span>
             ) : (
               <span className="badge badge-pending">
                 <AlertCircle size={12} />
-                UNVERIFIED
+                {isKannada ? 'ದಾಖಲೆ ಪರಿಶೀಲಿಸಿಲ್ಲ' : 'UNVERIFIED'}
               </span>
             )}
           </div>
 
-          <p style={{ fontSize: '1.05rem', color: '#FFFFFF', lineHeight: 1.6, marginBottom: '16px' }}>
+          <p style={{ fontSize: '1.05rem', color: '#FFFFFF', lineHeight: 1.65, marginBottom: '14px', fontWeight: 500 }}>
             {isKannada ? response.answer_kn : response.answer_en}
           </p>
 
-          {response.navTab && (
+          {/* Secondary Language Translation Preview */}
+          <div style={{ marginBottom: '16px' }}>
             <button
-              onClick={() => onNavigateTab(response.navTab as ViewTab)}
-              className="btn-primary"
-              style={{ padding: '8px 18px', fontSize: '0.82rem' }}
+              type="button"
+              onClick={() => setShowOtherLang(!showOtherLang)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#34D399',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                padding: 0,
+                textDecoration: 'underline',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
             >
-              <span>{isKannada ? 'ವಿಭಾಗಕ್ಕೆ ತೆರಳಿ' : 'Open Section in App'}</span>
-              <ArrowRight size={14} />
+              {showOtherLang
+                ? isKannada ? '▼ ಅನುವಾದ ಮರೆಮಾಡಿ' : '▼ Hide translation'
+                : isKannada ? '▶ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ನೋಡಿ (View English)' : '▶ ಕನ್ನಡದಲ್ಲಿ ನೋಡಿ (View Kannada)'}
             </button>
-          )}
+            {showOtherLang && (
+              <div style={{
+                marginTop: '10px',
+                padding: '12px 14px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                fontSize: '0.92rem',
+                color: '#CBD5E1',
+                lineHeight: 1.6
+              }}>
+                {isKannada ? response.answer_en : response.answer_kn}
+              </div>
+            )}
+          </div>
+
+          {/* Dual Audio & Action Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => handlePlayAudio('kn')}
+                style={{
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  borderRadius: '10px',
+                  padding: '6px 14px',
+                  color: '#34D399',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Listen in Kannada"
+              >
+                <Volume2 size={15} />
+                <span>🔊 ಕನ್ನಡದಲ್ಲಿ ಆಲಿಸಿ</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handlePlayAudio('en')}
+                style={{
+                  background: 'rgba(59, 130, 246, 0.15)',
+                  border: '1px solid rgba(59, 130, 246, 0.4)',
+                  borderRadius: '10px',
+                  padding: '6px 14px',
+                  color: '#60A5FA',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Listen in English"
+              >
+                <Volume2 size={15} />
+                <span>🔊 Listen in English</span>
+              </button>
+
+              {isSpeaking && (
+                <button
+                  type="button"
+                  onClick={handleStopAudio}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    border: '1px solid rgba(239, 68, 68, 0.5)',
+                    borderRadius: '10px',
+                    padding: '6px 12px',
+                    color: '#F87171',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                  title="Stop Audio"
+                >
+                  ⏹️ {isKannada ? 'ನಿಲ್ಲಿಸಿ' : 'Stop'}
+                </button>
+              )}
+            </div>
+
+            {response.navTab && (
+              <button
+                onClick={() => onNavigateTab(response.navTab as ViewTab)}
+                className="btn-primary"
+                style={{ padding: '8px 18px', fontSize: '0.82rem' }}
+              >
+                <span>{isKannada ? 'ವಿಭಾಗಕ್ಕೆ ತೆರಳಿ' : 'Open Section in App'}</span>
+                <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
         </div>
       )}
 

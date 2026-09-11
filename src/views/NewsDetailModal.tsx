@@ -49,14 +49,25 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
   const title = language === 'kn' ? news.title_kn : news.title_en;
   const content = language === 'kn' ? news.content_kn : news.content_en;
 
+  React.useEffect(() => {
+    if (!isOpen) {
+      voiceAssistant.stopSpeaking();
+      setIsSpeaking(false);
+    }
+  }, [isOpen]);
+
   const handleSpeech = () => {
     if (isSpeaking) {
       voiceAssistant.stopSpeaking();
       setIsSpeaking(false);
     } else {
       setIsSpeaking(true);
-      voiceAssistant.speak(`${title}. ${content}`, language);
-      setTimeout(() => setIsSpeaking(false), 8000);
+      voiceAssistant.speak(
+        `${title}. ${content}`,
+        language,
+        () => setIsSpeaking(false),
+        () => setIsSpeaking(false)
+      );
     }
   };
 

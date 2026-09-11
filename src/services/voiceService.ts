@@ -37,25 +37,40 @@ export class VoiceAssistantService {
     onError: (err: any) => void
   ): () => void {
     if (!this.recognition) {
-      onError(new Error('Speech recognition is not supported in this browser.'));
+      onError(new Error(lang === 'kn' ? 'ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ. ದಯವಿಟ್ಟು ಟೈಪ್ ಮಾಡಿ.' : 'Speech recognition is not supported in this browser. Please type your query.'));
       return () => {};
     }
 
     this.recognition.lang = lang === 'kn' ? 'kn-IN' : 'en-IN';
+    this.recognition.continuous = false;
+    this.recognition.interimResults = false;
+    this.recognition.maxAlternatives = 1;
 
     this.recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      onResult(transcript);
+      const transcript = event.results?.[0]?.[0]?.transcript;
+      if (transcript) {
+        onResult(transcript.trim());
+      }
     };
 
-    this.recognition.onerror = (err: any) => {
-      onError(err);
+    this.recognition.onerror = (event: any) => {
+      console.warn('Speech recognition error:', event?.error);
+      const errCode = event?.error || '';
+      if (errCode === 'not-allowed') {
+        onError(new Error(lang === 'kn' ? 'ಮೈಕ್ರೊಫೋನ್ ಅನುಮತಿ ನಿರಾಕರಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಮೈಕ್ ಅನುಮತಿಸಿ.' : 'Microphone permission denied. Please allow microphone access in your browser.'));
+      } else if (errCode === 'no-speech') {
+        onError(new Error(lang === 'kn' ? 'ಯಾವುದೇ ಧ್ವನಿ ಕೇಳಿಸಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಮಾತನಾಡಿ.' : 'No speech detected. Please tap the mic and speak clearly.'));
+      } else if (errCode === 'network') {
+        onError(new Error(lang === 'kn' ? 'ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ ನೆಟ್‌ವರ್ಕ್ ದೋಷ. ದಯವಿಟ್ಟು ಟೈಪ್ ಮಾಡಿ.' : 'Speech recognition network error. Please use text input.'));
+      } else {
+        onError(new Error(lang === 'kn' ? 'ಧ್ವನಿ ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಟೈಪ್ ಮಾಡಿ.' : 'Could not recognize speech. Please type your question.'));
+      }
     };
 
     try {
       this.recognition.start();
     } catch (e) {
-      // might already be active
+      // already active or aborted
     }
 
     return () => {
@@ -65,22 +80,74 @@ export class VoiceAssistantService {
     };
   }
 
-  public speak(text: string, lang: Language) {
-    if (!this.synthesis) return;
-    this.synthesis.cancel(); // Stop any previous speech
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang === 'kn' ? 'kn-IN' : 'en-IN';
-    utterance.rate = 0.95;
-
-    // Pick an appropriate voice if available
-    const voices = this.synthesis.getVoices();
-    const voice = voices.find((v) => (lang === 'kn' ? v.lang.includes('kn') : v.lang.includes('en')));
-    if (voice) {
-      utterance.voice = voice;
+  public speak(
+    text: string,
+    lang: Language,
+    onEnd?: () => void,
+    onError?: (err: any) => void
+  ): () => void {
+    if (!this.synthesis) {
+      onEnd?.();
+      return () => {};
     }
 
+    this.synthesis.cancel(); // Stop any previous speech
+
+    // Clean markdown formatting, emojis, and links for smooth voice readout
+    const cleanText = text
+      .replace(/[*#_`~[\]()]/g, '')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+      .trim();
+
+    if (!cleanText) {
+      onEnd?.();
+      return () => {};
+    }
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = lang === 'kn' ? 'kn-IN' : 'en-IN';
+    utterance.rate = lang === 'kn' ? 0.92 : 0.95;
+    utterance.pitch = 1.0;
+
+    // Pick appropriate voice if available in browser
+    const voices = this.synthesis.getVoices();
+    if (lang === 'kn') {
+      const knVoice = voices.find(
+        (v) =>
+          v.lang === 'kn-IN' ||
+          v.lang.startsWith('kn') ||
+          v.name.toLowerCase().includes('kannada') ||
+          v.name.toLowerCase().includes('kannada (india)')
+      );
+      if (knVoice) {
+        utterance.voice = knVoice;
+      }
+    } else {
+      const enVoice =
+        voices.find((v) => v.lang === 'en-IN') ||
+        voices.find((v) => v.lang.startsWith('en'));
+      if (enVoice) {
+        utterance.voice = enVoice;
+      }
+    }
+
+    utterance.onend = () => {
+      onEnd?.();
+    };
+
+    utterance.onerror = (e) => {
+      console.warn('SpeechSynthesis error:', e);
+      onError?.(e);
+      onEnd?.();
+    };
+
     this.synthesis.speak(utterance);
+
+    return () => {
+      this.stopSpeaking();
+      onEnd?.();
+    };
   }
 
   public stopSpeaking() {
@@ -94,7 +161,7 @@ export class VoiceAssistantService {
     try {
       // Primary: Live conversational Gemini intelligence grounded in village data
       const geminiRes = await geminiService.askVillageAssistant(prompt, currentLang);
-      if (geminiRes && geminiRes.answer_en) {
+      if (geminiRes && (geminiRes.answer_en || geminiRes.answer_kn)) {
         return {
           answer_en: geminiRes.answer_en,
           answer_kn: geminiRes.answer_kn,
