@@ -333,6 +333,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     } catch (err: any) {
       console.warn('Firebase sendPhoneOtp error:', err?.code, err?.message);
+      if (err?.code === 'auth/operation-not-allowed') {
+        return {
+          success: false,
+          error: 'SMS for this region is not enabled in Firebase Console. Go to Firebase Console > Authentication > Settings > SMS Region Policy and enable India (+91), or add your number under "Phone numbers for testing".'
+        };
+      }
       if (err?.code === 'auth/invalid-phone-number') {
         return { success: false, error: 'Invalid phone number format.' };
       }
