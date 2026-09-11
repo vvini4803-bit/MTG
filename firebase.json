@@ -1,5 +1,10 @@
 {
   "auth": {
+    "authorizedDomains": [
+      "localhost",
+      "mutthagundi-17.firebaseapp.com",
+      "mtg-swart.vercel.app"
+    ],
     "providers": {
       "emailPassword": true
     }
