@@ -87,9 +87,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     <div className="container" style={{ maxWidth: '480px', padding: '40px 16px' }}>
       <div className="glass-card" style={{ padding: '32px 24px', textAlign: 'center' }}>
         <img
-          src="/logo.svg"
-          alt="Gramasiri"
-          style={{ width: '64px', height: '64px', margin: '0 auto 16px' }}
+          src="/logo.png"
+          alt="Muttagundi Village MTG Logo"
+          style={{
+            width: '80px',
+            height: '80px',
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: '2px solid rgba(245, 158, 11, 0.6)',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.4)',
+            margin: '0 auto 16px'
+          }}
         />
 
         <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '6px' }}>

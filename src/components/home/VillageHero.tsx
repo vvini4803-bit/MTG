@@ -114,19 +114,37 @@ export const VillageHero: React.FC = () => {
           <span>{districtName}</span>
         </div>
 
-        {/* Village Name Title */}
-        <h1
-          style={{
-            fontSize: 'clamp(2rem, 5vw, 2.8rem)',
-            fontWeight: 900,
-            lineHeight: 1.15,
-            margin: '0 0 10px 0',
-            letterSpacing: '-0.02em',
-            textShadow: '0 2px 10px rgba(0,0,0,0.5)'
-          }}
-        >
-          {villageName}
-        </h1>
+        {/* Village Name Title & Logo Emblem */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '0 0 10px 0', flexWrap: 'wrap' }}>
+          <img
+            src="/logo.png"
+            alt="Muttagundi Village MTG Emblem"
+            style={{
+              width: '74px',
+              height: '74px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+              border: '2.5px solid rgba(245, 158, 11, 0.65)',
+              background: '#070F1E',
+              flexShrink: 0
+            }}
+          />
+          <div>
+            <h1
+              style={{
+                fontSize: 'clamp(2rem, 5vw, 2.8rem)',
+                fontWeight: 900,
+                lineHeight: 1.15,
+                margin: 0,
+                letterSpacing: '-0.02em',
+                textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+              }}
+            >
+              {villageName}
+            </h1>
+          </div>
+        </div>
 
         {/* Soulful Tagline */}
         <p

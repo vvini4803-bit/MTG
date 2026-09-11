@@ -4,9 +4,19 @@
   "description": "The digital home for Muttagundi village (Hosadurga, Chitradurga) — people, news, sports, agriculture, culture, and future.",
   "icons": [
     {
+      "src": "/logo-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
       "src": "/logo.svg",
       "type": "image/svg+xml",
-      "sizes": "192x192 512x512"
+      "sizes": "any"
     }
   ],
   "start_url": "/",

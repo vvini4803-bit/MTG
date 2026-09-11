@@ -263,21 +263,19 @@ export const App: React.FC = () => {
             onClick={() => navigateTo('home')}
             style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
           >
-            <div
+            <img
+              src="/logo.png"
+              alt="Muttagundi MTG Logo"
               style={{
                 width: '40px',
                 height: '40px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.3rem',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '1.5px solid rgba(245, 158, 11, 0.5)',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                flexShrink: 0
               }}
-            >
-              🌾
-            </div>
+            />
             <div>
               <h1 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
                 {isKannada ? 'ನಮ್ಮ ಮುತ್ತಗುಂಡಿ' : 'Muttagundi'}

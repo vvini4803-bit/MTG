@@ -117,17 +117,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       >
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
-              {verificationEmail
-                ? (isKannada ? 'ಇಮೇಲ್ ಪರಿಶೀಲನೆ' : 'Email Verification')
-                : activeTab === 'REGISTER'
-                ? (isKannada ? 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮ ಸದಸ್ಯತ್ವ' : 'Join Community')
-                : (isKannada ? 'ಲಾಗಿನ್ / ಸೈನ್ ಇನ್' : 'Resident Sign In')}
-            </h2>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>
-              {isKannada ? 'ಗ್ರಾಮ ವೇದಿಕೆ ಅಧಿಕೃತ ಪ್ರವೇಶ' : 'Official Grama Platform Access'}
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img
+              src="/logo.png"
+              alt="Muttagundi Logo"
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '1.5px solid rgba(245, 158, 11, 0.5)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                flexShrink: 0
+              }}
+            />
+            <div>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
+                {verificationEmail
+                  ? (isKannada ? 'ಇಮೇಲ್ ಪರಿಶೀಲನೆ' : 'Email Verification')
+                  : activeTab === 'REGISTER'
+                  ? (isKannada ? 'ಮುತ್ತಗುಂಡಿ ಸದಸ್ಯತ್ವ' : 'Join Community')
+                  : (isKannada ? 'ಲಾಗಿನ್ / ಸೈನ್ ಇನ್' : 'Resident Sign In')}
+              </h2>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                {isKannada ? 'ಗ್ರಾಮ ವೇದಿಕೆ ಅಧಿಕೃತ ಪ್ರವೇಶ' : 'Official Grama Platform Access'}
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
