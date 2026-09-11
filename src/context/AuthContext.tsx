@@ -2,14 +2,19 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../types';
 import { SEED_USERS } from '../services/seedData';
 import { realtimeSync } from '../services/realtimeSync';
-import { auth } from '../services/firebaseConfig';
+import { auth, db, googleProvider } from '../services/firebaseConfig';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  signInWithPhoneNumber,
+  RecaptchaVerifier,
+  ConfirmationResult,
   sendEmailVerification,
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export interface AuthResult {
   success: boolean;
@@ -30,6 +35,10 @@ interface AuthContextType {
   setUnverifiedEmail: (email: string | null) => void;
   signInWithEmail: (email: string, password: string) => Promise<AuthResult>;
   signUpWithEmail: (email: string, password: string) => Promise<AuthResult>;
+  signInWithGoogle: () => Promise<AuthResult>;
+  sendPhoneOtp: (phone: string, containerId?: string) => Promise<AuthResult>;
+  verifyPhoneOtp: (otp: string) => Promise<AuthResult>;
+  confirmationResult: ConfirmationResult | null;
   loginWithEmail: (email: string, password?: string) => Promise<boolean>;
   loginWithPhone: (phone: string, otp: string) => Promise<boolean>;
   loginWithDemo: (role: UserRole) => void;
@@ -51,6 +60,10 @@ const AuthContext = createContext<AuthContextType>({
   setUnverifiedEmail: () => {},
   signInWithEmail: async () => ({ success: false }),
   signUpWithEmail: async () => ({ success: false }),
+  signInWithGoogle: async () => ({ success: false }),
+  sendPhoneOtp: async () => ({ success: false }),
+  verifyPhoneOtp: async () => ({ success: false }),
+  confirmationResult: null,
   loginWithEmail: async () => false,
   loginWithPhone: async () => false,
   loginWithDemo: () => {},
@@ -73,8 +86,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
-  // Sync active user in local storage (No Firestore database calls)
+  // Sync active user in local storage
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('gramasiri_active_user', JSON.stringify(currentUser));
@@ -85,30 +99,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
+  // Helper: Synchronize user profile with Firestore users/{uid}
+  const syncUserProfileWithFirestore = async (
+    firebaseUser: any,
+    extraData: Partial<UserProfile> = {}
+  ): Promise<UserProfile> => {
+    let profile: UserProfile = {
+      uid: firebaseUser.uid,
+      name:
+        extraData.name ||
+        firebaseUser.displayName ||
+        (firebaseUser.email ? firebaseUser.email.split('@')[0] : '') ||
+        (firebaseUser.phoneNumber ? 'Resident ' + firebaseUser.phoneNumber.slice(-4) : 'Resident'),
+      name_kn: extraData.name_kn || '',
+      email: firebaseUser.email || extraData.email || '',
+      phone: firebaseUser.phoneNumber || extraData.phone || '',
+      photoUrl: firebaseUser.photoURL || extraData.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(firebaseUser.uid)}`,
+      role: extraData.role || 'USER',
+      language: extraData.language || 'kn',
+      bio: extraData.bio || 'Resident of Muttagundi Village',
+      bio_kn: extraData.bio_kn || 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ನಿವಾಸಿ',
+      account_status: 'ACTIVE',
+      created_at: firebaseUser.metadata?.creationTime || new Date().toISOString(),
+      last_login: new Date().toISOString(),
+      is_phone_verified: Boolean(firebaseUser.phoneNumber || extraData.phone),
+      community_category: extraData.community_category || 'RESIDENT',
+      allow_find_me: extraData.allow_find_me !== false,
+      privacy_find: extraData.privacy_find || 'EVERYONE',
+      privacy_message: extraData.privacy_message || 'EVERYONE'
+    };
+
+    if (db) {
+      try {
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const snap = await getDoc(userDocRef);
+        if (snap.exists()) {
+          const existingData = snap.data() as UserProfile;
+          profile = {
+            ...profile,
+            ...existingData,
+            last_login: new Date().toISOString()
+          };
+          await setDoc(userDocRef, { last_login: profile.last_login }, { merge: true });
+        } else {
+          await setDoc(userDocRef, profile, { merge: true });
+        }
+      } catch (dbErr) {
+        console.warn('Firestore user profile sync (offline fallback):', dbErr);
+      }
+    }
+
+    return profile;
+  };
+
   // Firebase Authentication State Listener
   useEffect(() => {
     if (!auth) return;
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        if (firebaseUser.emailVerified) {
-          const profile: UserProfile = {
-            uid: firebaseUser.uid,
-            name: firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Resident'),
-            email: firebaseUser.email || '',
-            role: 'USER',
-            language: 'en',
-            account_status: 'ACTIVE',
-            created_at: firebaseUser.metadata.creationTime || new Date().toISOString(),
-            last_login: new Date().toISOString(),
-            is_phone_verified: false
-          };
-          setCurrentUser(profile);
-          setUnverifiedEmail(null);
-        } else {
-          // If email is not verified, do NOT keep user signed in
+        // If logged in via password, verify email status
+        const isPasswordProvider = firebaseUser.providerData.some((p) => p.providerId === 'password');
+        if (isPasswordProvider && !firebaseUser.emailVerified) {
           signOut(auth).catch(() => {});
           setCurrentUser(null);
+        } else {
+          try {
+            const profile = await syncUserProfileWithFirestore(firebaseUser);
+            setCurrentUser(profile);
+            setUnverifiedEmail(null);
+          } catch (e) {
+            console.warn('User profile sync error:', e);
+          }
         }
       }
     });
@@ -129,10 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Firebase Authentication Sign In
-   * Requirements:
-   * - If credentials are incorrect, show: "Email or password is incorrect"
-   * - If user logs in and their email is not verified, block access and show verification screen
+   * Firebase Authentication: Email & Password Sign In
    */
   const signInWithEmail = async (email: string, password: string): Promise<AuthResult> => {
     const cleanEmail = email.trim();
@@ -148,59 +207,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
       const user = userCredential.user;
 
-      // Check Email Verification
       if (!user.emailVerified) {
-        // Send verification email
         try {
           await sendEmailVerification(user);
         } catch (resendErr) {
           console.warn('Verification email resend throttled:', resendErr);
         }
-        // Block access & sign out
         await signOut(auth);
         setUnverifiedEmail(cleanEmail);
         return { success: false, unverifiedEmail: cleanEmail };
       }
 
-      // Verified: Authenticate user in memory only (no Firestore writes)
-      const userProfile: UserProfile = {
-        uid: user.uid,
-        name: user.displayName || cleanEmail.split('@')[0],
-        email: user.email || cleanEmail,
-        role: 'USER',
-        language: 'en',
-        account_status: 'ACTIVE',
-        created_at: user.metadata.creationTime || new Date().toISOString(),
-        last_login: new Date().toISOString(),
-        is_phone_verified: false
-      };
-
-      setCurrentUser(userProfile);
+      const profile = await syncUserProfileWithFirestore(user);
+      setCurrentUser(profile);
       setUnverifiedEmail(null);
       return { success: true };
     } catch (err: any) {
       console.warn('Firebase signIn error:', err?.code, err?.message);
-      // Requirement: "If credentials are incorrect, show: Email or password is incorrect"
-      if (
-        err?.code === 'auth/invalid-credential' ||
-        err?.code === 'auth/wrong-password' ||
-        err?.code === 'auth/user-not-found' ||
-        err?.code === 'auth/invalid-email'
-      ) {
-        return { success: false, error: 'Email or password is incorrect' };
-      }
       return { success: false, error: 'Email or password is incorrect' };
     }
   };
 
   /**
-   * Firebase Authentication Sign Up
-   * Requirements:
-   * - Users can sign up using email and password
-   * - If the email already exists, show: "User already exists. Please sign in"
-   * - When a user registers with email/password, do not sign them in automatically.
-   * - Send a verification email and show verification screen
-   * - Do NOT save user profile data to Firestore
+   * Firebase Authentication: Email & Password Sign Up
    */
   const signUpWithEmail = async (email: string, password: string): Promise<AuthResult> => {
     const cleanEmail = email.trim();
@@ -216,17 +245,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
       const user = userCredential.user;
 
-      // Send verification email
       await sendEmailVerification(user);
-
-      // Do NOT sign them in automatically
       await signOut(auth);
 
       setUnverifiedEmail(cleanEmail);
       return { success: false, unverifiedEmail: cleanEmail };
     } catch (err: any) {
       console.warn('Firebase signUp error:', err?.code, err?.message);
-      // Requirement: "If the email already exists, show: User already exists. Please sign in"
       if (err?.code === 'auth/email-already-in-use') {
         return { success: false, error: 'User already exists. Please sign in' };
       }
@@ -234,6 +259,119 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: 'Password should be at least 6 characters' };
       }
       return { success: false, error: err?.message || 'Registration failed' };
+    }
+  };
+
+  /**
+   * Firebase Authentication: Google Sign-In (Popup)
+   */
+  const signInWithGoogle = async (): Promise<AuthResult> => {
+    if (!auth) {
+      return { success: false, error: 'Firebase Authentication is not available.' };
+    }
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const profile = await syncUserProfileWithFirestore(user);
+      setCurrentUser(profile);
+      setUnverifiedEmail(null);
+      return { success: true };
+    } catch (err: any) {
+      console.warn('Google sign-in error:', err?.code, err?.message);
+      if (err?.code === 'auth/popup-closed-by-user') {
+        return { success: false, error: 'Google sign-in was cancelled.' };
+      }
+      if (err?.code === 'auth/unauthorized-domain') {
+        return {
+          success: false,
+          error: 'Domain not authorized. Please authorize localhost and your domain in Firebase Console > Authentication > Settings > Authorized domains.'
+        };
+      }
+      return { success: false, error: err?.message || 'Google sign-in failed.' };
+    }
+  };
+
+  /**
+   * Firebase Authentication: Phone SMS OTP Request
+   */
+  const sendPhoneOtp = async (phoneNumber: string, containerId: string = 'recaptcha-container'): Promise<AuthResult> => {
+    if (!auth) {
+      return { success: false, error: 'Firebase Authentication is not available.' };
+    }
+
+    let cleanPhone = phoneNumber.trim().replace(/\s+/g, '');
+    if (!cleanPhone.startsWith('+')) {
+      cleanPhone = '+91' + cleanPhone.replace(/^0+/, '');
+    }
+
+    if (cleanPhone.length < 12) {
+      return { success: false, error: 'Please enter a valid 10-digit mobile number' };
+    }
+
+    try {
+      // Clear previous verifier instance if any
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {}
+      }
+
+      const verifier = new RecaptchaVerifier(auth, containerId, {
+        size: 'invisible',
+        callback: () => {
+          // reCAPTCHA solved
+        },
+        'expired-callback': () => {
+          console.warn('reCAPTCHA expired, please try again.');
+        }
+      });
+
+      (window as any).recaptchaVerifier = verifier;
+
+      const confirmation = await signInWithPhoneNumber(auth, cleanPhone, verifier);
+      setConfirmationResult(confirmation);
+      return { success: true };
+    } catch (err: any) {
+      console.warn('Firebase sendPhoneOtp error:', err?.code, err?.message);
+      if (err?.code === 'auth/invalid-phone-number') {
+        return { success: false, error: 'Invalid phone number format.' };
+      }
+      if (err?.code === 'auth/too-many-requests') {
+        return { success: false, error: 'Too many SMS requests. Please wait a few moments or try another method.' };
+      }
+      return { success: false, error: err?.message || 'Failed to send OTP SMS. Check phone auth settings in Firebase Console.' };
+    }
+  };
+
+  /**
+   * Firebase Authentication: Phone SMS OTP Verification
+   */
+  const verifyPhoneOtp = async (otp: string): Promise<AuthResult> => {
+    const cleanOtp = otp.trim();
+    if (cleanOtp.length !== 6) {
+      return { success: false, error: 'Enter a valid 6-digit OTP code' };
+    }
+
+    if (!confirmationResult) {
+      return { success: false, error: 'No active OTP request. Please request OTP first.' };
+    }
+
+    try {
+      const credential = await confirmationResult.confirm(cleanOtp);
+      const user = credential.user;
+      const profile = await syncUserProfileWithFirestore(user);
+      setCurrentUser(profile);
+      setConfirmationResult(null);
+      return { success: true };
+    } catch (err: any) {
+      console.warn('Firebase verifyPhoneOtp error:', err?.code, err?.message);
+      if (err?.code === 'auth/invalid-verification-code') {
+        return { success: false, error: 'Invalid OTP code. Please check and re-enter.' };
+      }
+      if (err?.code === 'auth/code-expired') {
+        return { success: false, error: 'OTP code expired. Please request a new OTP.' };
+      }
+      return { success: false, error: err?.message || 'OTP verification failed.' };
     }
   };
 
@@ -250,6 +388,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setCurrentUser(null);
     setUnverifiedEmail(null);
+    setConfirmationResult(null);
     localStorage.removeItem('gramasiri_active_user');
   };
 
@@ -312,6 +451,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       privacy_find: data.privacy_find || 'EVERYONE',
       privacy_message: data.privacy_message || 'EVERYONE'
     };
+
+    if (db && newProfile.uid) {
+      try {
+        await setDoc(doc(db, 'users', newProfile.uid), newProfile, { merge: true });
+      } catch (e) {
+        console.warn('Firestore user save fallback:', e);
+      }
+    }
+
     setCurrentUser(newProfile);
     return newProfile;
   };
@@ -320,6 +468,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentUser) return;
     const updated = { ...currentUser, ...data };
     setCurrentUser(updated);
+
+    if (db && currentUser.uid) {
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid), data, { merge: true });
+      } catch (e) {
+        console.warn('Firestore profile update fallback:', e);
+      }
+    }
   };
 
   return (
@@ -337,6 +493,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUnverifiedEmail,
         signInWithEmail,
         signUpWithEmail,
+        signInWithGoogle,
+        sendPhoneOtp,
+        verifyPhoneOtp,
+        confirmationResult,
         loginWithEmail,
         loginWithPhone,
         loginWithDemo,
@@ -351,3 +511,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const useAuth = () => useContext(AuthContext);
+

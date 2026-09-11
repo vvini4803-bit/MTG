@@ -20,6 +20,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     loginWithDemo,
     signInWithEmail,
     signUpWithEmail,
+    signInWithGoogle,
+    sendPhoneOtp,
+    verifyPhoneOtp,
     unverifiedEmail,
     setUnverifiedEmail
   } = useAuth();
@@ -27,20 +30,58 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [authMethod, setAuthMethod] = useState<'PHONE' | 'EMAIL'>('EMAIL');
   const [emailMode, setEmailMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   const [phone, setPhone] = useState('9845012345');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [verificationEmail, setVerificationEmail] = useState<string | null>(unverifiedEmail);
 
-  const handlePhoneSubmit = (e: React.FormEvent) => {
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setErrorMsg(null);
+    const res = await signInWithGoogle();
+    setIsLoading(false);
+    if (res.error) {
+      setErrorMsg(res.error);
+    } else if (res.success) {
+      onSuccess();
+    }
+  };
+
+  const handleSendPhoneOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone || phone.length < 10) {
       setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು 10 ಅಂಕಿಗಳ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ' : 'Enter valid 10-digit phone number');
       return;
     }
+    setIsLoading(true);
     setErrorMsg(null);
-    onOpenOtp(phone);
+    const res = await sendPhoneOtp(phone, 'login-recaptcha-container');
+    setIsLoading(false);
+    if (res.error) {
+      setErrorMsg(res.error);
+    } else if (res.success) {
+      setOtpSent(true);
+    }
+  };
+
+  const handleVerifyPhoneOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.length !== 6) {
+      setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು 6 ಅಂಕಿಗಳ OTP ನಮೂದಿಸಿ' : 'Enter valid 6-digit OTP');
+      return;
+    }
+    setIsLoading(true);
+    setErrorMsg(null);
+    const res = await verifyPhoneOtp(otpCode);
+    setIsLoading(false);
+    if (res.error) {
+      setErrorMsg(res.error);
+    } else if (res.success) {
+      onSuccess();
+    }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -98,6 +139,43 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             : 'Secure access for news posting, event RSVP, and village updates'}
         </p>
 
+        {/* Invisible reCAPTCHA container for Phone Auth */}
+        <div id="login-recaptcha-container"></div>
+
+        {/* Google Sign-in Option */}
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={isLoading}
+          className="btn-secondary"
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            marginBottom: '16px',
+            fontWeight: 700,
+            fontSize: '0.88rem'
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span>{isKannada ? 'ಗೂಗಲ್ ಮೂಲಕ ಮುಂದುವರಿಯಿರಿ' : 'Continue with Google'}</span>
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0 16px', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
+          <span style={{ padding: '0 10px', textTransform: 'uppercase' }}>{isKannada ? 'ಅಥವಾ' : 'OR'}</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
+        </div>
+
         {/* Auth Method Tabs */}
         <div
           style={{
@@ -110,7 +188,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         >
           <button
             type="button"
-            onClick={() => setAuthMethod('PHONE')}
+            onClick={() => {
+              setAuthMethod('PHONE');
+              setErrorMsg(null);
+            }}
             style={{
               flex: 1,
               padding: '8px',
@@ -132,7 +213,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setAuthMethod('EMAIL')}
+            onClick={() => {
+              setAuthMethod('EMAIL');
+              setErrorMsg(null);
+            }}
             style={{
               flex: 1,
               padding: '8px',
@@ -172,44 +256,105 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         )}
 
         {authMethod === 'PHONE' ? (
-          <form onSubmit={handlePhoneSubmit}>
-            <div className="form-group" style={{ textAlign: 'left' }}>
-              <label className="form-label">
-                {isKannada ? 'ಮೊಬೈಲ್ ಸಂಖ್ಯೆ (+91)' : 'Mobile Phone Number (+91)'}
-              </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <span
-                  style={{
-                    background: 'rgba(0,0,0,0.3)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '12px 14px',
-                    fontWeight: 700,
-                    color: 'var(--text-secondary)'
-                  }}
-                >
-                  +91
-                </span>
+          !otpSent ? (
+            <form onSubmit={handleSendPhoneOtp}>
+              <div className="form-group" style={{ textAlign: 'left' }}>
+                <label className="form-label">
+                  {isKannada ? 'ಮೊಬೈಲ್ ಸಂಖ್ಯೆ (+91)' : 'Mobile Phone Number (+91)'}
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span
+                    style={{
+                      background: 'rgba(0,0,0,0.3)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '12px 14px',
+                      fontWeight: 700,
+                      color: 'var(--text-secondary)'
+                    }}
+                  >
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="9845012345"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn-primary"
+                style={{ width: '100%', height: '48px', fontSize: '0.95rem', marginBottom: '16px' }}
+              >
+                <span>{isLoading ? (isKannada ? 'ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ...' : 'Sending...') : (isKannada ? 'OTP SMS ಕಳುಹಿಸಿ' : 'Send 6-Digit OTP')}</span>
+                <ArrowRight size={18} />
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyPhoneOtp}>
+              <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  {isKannada ? `OTP ಕೋಡ್ ಅನ್ನು ${phone} ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ` : `OTP sent via SMS to +91 ${phone}`}
+                </p>
+              </div>
+
+              <div className="form-group" style={{ textAlign: 'left' }}>
+                <label className="form-label">
+                  {isKannada ? '6 ಅಂಕಿಗಳ OTP ಕೋಡ್' : 'Enter 6-Digit OTP'}
+                </label>
                 <input
-                  type="tel"
-                  className="form-input"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  placeholder="9845012345"
+                  type="text"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="123456"
                   required
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    textAlign: 'center',
+                    fontSize: '1.4rem',
+                    letterSpacing: '8px',
+                    fontWeight: 800,
+                    borderRadius: 'var(--radius-md)',
+                    background: 'rgba(0, 0, 0, 0.25)',
+                    border: '1px solid var(--glass-border)',
+                    color: '#FFFFFF'
+                  }}
                 />
               </div>
-            </div>
 
-            <button
-              type="submit"
-              className="btn-primary"
-              style={{ width: '100%', height: '48px', fontSize: '0.95rem', marginBottom: '16px' }}
-            >
-              <span>{isKannada ? 'OTP ಕಳುಹಿಸಿ' : 'Send 6-Digit OTP'}</span>
-              <ArrowRight size={18} />
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn-primary"
+                style={{ width: '100%', height: '48px', fontSize: '0.95rem', marginBottom: '12px' }}
+              >
+                <span>{isLoading ? (isKannada ? 'ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...' : 'Verifying...') : (isKannada ? 'ದೃಢೀಕರಿಸಿ ಮತ್ತು ಪ್ರವೇಶಿಸಿ' : 'Verify & Sign In')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOtpSent(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  marginBottom: '16px'
+                }}
+              >
+                {isKannada ? '← ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಬದಲಾಯಿಸಿ' : '← Change Phone Number'}
+              </button>
+            </form>
+          )
         ) : verificationEmail ? (
           <div style={{ textAlign: 'center', padding: '12px 4px' }}>
             <div

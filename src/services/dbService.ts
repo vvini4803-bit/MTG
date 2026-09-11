@@ -49,6 +49,7 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  where,
   orderBy
 } from 'firebase/firestore';
 
@@ -605,6 +606,32 @@ class DatabaseService {
 
   // --- COMMENTS ---
   public subscribeComments(postId: string, callback: (comments: CommentItem[]) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(
+          collection(db, 'comments'),
+          where('post_id', '==', postId),
+          orderBy('created_at', 'asc')
+        );
+        return onSnapshot(
+          q,
+          (snapshot) => {
+            const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as CommentItem));
+            if (items.length > 0) {
+              callback(items);
+            } else {
+              callback(this.comments.filter((c) => c.post_id === postId));
+            }
+          },
+          (err) => {
+            console.warn('Firestore comments listener error (using local):', err);
+            callback(this.comments.filter((c) => c.post_id === postId));
+          }
+        );
+      } catch (e) {
+        console.warn('Firestore comments query fallback:', e);
+      }
+    }
     const filtered = this.comments.filter((c) => c.post_id === postId);
     return this.subscribe(`comments_${postId}`, filtered, callback);
   }
@@ -619,6 +646,14 @@ class DatabaseService {
       reports_count: 0
     };
 
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'comments', newComment.id), newComment);
+      } catch (e) {
+        console.warn('Firestore setDoc failed for comment:', e);
+      }
+    }
+
     this.comments = [newComment, ...this.comments];
     this.saveCollection('comments', this.comments);
 
@@ -627,6 +662,9 @@ class DatabaseService {
     if (post) {
       post.comments_count += 1;
       this.saveCollection('news', [...this.news]);
+      if (isFirebaseConfigured && db) {
+        updateDoc(doc(db, 'news', post.id), { comments_count: post.comments_count }).catch(() => {});
+      }
     }
 
     this.emit(`comments_${comment.post_id}`, this.comments.filter((c) => c.post_id === comment.post_id));
@@ -635,6 +673,30 @@ class DatabaseService {
 
   // --- EVENTS ---
   public subscribeEvents(callback: (events: EventItem[]) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(collection(db, 'events'), orderBy('event_date', 'asc'));
+        return onSnapshot(
+          q,
+          (snapshot) => {
+            const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as EventItem));
+            if (items.length > 0) {
+              this.events = items;
+              this.saveCollection('events', items);
+              callback(items);
+            } else {
+              callback(this.events);
+            }
+          },
+          (error) => {
+            console.warn('Firestore events listener error (using local):', error);
+            callback(this.events);
+          }
+        );
+      } catch (err) {
+        console.warn('Firestore events listener fallback:', err);
+      }
+    }
     return this.subscribe('events', this.events, callback);
   }
 
@@ -647,6 +709,14 @@ class DatabaseService {
       is_demo: false
     };
 
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'events', newEvent.id), newEvent);
+      } catch (e) {
+        console.warn('Firestore setDoc failed for event:', e);
+      }
+    }
+
     this.events = [newEvent, ...this.events];
     this.saveCollection('events', this.events);
     realtimeSync.broadcast('EVENT_CREATED', newEvent);
@@ -657,18 +727,32 @@ class DatabaseService {
     const evt = this.events.find((e) => e.id === eventId);
     if (!evt) return false;
 
+    let isRegistered = false;
     if (!evt.registered_uids.includes(uid)) {
       evt.registered_uids.push(uid);
       evt.participants_count += 1;
-      this.saveCollection('events', [...this.events]);
-      return true;
+      isRegistered = true;
     } else {
       // Unregister
       evt.registered_uids = evt.registered_uids.filter((id) => id !== uid);
       evt.participants_count = Math.max(0, evt.participants_count - 1);
-      this.saveCollection('events', [...this.events]);
-      return false;
+      isRegistered = false;
     }
+
+    this.saveCollection('events', [...this.events]);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'events', eventId), {
+          registered_uids: evt.registered_uids,
+          participants_count: evt.participants_count
+        });
+      } catch (e) {
+        console.warn('Firestore updateDoc failed for event RSVP:', e);
+      }
+    }
+
+    return isRegistered;
   }
 
   // --- SPORTS & LIVE SCORES ---
@@ -860,6 +944,30 @@ class DatabaseService {
 
   // --- REPORTS ---
   public subscribeReports(callback: (reports: ReportItem[]) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(collection(db, 'reports'), orderBy('created_at', 'desc'));
+        return onSnapshot(
+          q,
+          (snapshot) => {
+            const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ReportItem));
+            if (items.length > 0) {
+              this.reports = items;
+              this.saveCollection('reports', items);
+              callback(items);
+            } else {
+              callback(this.reports);
+            }
+          },
+          (err) => {
+            console.warn('Firestore reports listener error (using local):', err);
+            callback(this.reports);
+          }
+        );
+      } catch (e) {
+        console.warn('Reports listener fallback:', e);
+      }
+    }
     return this.subscribe('reports', this.reports, callback);
   }
 
@@ -870,6 +978,15 @@ class DatabaseService {
       status: 'PENDING',
       created_at: new Date().toISOString()
     };
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'reports', newRep.id), newRep);
+      } catch (e) {
+        console.warn('Firestore setDoc failed for report:', e);
+      }
+    }
+
     this.reports = [newRep, ...this.reports];
     this.saveCollection('reports', this.reports);
 
@@ -879,6 +996,9 @@ class DatabaseService {
       if (target) {
         target.reports_count += 1;
         this.saveCollection('news', [...this.news]);
+        if (isFirebaseConfigured && db) {
+          updateDoc(doc(db, 'news', target.id), { reports_count: target.reports_count }).catch(() => {});
+        }
       }
     }
     return newRep;
@@ -889,6 +1009,13 @@ class DatabaseService {
     if (rep) {
       rep.status = status;
       this.saveCollection('reports', [...this.reports]);
+      if (isFirebaseConfigured && db) {
+        try {
+          await updateDoc(doc(db, 'reports', reportId), { status });
+        } catch (e) {
+          console.warn('Firestore updateDoc failed for report:', e);
+        }
+      }
     }
   }
 
@@ -920,6 +1047,29 @@ class DatabaseService {
 
   // --- USERS MANAGEMENT (RBAC) ---
   public subscribeUsers(callback: (users: UserProfile[]) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      try {
+        return onSnapshot(
+          collection(db, 'users'),
+          (snapshot) => {
+            const items = snapshot.docs.map((d) => ({ uid: d.id, ...d.data() } as UserProfile));
+            if (items.length > 0) {
+              this.users = items;
+              this.saveCollection('users', items);
+              callback(items);
+            } else {
+              callback(this.users);
+            }
+          },
+          (err) => {
+            console.warn('Firestore users listener error (using local):', err);
+            callback(this.users);
+          }
+        );
+      } catch (e) {
+        console.warn('Users listener fallback:', e);
+      }
+    }
     return this.subscribe('users', this.users, callback);
   }
 
@@ -928,6 +1078,9 @@ class DatabaseService {
     if (u) {
       u.role = newRole;
       this.saveCollection('users', [...this.users]);
+      if (isFirebaseConfigured && db) {
+        updateDoc(doc(db, 'users', uid), { role: newRole }).catch(() => {});
+      }
       this.logAudit('UPDATE_USER_ROLE', 'admin', 'Super Admin', uid, 'USER', `Updated role to ${newRole}`);
     }
   }
@@ -937,6 +1090,9 @@ class DatabaseService {
     if (u) {
       u.account_status = status;
       this.saveCollection('users', [...this.users]);
+      if (isFirebaseConfigured && db) {
+        updateDoc(doc(db, 'users', uid), { account_status: status }).catch(() => {});
+      }
       this.logAudit('UPDATE_USER_STATUS', 'admin', 'Super Admin', uid, 'USER', `Updated status to ${status}`);
     }
   }
@@ -949,6 +1105,15 @@ class DatabaseService {
       this.users.push(profile);
     }
     this.saveCollection('users', [...this.users]);
+
+    if (isFirebaseConfigured && db && profile.uid) {
+      try {
+        await setDoc(doc(db, 'users', profile.uid), profile, { merge: true });
+      } catch (e) {
+        console.warn('Firestore registerOrUpdateUser error (using local):', e);
+      }
+    }
+
     realtimeSync.broadcast('USER_REGISTERED', profile);
   }
 

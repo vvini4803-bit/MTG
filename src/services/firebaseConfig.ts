@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyClTElD43FmV3MFiBGOvfJrOBv0ofcFzHU",
@@ -18,20 +19,23 @@ export const isFirebaseConfigured = Boolean(
 
 let app: any = null;
 let auth: any = null;
-// Requirement: "Use Firebase Authentication only", "Do NOT use Firestore or Storage yet"
 let db: any = null;
 let storage: any = null;
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 if (isFirebaseConfigured) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
     auth = getAuth(app);
-    console.info('Connected to live Firebase Authentication:', firebaseConfig.projectId);
+    db = getFirestore(app);
+    console.info('Connected to Firebase project:', firebaseConfig.projectId);
   } catch (error) {
     console.warn('Firebase initialization error:', error);
   }
 } else {
-  console.info('Running in offline auth mode');
+  console.info('Running in local offline mode');
 }
 
-export { app, auth, db, storage, firebaseConfig };
+export { app, auth, db, storage, googleProvider, firebaseConfig };
+
