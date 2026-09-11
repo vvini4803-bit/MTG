@@ -36,7 +36,8 @@ export interface MapLocationItem {
     | 'SHOP'
     | 'BANK'
     | 'WATER'
-    | 'EMERGENCY';
+    | 'EMERGENCY'
+    | 'FARM';
   icon: string;
   color: string;
   desc_en: string;
@@ -54,30 +55,30 @@ export interface MapLocationItem {
 export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
   {
     id: 'mtg_panchayat',
-    name_en: 'Muttagundi Grama Panchayat Office',
-    name_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮ ಪಂಚಾಯತಿ ಕಾರ್ಯಾಲಯ',
+    name_en: 'Muttagondi Community Hall & Shops',
+    name_kn: 'ಮುತ್ತಾಗೊಂದಿ ಸಮುದಾಯ ಭವನ & ಅಂಗಡಿಗಳು',
     category: 'HALL',
     icon: '🏛️',
     color: '#10B981',
-    desc_en: 'Village administration center, citizen certificates, and public development desk.',
-    desc_kn: 'ಗ್ರಾಮ ಆಡಳಿತ ಕಚೇರಿ, ನಾಗರಿಕ ಸೇವೆಗಳು, ಪ್ರಮಾಣಪತ್ರ ಮತ್ತು ಸಾರ್ವಜನಿಕ ಸಭೆಗಳು.',
+    desc_en: 'Village community hall, public meetings, gathering space, and local shops.',
+    desc_kn: 'ಗ್ರಾಮ ಸಮುದಾಯ ಭವನ, ಸಾರ್ವಜನಿಕ ಸಭೆಗಳು, ಶುಭ ಸಮಾರಂಭ ಹಾಗೂ ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳು.',
     distance_en: 'Village Center',
     distance_kn: 'ಗ್ರಾಮ ಕೇಂದ್ರ',
-    timings_en: '10:00 AM - 5:30 PM (Mon - Sat)',
-    timings_kn: 'ಬೆಳಗ್ಗೆ ೧೦:೦೦ - ಸಂಜೆ ೫:೩೦ (ಸೋಮ - ಶನಿ)',
+    timings_en: '8:00 AM - 9:00 PM',
+    timings_kn: 'ಬೆಳಗ್ಗೆ ೮:೦೦ - ರಾತ್ರಿ ೯:೦೦',
     phone: '+91 98450 00001',
     coords: { lat: 13.8052, lng: 76.2915 },
     verified: true
   },
   {
-    id: 'mtg_temple_ranganatha',
-    name_en: 'Sri Ranganatha Swamy Temple',
-    name_kn: 'ಶ್ರೀ ರಂಗನಾಥ ಸ್ವಾಮಿ ದೇವಾಲಯ',
+    id: 'mtg_temple_anjaneya',
+    name_en: 'Sri Anjaneya Swamy Temple',
+    name_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ',
     category: 'TEMPLE',
     icon: '🛕',
     color: '#F59E0B',
-    desc_en: 'Sacred historic shrine and cultural center of annual village Rathotsava festival.',
-    desc_kn: 'ಗ್ರಾಮದ ಪವಿತ್ರ ಐತಿಹಾಸಿಕ ದೇವಾಲಯ ಮತ್ತು ವಾರ್ಷಿಕ ಜಾತ್ರಾ ಮಹೋತ್ಸವ ತಾಣ.',
+    desc_en: 'Sacred shrine of Lord Anjaneya Swamy with regular pooja and festival celebrations.',
+    desc_kn: 'ಗ್ರಾಮದ ಪವಿತ್ರ ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ಸನ್ನಿಧಿ ಹಾಗೂ ವಿಶೇಷ ಪೂಜಾ ಕೈಂಕರ್ಯಗಳು.',
     distance_en: 'East Ward',
     distance_kn: 'ಪೂರ್ವ ಬಡಾವಣೆ',
     timings_en: '6:00 AM - 12:30 PM & 5:30 PM - 8:30 PM',
@@ -86,14 +87,30 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     verified: true
   },
   {
+    id: 'mtg_temple_kalle_devar',
+    name_en: 'Kalle Devar Gudi',
+    name_kn: 'ಕಲ್ಲೇ ದೇವರ ಗುಡಿ',
+    category: 'TEMPLE',
+    icon: '🛕',
+    color: '#8B5CF6',
+    desc_en: 'Traditional sacred village deity shrine of Kalle Devaru.',
+    desc_kn: 'ಗ್ರಾಮದ ಶ್ರದ್ಧಾ ಕೇಂದ್ರವಾದ ಕಲ್ಲೇ ದೇವರ ಗುಡಿ ಮತ್ತು ವಾರ್ಷಿಕ ಪೂಜಾ ಆಚರಣೆ.',
+    distance_en: 'South Side',
+    distance_kn: 'ದಕ್ಷಿಣ ಭಾಗ',
+    timings_en: 'Open all day for darshan',
+    timings_kn: 'ದಿನವಿಡೀ ದರ್ಶನ ಲಭ್ಯ',
+    coords: { lat: 13.8070, lng: 76.2935 },
+    verified: true
+  },
+  {
     id: 'mtg_school',
-    name_en: 'Government Higher Primary School',
-    name_kn: 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ',
+    name_en: 'Govt Primary School Muttagondi',
+    name_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ಮುತ್ತಾಗೊಂದಿ',
     category: 'SCHOOL',
     icon: '🏫',
     color: '#3B82F6',
-    desc_en: 'Primary & middle education, children playground, and Mid-Day Meal center.',
-    desc_kn: 'ಪ್ರಾಥಮಿಕ ಮತ್ತು ಪ್ರೌಢ ಶಿಕ್ಷಣ, ಆಟದ ಮೈದಾನ ಹಾಗೂ ಬಿಸಿಯೂಟ ಕೇಂದ್ರ.',
+    desc_en: 'Primary education center, mid-day meal scheme, and children classrooms.',
+    desc_kn: 'ಪ್ರಾಥಮಿಕ ಶಿಕ್ಷಣ, ಮಕ್ಕಳಿಗೆ ಬಿಸಿಯೂಟ ಮತ್ತು ಆಟದ ಮೈದಾನ.',
     distance_en: 'School Road',
     distance_kn: 'ಶಾಲೆ ರಸ್ತೆ',
     timings_en: '9:30 AM - 4:30 PM',
@@ -102,18 +119,18 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     verified: true
   },
   {
-    id: 'mtg_health_center',
-    name_en: 'Primary Health Sub-Center (PHC)',
-    name_kn: 'ಪ್ರಾಥಮಿಕ ಆರೋಗ್ಯ ಉಪಕೇಂದ್ರ',
+    id: 'mtg_anganwadi',
+    name_en: 'Anganwadi Kendra Muttagondi',
+    name_kn: 'ಅಂಗನವಾಡಿ ಕೇಂದ್ರ ಮುತ್ತಾಗೊಂದಿ',
     category: 'HEALTH',
-    icon: '🏥',
-    color: '#EF4444',
-    desc_en: 'First aid, seasonal immunization, maternal health care and emergency clinic.',
-    desc_kn: 'ಪ್ರಥಮ ಚಿಕಿತ್ಸೆ, ಲಸಿಕೆ ವಿತರಣೆ, ಆರೋಗ್ಯ ತಪಾಸಣೆ ಮತ್ತು ತುರ್ತು ವೈದ್ಯಕೀಯ ಸೇವೆ.',
+    icon: '👶',
+    color: '#FFB3D9',
+    desc_en: 'Early childhood nutrition, preschool education, and mother & child welfare care.',
+    desc_kn: 'ಮಕ್ಕಳ ಪೌಷ್ಟಿಕ ಆಹಾರ, ಶಾಲಾಪೂರ್ವ ಶಿಕ್ಷಣ ಹಾಗೂ ತಾಯಿ-ಮಕ್ಕಳ ಆರೈಕೆ ಕೇಂದ್ರ.',
     distance_en: 'Hospital Road',
     distance_kn: 'ಆಸ್ಪತ್ರೆ ರಸ್ತೆ',
-    timings_en: '24/7 Emergency & 9:00 AM - 5:00 PM OPD',
-    timings_kn: '೨೪/೭ ತುರ್ತು ಸೇವೆ & ಬೆಳಗ್ಗೆ ೯:೦೦ - ಸಂಜೆ ೫:೦೦',
+    timings_en: '9:00 AM - 4:00 PM',
+    timings_kn: 'ಬೆಳಗ್ಗೆ ೯:೦೦ - ಸಂಜೆ ೪:೦೦',
     phone: '108',
     coords: { lat: 13.8035, lng: 76.2898 },
     verified: true
@@ -149,6 +166,22 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     timings_kn: 'ಬೆಳಗ್ಗೆ ೬:೦೦ ರಿಂದ ರಾತ್ರಿ ೯:೦೦ ರವರೆಗೆ ಬಸ್ ಸಂಚಾರ',
     coords: { lat: 13.8070, lng: 76.2935 },
     verified: true
+  },
+  {
+    id: 'mtg_farms',
+    name_en: 'Arecanut & Coconut Farms',
+    name_kn: 'ಅಡಿಕೆ ಮತ್ತು ತೆಂಗಿನ ತೋಟ',
+    category: 'FARM',
+    icon: '🌴',
+    color: '#16A34A',
+    desc_en: 'Lush green arecanut plantations, coconut groves, and drip-irrigated farmland.',
+    desc_kn: 'ಸಮೃದ್ಧ ಹಸಿರಿನ ಅಡಿಕೆ ತೋಟಗಳು, ತೆಂಗಿನ ಮರಗಳು ಹಾಗೂ ಹನಿ ನೀರಾವರಿ ಕೃಷಿ ಭೂಮಿ.',
+    distance_en: 'West & South Outskirts',
+    distance_kn: 'ಪಶ್ಚಿಮ ಮತ್ತು ದಕ್ಷಿಣ ಹೊರವಲಯ',
+    timings_en: 'Open Field Area',
+    timings_kn: 'ಮುಕ್ತ ಕೃಷಿ ಪ್ರದೇಶ',
+    coords: { lat: 13.8055, lng: 76.2885 },
+    verified: true
   }
 ];
 
@@ -163,6 +196,7 @@ export function getCategoryIcon(cat: string): string {
     case 'BANK': return '🏦';
     case 'HALL': return '🏛️';
     case 'EMERGENCY': return '🚨';
+    case 'FARM': return '🌴';
     default: return '📍';
   }
 }
@@ -178,6 +212,7 @@ export function getCategoryColor(cat: string): string {
     case 'BANK': return '#6366F1';
     case 'HALL': return '#10B981';
     case 'EMERGENCY': return '#DC2626';
+    case 'FARM': return '#16A34A';
     default: return '#10B981';
   }
 }
@@ -211,7 +246,11 @@ export const VillageMapView: React.FC = () => {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Keep user-added custom places and ensure latest verified locations are always up-to-date
+          const customPlaces = parsed.filter(
+            (p: MapLocationItem) => !p.verified || !VERIFIED_VILLAGE_LOCATIONS.some((v) => v.id === p.id)
+          );
+          return [...VERIFIED_VILLAGE_LOCATIONS, ...customPlaces];
         }
       }
     } catch {}
@@ -238,17 +277,21 @@ export const VillageMapView: React.FC = () => {
   const handle3DLandmarkSelect = (landmarkId: LandmarkId) => {
     let match: MapLocationItem | undefined;
     if (landmarkId === 'temple') {
-      match = locations.find((l) => l.category === 'TEMPLE' || l.id.includes('temple'));
+      match = locations.find((l) => l.id.includes('anjaneya') || (l.category === 'TEMPLE' && !l.id.includes('kalle')));
+    } else if (landmarkId === 'temple1') {
+      match = locations.find((l) => l.id.includes('kalle') || l.category === 'TEMPLE');
     } else if (landmarkId === 'panchayat') {
-      match = locations.find((l) => l.category === 'HALL' || l.id.includes('panchayat'));
+      match = locations.find((l) => l.category === 'HALL' || l.id.includes('panchayat') || l.id.includes('community'));
     } else if (landmarkId === 'school') {
       match = locations.find((l) => l.category === 'SCHOOL' || l.id.includes('school'));
-    } else if (landmarkId === 'clinic') {
-      match = locations.find((l) => l.category === 'HEALTH' || l.id.includes('health'));
-    } else if (landmarkId === 'sports') {
-      match = locations.find((l) => l.category === 'SPORTS' || l.id.includes('sports'));
+    } else if (landmarkId === 'kindergarden' || landmarkId === 'clinic') {
+      match = locations.find((l) => l.category === 'HEALTH' || l.id.includes('anganwadi') || l.id.includes('health'));
+    } else if (landmarkId === 'farms') {
+      match = locations.find((l) => l.category === 'FARM' || l.id.includes('farm'));
     } else if (landmarkId === 'water') {
       match = locations.find((l) => l.category === 'WATER' || l.id.includes('water'));
+    } else if (landmarkId === 'sports') {
+      match = locations.find((l) => l.category === 'SPORTS' || l.id.includes('sports'));
     }
 
     if (match) {

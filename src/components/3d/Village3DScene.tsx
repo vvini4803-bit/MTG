@@ -1,7 +1,16 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import * as THREE from 'three';
 
-export type LandmarkId = 'panchayat' | 'temple' | 'farms' | 'sports' | 'clinic' | 'school' | 'water';
+export type LandmarkId =
+  | 'panchayat'
+  | 'temple'
+  | 'school'
+  | 'farms'
+  | 'temple1'
+  | 'kindergarden'
+  | 'water'
+  | 'sports'
+  | 'clinic';
 
 export interface Village3DSceneProps {
   selectedId?: string;
@@ -42,16 +51,16 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     [key in LandmarkId]?: { x: number; y: number; visible: boolean };
   }>({});
 
-  // Map any incoming location ID (like mtg_temple_ranganatha) to landmark ID
+  // Map any incoming location ID to landmark ID
   const activeLandmarkId: LandmarkId = useMemo(() => {
     const raw = (selectedId || '').toLowerCase();
-    if (raw.includes('temple') || raw.includes('ranganatha')) return 'temple';
-    if (raw.includes('panchayat') || raw.includes('hall')) return 'panchayat';
-    if (raw.includes('school')) return 'school';
-    if (raw.includes('health') || raw.includes('clinic')) return 'clinic';
-    if (raw.includes('sports') || raw.includes('ground') || raw.includes('cricket')) return 'sports';
-    if (raw.includes('water') || raw.includes('ro')) return 'water';
-    if (raw.includes('farm') || raw.includes('crop') || raw.includes('agriculture')) return 'farms';
+    if (raw.includes('kalle') || raw.includes('temple1') || raw.includes('sports') || raw.includes('ground')) return 'temple1';
+    if (raw.includes('anganwadi') || raw.includes('kindergarden') || raw.includes('clinic') || raw.includes('health') || raw.includes('children')) return 'kindergarden';
+    if (raw.includes('anjaneya') || raw.includes('temple') || raw.includes('ranganatha')) return 'temple';
+    if (raw.includes('panchayat') || raw.includes('hall') || raw.includes('community') || raw.includes('shop')) return 'panchayat';
+    if (raw.includes('school') || raw.includes('primary')) return 'school';
+    if (raw.includes('water') || raw.includes('ro') || raw.includes('tank')) return 'water';
+    if (raw.includes('farm') || raw.includes('crop') || raw.includes('agriculture') || raw.includes('areca') || raw.includes('coconut')) return 'farms';
     return 'panchayat';
   }, [selectedId]);
 
@@ -66,64 +75,64 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
   }[] = [
     {
       id: 'panchayat',
-      label_en: 'Grama Panchayat',
-      label_kn: 'ಗ್ರಾಮ ಪಂಚಾಯತಿ',
-      sub_en: 'Administration & Flag',
-      sub_kn: 'ಆಡಳಿತ & ಕನ್ನಡ ಧ್ವಜ',
+      label_en: 'Muttagondi Community Hall',
+      label_kn: 'ಮುತ್ತಾಗೊಂದಿ ಸಮುದಾಯ ಭವನ',
+      sub_en: 'Shops',
+      sub_kn: 'ಅಂಗಡಿಗಳು',
       icon: '🏛️',
       color: '#10B981'
     },
     {
       id: 'temple',
-      label_en: 'Sri Ranganatha Temple',
-      label_kn: 'ಶ್ರೀ ರಂಗನಾಥ ದೇವಾಲಯ',
-      sub_en: 'Historic Shrine & Gopuram',
-      sub_kn: 'ಐತಿಹಾಸಿಕ ಗೋಪುರ & ದೀಪಗಳು',
+      label_en: 'Sri ANJANEYA SWAMY Temple',
+      label_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ',
+      sub_en: 'Temple',
+      sub_kn: 'ದೇವಾಲಯ',
       icon: '🛕',
       color: '#F59E0B'
     },
     {
       id: 'school',
-      label_en: 'Govt Higher School',
-      label_kn: 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಶಾಲೆ',
-      sub_en: 'Classrooms & Tricolor',
+      label_en: 'Govt Primary School',
+      label_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ಮುತ್ತಾಗೊಂದಿ',
+      sub_en: 'School',
       sub_kn: 'ತರಗತಿ ಕೊಠಡಿ & ಆವರಣ',
       icon: '🏫',
       color: '#3B82F6'
     },
     {
       id: 'farms',
-      label_en: 'Arecanut & Paddy Farms',
-      label_kn: 'ಅಡಿಕೆ & ಭತ್ತದ ತೋಟ',
-      sub_en: 'Canal & Plantation',
-      sub_kn: 'ಕಾಲುವೆ & ಕೃಷಿ ಭೂಮಿ',
+      label_en: 'Arecanut & Coconut Farms',
+      label_kn: 'ಅಡಿಕೆ ಮತ್ತು ತೆಂಗಿನ ತೋಟ',
+      sub_en: 'Farms',
+      sub_kn: 'ಕೃಷಿ ಭೂಮಿ',
       icon: '🌾',
       color: '#84CC16'
     },
     {
-      id: 'sports',
-      label_en: 'Village Sports Ground',
-      label_kn: 'ಗ್ರಾಮೀಣ ಕ್ರೀಡಾಂಗಣ',
-      sub_en: 'Cricket Pitch & Pavilion',
-      sub_kn: 'ಕ್ರಿಕೆಟ್ ಪಿಚ್ & ಮೈದಾನ',
-      icon: '🏏',
+      id: 'temple1',
+      label_en: 'Kalle Devar Gudi',
+      label_kn: 'ಕಲ್ಲೇ ದೇವರ ಗುಡಿ',
+      sub_en: 'Temple',
+      sub_kn: 'ದೇವಾಲಯ',
+      icon: '🛕',
       color: '#8B5CF6'
     },
     {
-      id: 'clinic',
-      label_en: 'Primary Health Clinic',
-      label_kn: 'ಆರೋಗ್ಯ ಉಪಕೇಂದ್ರ',
-      sub_en: 'First Aid & Care',
-      sub_kn: 'ತುರ್ತು ಚಿಕಿತ್ಸೆ & ಔಷಧ',
-      icon: '🏥',
-      color: '#EF4444'
+      id: 'kindergarden',
+      label_en: 'Anganwadi Kendra Muttagondi',
+      label_kn: 'ಅಂಗನವಾಡಿ ಕೇಂದ್ರ ಮುತ್ತಾಗೊಂದಿ',
+      sub_en: 'Children',
+      sub_kn: 'ಮಕ್ಕಳು',
+      icon: '👶',
+      color: '#FFB3D9'
     },
     {
       id: 'water',
       label_en: 'Pure Water RO Plant',
       label_kn: 'ಶುದ್ಧ ಕುಡಿಯುವ ನೀರು',
       sub_en: 'RO Filtration Hub',
-      sub_kn: 'ನೀರಿನ ಘಟಕ & ಟ್ಯಾಂಕ್',
+      sub_kn: 'ನೀರಿನ ಟ್ಯಾಂಕ್',
       icon: '💧',
       color: '#06B6D4'
     }
@@ -135,8 +144,10 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
       panchayat: 0,
       temple: -Math.PI * 0.45,
       school: -Math.PI * 0.85,
+      temple1: Math.PI,
       sports: Math.PI,
       farms: Math.PI * 0.5,
+      kindergarden: Math.PI * 0.22,
       clinic: Math.PI * 0.22,
       water: Math.PI * 0.82
     };
@@ -631,75 +642,94 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     }
 
     // =========================================================================
-    // 🏏 LANDMARK 5: VILLAGE SPORTS GROUND (South: 0, 0, 7.5)
+    // 🛕 LANDMARK 5: KALLE DEVAR GUDI (South: 0, 0, 7.5)
     // =========================================================================
-    const sportsGroup = new THREE.Group();
-    sportsGroup.position.set(0, 0, 7.5);
-    villageGroup.add(sportsGroup);
-    landmarkObjectsRef.current['sports'] = sportsGroup;
+    const temple1Group = new THREE.Group();
+    temple1Group.position.set(0, 0, 7.5);
+    villageGroup.add(temple1Group);
+    landmarkObjectsRef.current['temple1'] = temple1Group;
+    landmarkObjectsRef.current['sports'] = temple1Group;
 
-    // Circular turf boundary
-    const turf = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.2, 32), new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.8 }));
-    turf.position.y = 0.1;
-    turf.receiveShadow = true;
-    sportsGroup.add(turf);
-    registerInteractive(turf, 'sports');
+    // Stone Plinth (ಜಗುಲಿ)
+    const t1Base = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.35, 3.6), stoneMat);
+    t1Base.position.y = 0.17;
+    t1Base.receiveShadow = true;
+    temple1Group.add(t1Base);
+    registerInteractive(t1Base, 'temple1');
 
-    // Clay Cricket Pitch
-    const pitch = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.24, 3.4), pitchMat);
-    pitch.position.y = 0.12;
-    sportsGroup.add(pitch);
+    // Sacred Garbhagriha / Sanctum Walls
+    const t1Body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.8, 2.6), wallWhiteMat);
+    t1Body.position.y = 1.25;
+    t1Body.castShadow = true;
+    temple1Group.add(t1Body);
+    registerInteractive(t1Body, 'temple1');
 
-    // Stumps & Bails at both ends
-    for (let sz of [-1.5, 1.5]) {
-      for (let sx of [-0.08, 0, 0.08]) {
-        const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.45, 6), wallWhiteMat);
-        stump.position.set(sx, 0.42, sz);
-        sportsGroup.add(stump);
-      }
+    // Stepped Shikhara (ಗೋಪುರ)
+    const t1Roof1 = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.4, 2.2), stoneMat);
+    t1Roof1.position.y = 2.35;
+    temple1Group.add(t1Roof1);
+
+    const t1Roof2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 1.6), stoneMat);
+    t1Roof2.position.y = 2.75;
+    temple1Group.add(t1Roof2);
+
+    const t1Roof3 = new THREE.Mesh(new THREE.ConeGeometry(0.9, 0.8, 4), stoneMat);
+    t1Roof3.position.y = 3.35;
+    t1Roof3.rotation.y = Math.PI * 0.25;
+    temple1Group.add(t1Roof3);
+
+    // Golden Kalasha on top
+    const t1Kalash = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.14, 0.4, 8), goldMat);
+    t1Kalash.position.y = 3.95;
+    temple1Group.add(t1Kalash);
+
+    // Deepa Stambha (ದೀಪಸ್ತಂಭ - sacred stone pillar in front)
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 2.4, 8), stoneMat);
+    pillar.position.set(0, 1.2, 2.6);
+    temple1Group.add(pillar);
+
+    const pillarLight = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), goldMat);
+    pillarLight.position.set(0, 2.5, 2.6);
+    temple1Group.add(pillarLight);
+
+    // =========================================================================
+    // 👶 LANDMARK 6: ANGANWADI KENDRA MUTTAGONDI (North-West: -5.2, 0, -5.5)
+    // =========================================================================
+    const kindergardenGroup = new THREE.Group();
+    kindergardenGroup.position.set(-5.2, 0, -5.5);
+    villageGroup.add(kindergardenGroup);
+    landmarkObjectsRef.current['kindergarden'] = kindergardenGroup;
+    landmarkObjectsRef.current['clinic'] = kindergardenGroup;
+
+    const kBase = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.25, 3.0), stoneMat);
+    kBase.position.y = 0.12;
+    kindergardenGroup.add(kBase);
+    registerInteractive(kBase, 'kindergarden');
+
+    // Friendly colored Anganwadi building
+    const kBody = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.6, 2.6), wallWhiteMat);
+    kBody.position.y = 0.95;
+    kBody.castShadow = true;
+    kindergardenGroup.add(kBody);
+    registerInteractive(kBody, 'kindergarden');
+
+    // Cheerful Anganwadi roof
+    const kRoof = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.25, 2.9), roofRedMat);
+    kRoof.position.y = 1.85;
+    kindergardenGroup.add(kRoof);
+
+    // Playful Children entrance arches & flowers
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.1, 0.05), woodTrunkMat);
+    door.position.set(0, 0.7, 1.32);
+    kindergardenGroup.add(door);
+
+    // Little garden flowers in front
+    const flowerMat = new THREE.MeshStandardMaterial({ color: 0xff69b4, roughness: 0.5 });
+    for (let fx of [-1.2, -0.6, 0.6, 1.2]) {
+      const flower = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 6), flowerMat);
+      flower.position.set(fx, 0.3, 1.8);
+      kindergardenGroup.add(flower);
     }
-
-    // Mini Spectator Pavilion (ನೆರಳಿನ ಪೆವಿಲಿಯನ್)
-    const pav = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.9, 1.1), wallWhiteMat);
-    pav.position.set(0, 0.5, -2.2);
-    pav.castShadow = true;
-    sportsGroup.add(pav);
-
-    const pavRoof = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.15, 1.4), roofRedMat);
-    pavRoof.position.set(0, 1.0, -2.2);
-    sportsGroup.add(pavRoof);
-
-    // =========================================================================
-    // 🏥 LANDMARK 6: PRIMARY HEALTH CARE CLINIC (North-West: -5.2, 0, -5.5)
-    // =========================================================================
-    const clinicGroup = new THREE.Group();
-    clinicGroup.position.set(-5.2, 0, -5.5);
-    villageGroup.add(clinicGroup);
-    landmarkObjectsRef.current['clinic'] = clinicGroup;
-
-    const cBase = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.25, 2.8), stoneMat);
-    cBase.position.y = 0.12;
-    clinicGroup.add(cBase);
-    registerInteractive(cBase, 'clinic');
-
-    const cBody = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.6, 2.4), wallWhiteMat);
-    cBody.position.y = 0.95;
-    cBody.castShadow = true;
-    clinicGroup.add(cBody);
-    registerInteractive(cBody, 'clinic');
-
-    const cRoof = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.2, 2.6), cyanMat);
-    cRoof.position.y = 1.85;
-    clinicGroup.add(cRoof);
-
-    // Red Medical Cross Symbol on Front
-    const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.06), kannadaRedMat);
-    crossV.position.set(0, 1.1, 1.22);
-    clinicGroup.add(crossV);
-
-    const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.2, 0.06), kannadaRedMat);
-    crossH.position.set(0, 1.1, 1.22);
-    clinicGroup.add(crossH);
 
     // =========================================================================
     // 💧 LANDMARK 7: PURE DRINKING WATER RO PLANT (South-West: -5.5, 0, 5.5)
@@ -917,7 +947,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
 
       // Project 3D landmark coordinates to 2D screen pins
       const updatedCoords: { [key in LandmarkId]?: { x: number; y: number; visible: boolean } } = {};
-      const landmarksList: LandmarkId[] = ['panchayat', 'temple', 'school', 'farms', 'sports', 'clinic', 'water'];
+      const landmarksList: LandmarkId[] = ['panchayat', 'temple', 'school', 'farms', 'temple1', 'kindergarden', 'water'];
 
       landmarksList.forEach((id) => {
         const obj = landmarkObjectsRef.current[id];
