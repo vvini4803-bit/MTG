@@ -13,7 +13,7 @@
     "@types/paho-mqtt": "^1.0.10",
     "@types/three": "^0.185.4",
     "canvas-confetti": "^1.9.4",
-    "firebase": "^12.18.0",
+    "firebase": "^12.19.0",
     "lucide-react": "^1.43.0",
     "paho-mqtt": "^1.1.0",
     "react": "^19.2.8",

@@ -184,7 +184,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
     container.innerHTML = '';
@@ -880,11 +880,11 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
 
     // --- Animation Loop ---
     let animationFrameId: number;
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      const elapsedTime = (performance.now() - startTime) * 0.001;
 
       // Idle Rotation
       if (isAutoRotatingRef.current && !isDraggingRef.current) {
