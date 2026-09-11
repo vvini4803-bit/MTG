@@ -96,7 +96,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     if (emailMode === 'REGISTER') {
       const res = await signUpWithEmail(email, password);
       setIsLoading(false);
-      if (res.unverifiedEmail) {
+      if (res.success) {
+        onSuccess();
+      } else if (res.unverifiedEmail) {
         setVerificationEmail(res.unverifiedEmail);
         setUnverifiedEmail(res.unverifiedEmail);
       } else if (res.error) {
@@ -413,6 +415,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             >
               {isKannada ? 'ಲಾಗಿನ್ (Login)' : 'Login'}
             </button>
+
+            <p style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: '14px', lineHeight: 1.5 }}>
+              {isKannada
+                ? 'ಗಮನಿಸಿ: ಇಮೇಲ್ ಇನ್‌ಬಾಕ್ಸ್‌ನಲ್ಲಿ ಇಲ್ಲದಿದ್ದರೆ ಸ್ಪ್ಯಾಮ್ / ಜಂಕ್ ಫೋಲ್ಡರ್ ಪರಿಶೀಲಿಸಿ, ಅಥವಾ ನೇರವಾಗಿ ಲಾಗಿನ್ ಆಗಲು ಮೇಲೆ ಕ್ಲಿಕ್ ಮಾಡಿ.'
+                : 'Note: If not in your inbox, check your Spam / Junk folder, or click Login above to sign in directly.'}
+            </p>
           </div>
         ) : (
           <form onSubmit={handleEmailSubmit}>

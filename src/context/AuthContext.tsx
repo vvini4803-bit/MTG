@@ -158,20 +158,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // If logged in via password, verify email status
-        const isPasswordProvider = firebaseUser.providerData.some((p) => p.providerId === 'password');
-        if (isPasswordProvider && !firebaseUser.emailVerified) {
-          signOut(auth).catch(() => {});
-          setCurrentUser(null);
-        } else {
-          try {
-            const profile = await syncUserProfileWithFirestore(firebaseUser);
-            setCurrentUser(profile);
-            setUnverifiedEmail(null);
-          } catch (e) {
-            console.warn('User profile sync error:', e);
-          }
+        try {
+          const profile = await syncUserProfileWithFirestore(firebaseUser);
+          setCurrentUser(profile);
+          setUnverifiedEmail(null);
+        } catch (e) {
+          console.warn('User profile sync error:', e);
         }
+      } else {
+        // Keep demo login intact if active, otherwise clear currentUser
+        setCurrentUser((prev) => (prev && prev.uid?.startsWith('usr_') ? prev : null));
       }
     });
 
@@ -207,17 +203,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
       const user = userCredential.user;
 
-      if (!user.emailVerified) {
-        try {
-          await sendEmailVerification(user);
-        } catch (resendErr) {
-          console.warn('Verification email resend throttled:', resendErr);
-        }
-        await signOut(auth);
-        setUnverifiedEmail(cleanEmail);
-        return { success: false, unverifiedEmail: cleanEmail };
-      }
-
       const profile = await syncUserProfileWithFirestore(user);
       setCurrentUser(profile);
       setUnverifiedEmail(null);
@@ -245,11 +230,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
       const user = userCredential.user;
 
-      await sendEmailVerification(user);
-      await signOut(auth);
+      // Attempt sending verification email in background without blocking user login
+      sendEmailVerification(user).catch((resendErr) => {
+        console.warn('Verification email send notice:', resendErr?.code, resendErr?.message);
+      });
 
-      setUnverifiedEmail(cleanEmail);
-      return { success: false, unverifiedEmail: cleanEmail };
+      const profile = await syncUserProfileWithFirestore(user);
+      setCurrentUser(profile);
+      setUnverifiedEmail(null);
+      return { success: true };
     } catch (err: any) {
       console.warn('Firebase signUp error:', err?.code, err?.message);
       if (err?.code === 'auth/email-already-in-use') {
