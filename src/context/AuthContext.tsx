@@ -1,9 +1,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../types';
 import { SEED_USERS } from '../services/seedData';
-import { dbService } from '../services/dbService';
-
 import { realtimeSync } from '../services/realtimeSync';
+import { auth } from '../services/firebaseConfig';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
+
+export interface AuthResult {
+  success: boolean;
+  unverifiedEmail?: string;
+  error?: string;
+}
 
 interface AuthContextType {
   currentUser: UserProfile | null;
@@ -14,11 +26,15 @@ interface AuthContextType {
   isSportsOrganizer: boolean;
   isEventOrganizer: boolean;
   hasRole: (requiredRole: UserRole) => boolean;
-  loginWithDemo: (role: UserRole) => void;
-  loginWithEmail: (email: string) => Promise<boolean>;
+  unverifiedEmail: string | null;
+  setUnverifiedEmail: (email: string | null) => void;
+  signInWithEmail: (email: string, password: string) => Promise<AuthResult>;
+  signUpWithEmail: (email: string, password: string) => Promise<AuthResult>;
+  loginWithEmail: (email: string, password?: string) => Promise<boolean>;
   loginWithPhone: (phone: string, otp: string) => Promise<boolean>;
+  loginWithDemo: (role: UserRole) => void;
   registerUser: (data: Partial<UserProfile> & { name: string; phone?: string }) => Promise<UserProfile>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
@@ -31,16 +47,19 @@ const AuthContext = createContext<AuthContextType>({
   isSportsOrganizer: false,
   isEventOrganizer: false,
   hasRole: () => false,
-  loginWithDemo: () => {},
+  unverifiedEmail: null,
+  setUnverifiedEmail: () => {},
+  signInWithEmail: async () => ({ success: false }),
+  signUpWithEmail: async () => ({ success: false }),
   loginWithEmail: async () => false,
   loginWithPhone: async () => false,
+  loginWithDemo: () => {},
   registerUser: async () => ({} as UserProfile),
-  logout: () => {},
+  logout: async () => {},
   updateProfile: async () => {}
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Start as saved active user or null (guest) so visitors can register their own unique profile
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('gramasiri_active_user');
     if (saved) {
@@ -53,16 +72,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   });
 
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+
+  // Sync active user in local storage (No Firestore database calls)
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('gramasiri_active_user', JSON.stringify(currentUser));
-      dbService.registerOrUpdateUser(currentUser);
       realtimeSync.setCurrentUser(currentUser.uid);
     } else {
       localStorage.removeItem('gramasiri_active_user');
       realtimeSync.setCurrentUser(null);
     }
   }, [currentUser]);
+
+  // Firebase Authentication State Listener
+  useEffect(() => {
+    if (!auth) return;
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        if (firebaseUser.emailVerified) {
+          const profile: UserProfile = {
+            uid: firebaseUser.uid,
+            name: firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Resident'),
+            email: firebaseUser.email || '',
+            role: 'USER',
+            language: 'en',
+            account_status: 'ACTIVE',
+            created_at: firebaseUser.metadata.creationTime || new Date().toISOString(),
+            last_login: new Date().toISOString(),
+            is_phone_verified: false
+          };
+          setCurrentUser(profile);
+          setUnverifiedEmail(null);
+        } else {
+          // If email is not verified, do NOT keep user signed in
+          signOut(auth).catch(() => {});
+          setCurrentUser(null);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const role: UserRole = currentUser ? currentUser.role : 'USER';
   const isAdmin = role === 'SUPER_ADMIN' || role === 'ADMIN';
@@ -76,31 +128,138 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return role === requiredRole;
   };
 
-  const loginWithDemo = (demoRole: UserRole) => {
-    const matched = SEED_USERS.find((u) => u.role === demoRole) || SEED_USERS[0];
-    setCurrentUser(matched);
+  /**
+   * Firebase Authentication Sign In
+   * Requirements:
+   * - If credentials are incorrect, show: "Email or password is incorrect"
+   * - If user logs in and their email is not verified, block access and show verification screen
+   */
+  const signInWithEmail = async (email: string, password: string): Promise<AuthResult> => {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
+      return { success: false, error: 'Email or password is incorrect' };
+    }
+
+    if (!auth) {
+      return { success: false, error: 'Firebase Authentication is not available.' };
+    }
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+      const user = userCredential.user;
+
+      // Check Email Verification
+      if (!user.emailVerified) {
+        // Send verification email
+        try {
+          await sendEmailVerification(user);
+        } catch (resendErr) {
+          console.warn('Verification email resend throttled:', resendErr);
+        }
+        // Block access & sign out
+        await signOut(auth);
+        setUnverifiedEmail(cleanEmail);
+        return { success: false, unverifiedEmail: cleanEmail };
+      }
+
+      // Verified: Authenticate user in memory only (no Firestore writes)
+      const userProfile: UserProfile = {
+        uid: user.uid,
+        name: user.displayName || cleanEmail.split('@')[0],
+        email: user.email || cleanEmail,
+        role: 'USER',
+        language: 'en',
+        account_status: 'ACTIVE',
+        created_at: user.metadata.creationTime || new Date().toISOString(),
+        last_login: new Date().toISOString(),
+        is_phone_verified: false
+      };
+
+      setCurrentUser(userProfile);
+      setUnverifiedEmail(null);
+      return { success: true };
+    } catch (err: any) {
+      console.warn('Firebase signIn error:', err?.code, err?.message);
+      // Requirement: "If credentials are incorrect, show: Email or password is incorrect"
+      if (
+        err?.code === 'auth/invalid-credential' ||
+        err?.code === 'auth/wrong-password' ||
+        err?.code === 'auth/user-not-found' ||
+        err?.code === 'auth/invalid-email'
+      ) {
+        return { success: false, error: 'Email or password is incorrect' };
+      }
+      return { success: false, error: 'Email or password is incorrect' };
+    }
   };
 
-  const loginWithEmail = async (email: string): Promise<boolean> => {
-    const matched = SEED_USERS.find((u) => u.email && u.email.toLowerCase() === email.toLowerCase());
-    if (matched) {
-      setCurrentUser(matched);
-      return true;
+  /**
+   * Firebase Authentication Sign Up
+   * Requirements:
+   * - Users can sign up using email and password
+   * - If the email already exists, show: "User already exists. Please sign in"
+   * - When a user registers with email/password, do not sign them in automatically.
+   * - Send a verification email and show verification screen
+   * - Do NOT save user profile data to Firestore
+   */
+  const signUpWithEmail = async (email: string, password: string): Promise<AuthResult> => {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
+      return { success: false, error: 'Please enter valid email and password' };
     }
-    // Create new standard user
-    const newUser: UserProfile = {
-      uid: 'user_' + Date.now(),
-      name: email.split('@')[0],
-      email: email,
-      role: 'USER',
-      language: 'en',
-      account_status: 'ACTIVE',
-      created_at: new Date().toISOString(),
-      last_login: new Date().toISOString(),
-      is_phone_verified: false
-    };
-    setCurrentUser(newUser);
-    return true;
+
+    if (!auth) {
+      return { success: false, error: 'Firebase Authentication is not available.' };
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+      const user = userCredential.user;
+
+      // Send verification email
+      await sendEmailVerification(user);
+
+      // Do NOT sign them in automatically
+      await signOut(auth);
+
+      setUnverifiedEmail(cleanEmail);
+      return { success: false, unverifiedEmail: cleanEmail };
+    } catch (err: any) {
+      console.warn('Firebase signUp error:', err?.code, err?.message);
+      // Requirement: "If the email already exists, show: User already exists. Please sign in"
+      if (err?.code === 'auth/email-already-in-use') {
+        return { success: false, error: 'User already exists. Please sign in' };
+      }
+      if (err?.code === 'auth/weak-password') {
+        return { success: false, error: 'Password should be at least 6 characters' };
+      }
+      return { success: false, error: err?.message || 'Registration failed' };
+    }
+  };
+
+  /**
+   * Logout button that signs the user out and returns to the auth screen
+   */
+  const logout = async () => {
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.warn('Sign out error:', err);
+      }
+    }
+    setCurrentUser(null);
+    setUnverifiedEmail(null);
+    localStorage.removeItem('gramasiri_active_user');
+  };
+
+  // Backward compatibility methods
+  const loginWithEmail = async (email: string, password?: string): Promise<boolean> => {
+    if (password) {
+      const res = await signInWithEmail(email, password);
+      return res.success;
+    }
+    return false;
   };
 
   const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
@@ -127,13 +286,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
-  const logout = () => {
-    setCurrentUser(null);
+  const loginWithDemo = (demoRole: UserRole) => {
+    const matched = SEED_USERS.find((u) => u.role === demoRole) || SEED_USERS[0];
+    setCurrentUser(matched);
   };
 
   const registerUser = async (data: Partial<UserProfile> & { name: string; phone?: string }): Promise<UserProfile> => {
     const newProfile: UserProfile = {
-      uid: data.uid || ('usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)),
+      uid: data.uid || ('usr_' + Date.now()),
       name: data.name.trim(),
       name_kn: data.name_kn?.trim(),
       phone: data.phone || '',
@@ -157,12 +317,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
-    if (!currentUser) {
-      if (data.name) {
-        await registerUser(data as any);
-      }
-      return;
-    }
+    if (!currentUser) return;
     const updated = { ...currentUser, ...data };
     setCurrentUser(updated);
   };
@@ -178,9 +333,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isSportsOrganizer,
         isEventOrganizer,
         hasRole,
-        loginWithDemo,
+        unverifiedEmail,
+        setUnverifiedEmail,
+        signInWithEmail,
+        signUpWithEmail,
         loginWithEmail,
         loginWithPhone,
+        loginWithDemo,
         registerUser,
         logout,
         updateProfile

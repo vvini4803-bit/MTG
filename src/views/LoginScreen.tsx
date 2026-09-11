@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
-import { Phone, Mail, Shield, UserCheck, ArrowRight, Check } from 'lucide-react';
+import { Phone, Mail, Shield, UserCheck, ArrowRight, Check, Lock, UserPlus, LogIn } from 'lucide-react';
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -16,13 +16,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   onOpenCreateProfile
 }) => {
   const { isKannada } = useLanguage();
-  const { loginWithDemo, loginWithEmail, isAuthenticated, currentUser } = useAuth();
+  const {
+    loginWithDemo,
+    signInWithEmail,
+    signUpWithEmail,
+    unverifiedEmail,
+    setUnverifiedEmail
+  } = useAuth();
 
-  const [authMethod, setAuthMethod] = useState<'PHONE' | 'EMAIL'>('PHONE');
+  const [authMethod, setAuthMethod] = useState<'PHONE' | 'EMAIL'>('EMAIL');
+  const [emailMode, setEmailMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   const [phone, setPhone] = useState('9845012345');
-  const [email, setEmail] = useState('admin@gramasiri.org');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(unverifiedEmail);
 
   const handlePhoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,19 +45,33 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !email.includes('@')) {
-      setErrorMsg(isKannada ? 'ಮಾನ್ಯವಾದ ಇಮೇಲ್ ವಿಳಾಸ ನಮೂದಿಸಿ' : 'Enter a valid email address');
+    if (!email.trim() || !password) {
+      setErrorMsg('Email or password is incorrect');
       return;
     }
     setIsLoading(true);
     setErrorMsg(null);
-    try {
-      await loginWithEmail(email);
+
+    if (emailMode === 'REGISTER') {
+      const res = await signUpWithEmail(email, password);
       setIsLoading(false);
-      onSuccess();
-    } catch (err: any) {
+      if (res.unverifiedEmail) {
+        setVerificationEmail(res.unverifiedEmail);
+        setUnverifiedEmail(res.unverifiedEmail);
+      } else if (res.error) {
+        setErrorMsg(res.error);
+      }
+    } else {
+      const res = await signInWithEmail(email, password);
       setIsLoading(false);
-      setErrorMsg(err.message || 'Login failed');
+      if (res.unverifiedEmail) {
+        setVerificationEmail(res.unverifiedEmail);
+        setUnverifiedEmail(res.unverifiedEmail);
+      } else if (res.error) {
+        setErrorMsg(res.error);
+      } else if (res.success) {
+        onSuccess();
+      }
     }
   };
 
@@ -187,18 +210,167 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               <ArrowRight size={18} />
             </button>
           </form>
+        ) : verificationEmail ? (
+          <div style={{ textAlign: 'center', padding: '12px 4px' }}>
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                background: 'rgba(59, 130, 246, 0.15)',
+                border: '1px solid rgba(59, 130, 246, 0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                fontSize: '1.6rem'
+              }}
+            >
+              ✉️
+            </div>
+
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '10px' }}>
+              {isKannada ? 'ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ' : 'Verify Your Email'}
+            </h3>
+
+            {/* Exact Required Verification Message */}
+            <p
+              style={{
+                fontSize: '0.9rem',
+                color: '#E2E8F0',
+                lineHeight: 1.6,
+                marginBottom: '22px',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '14px',
+                padding: '14px 12px'
+              }}
+            >
+              We have sent you a verification email to <strong style={{ color: '#60A5FA' }}>{verificationEmail}</strong>. Please verify it and log in.
+            </p>
+
+            {/* Login Button on Verification Screen */}
+            <button
+              type="button"
+              onClick={() => {
+                setVerificationEmail(null);
+                setUnverifiedEmail(null);
+                setEmailMode('LOGIN');
+                setErrorMsg(null);
+              }}
+              className="btn-primary"
+              style={{
+                width: '100%',
+                padding: '14px',
+                fontSize: '0.95rem',
+                fontWeight: 800
+              }}
+            >
+              {isKannada ? 'ಲಾಗಿನ್ (Login)' : 'Login'}
+            </button>
+          </div>
         ) : (
           <form onSubmit={handleEmailSubmit}>
+            {/* Email Mode Toggle (Sign In / Register) */}
+            <div
+              style={{
+                display: 'flex',
+                background: 'rgba(0, 0, 0, 0.25)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '3px',
+                marginBottom: '16px'
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setEmailMode('LOGIN');
+                  setErrorMsg(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  background: emailMode === 'LOGIN' ? 'var(--accent-emerald)' : 'transparent',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px'
+                }}
+              >
+                <LogIn size={13} />
+                <span>{isKannada ? 'ಸೈನ್ ಇನ್' : 'Sign In'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmailMode('REGISTER');
+                  setErrorMsg(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  background: emailMode === 'REGISTER' ? 'var(--accent-emerald)' : 'transparent',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px'
+                }}
+              >
+                <UserPlus size={13} />
+                <span>{isKannada ? 'ನೋಂದಣಿ' : 'Register'}</span>
+              </button>
+            </div>
+
             <div className="form-group" style={{ textAlign: 'left' }}>
               <label className="form-label">{isKannada ? 'ಇಮೇಲ್ ವಿಳಾಸ' : 'Email Address'}</label>
-              <input
-                type="email"
-                className="form-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                required
-              />
+              <div style={{ position: 'relative' }}>
+                <Mail
+                  size={16}
+                  color="#94A3B8"
+                  style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
+                />
+                <input
+                  type="email"
+                  className="form-input"
+                  style={{ paddingLeft: '40px' }}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ textAlign: 'left' }}>
+              <label className="form-label">{isKannada ? 'ಪಾಸ್‌ವರ್ಡ್' : 'Password'}</label>
+              <div style={{ position: 'relative' }}>
+                <Lock
+                  size={16}
+                  color="#94A3B8"
+                  style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
+                />
+                <input
+                  type="password"
+                  className="form-input"
+                  style={{ paddingLeft: '40px' }}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
             </div>
 
             <button
@@ -207,7 +379,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               disabled={isLoading}
               style={{ width: '100%', height: '48px', fontSize: '0.95rem', marginBottom: '16px' }}
             >
-              <span>{isLoading ? 'Checking...' : isKannada ? 'ಪ್ರವೇಶಿಸಿ' : 'Sign In'}</span>
+              <span>
+                {isLoading
+                  ? 'Checking...'
+                  : emailMode === 'REGISTER'
+                  ? isKannada
+                    ? 'ನೋಂದಾಯಿಸಿ (Sign Up)'
+                    : 'Sign Up'
+                  : isKannada
+                  ? 'ಪ್ರವೇಶಿಸಿ (Sign In)'
+                  : 'Sign In'}
+              </span>
               <ArrowRight size={18} />
             </button>
           </form>

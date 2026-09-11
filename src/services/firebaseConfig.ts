@@ -1,15 +1,13 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyClTElD43FmV3MFiBGOvfJrOBv0ofcFzHU",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "mutthagundi-17.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "mutthagundi-17",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "mutthagundi-17.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "565999563658",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:565999563658:web:c649413257e69d61950e73"
 };
 
 export const isFirebaseConfigured = Boolean(
@@ -20,6 +18,7 @@ export const isFirebaseConfigured = Boolean(
 
 let app: any = null;
 let auth: any = null;
+// Requirement: "Use Firebase Authentication only", "Do NOT use Firestore or Storage yet"
 let db: any = null;
 let storage: any = null;
 
@@ -27,14 +26,12 @@ if (isFirebaseConfigured) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
     auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-    console.info('Connected to live Firebase project:', firebaseConfig.projectId);
+    console.info('Connected to live Firebase Authentication:', firebaseConfig.projectId);
   } catch (error) {
-    console.warn('Firebase initialization error, falling back to local simulated repository:', error);
+    console.warn('Firebase initialization error:', error);
   }
 } else {
-  console.info('Running in Local Simulated Firestore mode (Firebase credentials not specified in .env)');
+  console.info('Running in offline auth mode');
 }
 
-export { app, auth, db, storage };
+export { app, auth, db, storage, firebaseConfig };
