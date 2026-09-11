@@ -796,6 +796,107 @@ export const App: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* 💻 DEVELOPER SPOTLIGHT / ಡೆವಲಪರ್ ಪರಿಚಯ */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.12) 50%, rgba(139, 92, 246, 0.08) 100%)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: '24px',
+                padding: '24px 20px',
+                marginTop: '32px',
+                marginBottom: '16px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.35)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flexShrink: 0, margin: '0 auto' }}>
+                  <img
+                    src="/developer.png"
+                    alt="Vinay - Developer & Creator"
+                    style={{
+                      width: '96px',
+                      height: '96px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '3px solid #10B981',
+                      boxShadow: '0 0 24px rgba(16, 185, 129, 0.5), 0 4px 16px rgba(0,0,0,0.6)',
+                      display: 'block'
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '0',
+                      right: '0',
+                      background: '#10B981',
+                      color: '#070F1E',
+                      borderRadius: '50%',
+                      width: '26px',
+                      height: '26px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.85rem',
+                      fontWeight: 900,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                    }}
+                    title="Verified Developer"
+                  >
+                    ✓
+                  </div>
+                </div>
+
+                <div style={{ flex: '1', minWidth: '260px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                    <h3 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+                      Vinay (ವಿನಯ್)
+                    </h3>
+                    <span
+                      style={{
+                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                        color: '#FFFFFF',
+                        fontSize: '0.72rem',
+                        fontWeight: 900,
+                        padding: '3px 10px',
+                        borderRadius: '20px',
+                        letterSpacing: '0.04em',
+                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)'
+                      }}
+                    >
+                      DEVELOPER & CREATOR
+                    </span>
+                  </div>
+
+                  <p style={{ fontSize: '0.88rem', color: '#CBD5E1', margin: '0 0 12px 0', lineHeight: 1.55 }}>
+                    {isKannada
+                      ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಅಧಿಕೃತ ಡಿಜಿಟಲ್ ಪೋರ್ಟಲ್, 3D ಗ್ರಾಮ ನಕ್ಷೆ, ಕನ್ನಡ ಮತ್ತು ಇಂಗ್ಲಿಷ್ ಜೆಮಿನಿ AI ವಾಯ್ಸ್ ಅಸಿಸ್ಟೆಂಟ್, ನೈಜ ಸಮಯದ ಗ್ರಾಮ ಸುದ್ದಿ ಮತ್ತು ಸಮುದಾಯ ವೇದಿಕೆಯನ್ನು ರೂಪಿಸಿ ಅಭಿವೃದ್ಧಿಪಡಿಸಿದ ತಂತ್ರಜ್ಞಾನ ಅಭಿವೃದ್ಧಿಕಾರರು.'
+                      : 'Designed, engineered, and developed the Muttagundi Digital Village Portal featuring the 3D Village interactive map, bilingual Gemini AI Voice Assistant, real-time community updates, and village services.'}
+                  </p>
+
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {['💻 Full-Stack Developer', '🌐 Three.js 3D', '🤖 Gemini AI', '🔥 Firebase', '📱 PWA'].map((tech) => (
+                      <span
+                        key={tech}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          color: '#A7F3D0',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(16, 185, 129, 0.25)'
+                        }}
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1121,6 +1222,59 @@ export const App: React.FC = () => {
             />
           </div>
         )}
+
+        {/* 🌐 GLOBAL VILLAGE FOOTER */}
+        <footer
+          style={{
+            marginTop: '48px',
+            marginBottom: '40px',
+            paddingTop: '24px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            textAlign: 'center'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+            <img src="/logo-192.png" alt="Muttagundi Logo" style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
+            <strong style={{ fontSize: '0.95rem', color: '#FFFFFF' }}>
+              {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್' : 'Muttagundi Digital Village Portal'}
+            </strong>
+          </div>
+          <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: '0 0 12px 0' }}>
+            {isKannada
+              ? 'ಹೊಸದುರ್ಗ ತಾಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ • ಪಿನ್ ಕೋಡ್: 577527'
+              : 'Hosadurga Taluk, Chitradurga District, Karnataka • PIN 577527'}
+          </p>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '28px',
+              padding: '6px 16px',
+              fontSize: '0.8rem',
+              color: '#CBD5E1',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+            }}
+          >
+            <img
+              src="/developer.png"
+              alt="Vinay - Developer"
+              style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid #10B981'
+              }}
+            />
+            <span>
+              {isKannada ? 'ತಂತ್ರಜ್ಞಾನ ಅಭಿವೃದ್ಧಿ & ನಿರ್ಮಾಣ:' : 'Designed & Engineered by'}{' '}
+              <strong style={{ color: '#34D399' }}>Vinay (ವಿನಯ್)</strong>
+            </span>
+          </div>
+        </footer>
       </main>
 
       {/* 4. MOBILE BOTTOM 5-TAB NAVIGATION (WhatsApp-Simple) */}

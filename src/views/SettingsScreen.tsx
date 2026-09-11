@@ -207,6 +207,75 @@ export const SettingsScreen: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Developer & Project Profile */}
+        <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
+          <label className="form-label">{isKannada ? 'ಯೋಜನೆಯ ತಂತ್ರಜ್ಞಾನ ಅಭಿವೃದ್ಧಿಕಾರರು' : 'Project Developer & Creator'}</label>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '16px',
+              padding: '16px'
+            }}
+          >
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <img
+                src="/developer.png"
+                alt="Vinay - Developer"
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid #10B981',
+                  boxShadow: '0 0 16px rgba(16, 185, 129, 0.4)'
+                }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  bottom: '-2px',
+                  right: '-2px',
+                  background: '#10B981',
+                  color: '#070F1E',
+                  borderRadius: '50%',
+                  width: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.7rem',
+                  fontWeight: 900
+                }}
+              >
+                ✓
+              </span>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '2px' }}>
+                <strong style={{ fontSize: '1.05rem', color: '#FFFFFF' }}>Vinay (ವಿನಯ್)</strong>
+                <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', fontSize: '0.68rem', fontWeight: 800, padding: '2px 8px', borderRadius: '12px' }}>
+                  DEVELOPER
+                </span>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 8px 0', lineHeight: 1.4 }}>
+                {isKannada
+                  ? 'ಮುತ್ತಾಗೊಂದಿ ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್ ಹಾಗೂ ತಂತ್ರಜ್ಞಾನ ವ್ಯವಸ್ಥೆಯನ್ನು ವಿನ್ಯಾಸಗೊಳಿಸಿ ನಿರ್ಮಿಸಿದವರು.'
+                  : 'Lead Developer & Creator of the Muttagundi Digital Village Portal & Community Systems.'}
+              </p>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.7rem', color: '#A7F3D0', background: 'rgba(16,185,129,0.12)', padding: '2px 8px', borderRadius: '6px' }}>
+                  React • TypeScript • Three.js 3D • Gemini AI
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
