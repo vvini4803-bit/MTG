@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
-import { Phone, Mail, Shield, UserCheck, ArrowRight, Check, Lock, UserPlus, LogIn } from 'lucide-react';
+import { Mail, Shield, UserCheck, ArrowRight, Check, Lock, UserPlus, LogIn, User } from 'lucide-react';
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -12,7 +12,6 @@ interface LoginScreenProps {
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onSuccess,
-  onOpenOtp,
   onOpenCreateProfile
 }) => {
   const { isKannada } = useLanguage();
@@ -21,18 +20,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
-    sendPhoneOtp,
-    verifyPhoneOtp,
-    loginWithPhoneDirect,
     unverifiedEmail,
     setUnverifiedEmail
   } = useAuth();
 
-  const [authMethod, setAuthMethod] = useState<'PHONE' | 'EMAIL'>('EMAIL');
   const [emailMode, setEmailMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
-  const [phone, setPhone] = useState('9845012345');
-  const [otpCode, setOtpCode] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,40 +36,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setIsLoading(true);
     setErrorMsg(null);
     const res = await signInWithGoogle();
-    setIsLoading(false);
-    if (res.error) {
-      setErrorMsg(res.error);
-    } else if (res.success) {
-      onSuccess();
-    }
-  };
-
-  const handleSendPhoneOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone || phone.length < 10) {
-      setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು 10 ಅಂಕಿಗಳ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ' : 'Enter valid 10-digit phone number');
-      return;
-    }
-    setIsLoading(true);
-    setErrorMsg(null);
-    const res = await sendPhoneOtp(phone, 'login-recaptcha-container');
-    setIsLoading(false);
-    if (res.error) {
-      setErrorMsg(res.error);
-    } else if (res.success) {
-      setOtpSent(true);
-    }
-  };
-
-  const handleVerifyPhoneOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otpCode || otpCode.length !== 6) {
-      setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು 6 ಅಂಕಿಗಳ OTP ನಮೂದಿಸಿ' : 'Enter valid 6-digit OTP');
-      return;
-    }
-    setIsLoading(true);
-    setErrorMsg(null);
-    const res = await verifyPhoneOtp(otpCode);
     setIsLoading(false);
     if (res.error) {
       setErrorMsg(res.error);
@@ -142,8 +101,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             : 'Secure access for news posting, event RSVP, and village updates'}
         </p>
 
-        {/* Invisible reCAPTCHA container for Phone Auth */}
-        <div id="login-recaptcha-container"></div>
 
         {/* Google Sign-in Option */}
         <button
@@ -179,7 +136,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
         </div>
 
-        {/* Auth Method Tabs */}
+        {/* Mode Toggle (Sign In / Register) */}
         <div
           style={{
             display: 'flex',
@@ -192,18 +149,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           <button
             type="button"
             onClick={() => {
-              setAuthMethod('PHONE');
+              setEmailMode('LOGIN');
               setErrorMsg(null);
             }}
             style={{
               flex: 1,
-              padding: '8px',
+              padding: '10px',
               border: 'none',
               borderRadius: 'var(--radius-sm)',
-              background: authMethod === 'PHONE' ? 'var(--accent-emerald)' : 'transparent',
+              background: emailMode === 'LOGIN' ? 'var(--accent-emerald)' : 'transparent',
               color: '#FFFFFF',
-              fontWeight: 600,
-              fontSize: '0.82rem',
+              fontWeight: 700,
+              fontSize: '0.84rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -211,24 +168,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               gap: '6px'
             }}
           >
-            <Phone size={14} />
-            <span>{isKannada ? 'ಮೊಬೈಲ್ OTP' : 'Phone OTP'}</span>
+            <LogIn size={15} />
+            <span>{isKannada ? 'ಸೈನ್ ಇನ್' : 'Sign In'}</span>
           </button>
           <button
             type="button"
             onClick={() => {
-              setAuthMethod('EMAIL');
+              setEmailMode('REGISTER');
               setErrorMsg(null);
             }}
             style={{
               flex: 1,
-              padding: '8px',
+              padding: '10px',
               border: 'none',
               borderRadius: 'var(--radius-sm)',
-              background: authMethod === 'EMAIL' ? 'var(--accent-emerald)' : 'transparent',
+              background: emailMode === 'REGISTER' ? 'var(--accent-emerald)' : 'transparent',
               color: '#FFFFFF',
-              fontWeight: 600,
-              fontSize: '0.82rem',
+              fontWeight: 700,
+              fontSize: '0.84rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -236,8 +193,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               gap: '6px'
             }}
           >
-            <Mail size={14} />
-            <span>{isKannada ? 'ಇಮೇಲ್' : 'Email'}</span>
+            <UserPlus size={15} />
+            <span>{isKannada ? 'ಹೊಸ ಖಾತೆ ನೋಂದಣಿ' : 'Register Account'}</span>
           </button>
         </div>
 
@@ -249,144 +206,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               borderRadius: 'var(--radius-md)',
               padding: '12px 14px',
               color: '#FCA5A5',
-              fontSize: '0.8rem',
+              fontSize: '0.82rem',
               marginBottom: '16px',
               textAlign: 'left',
               lineHeight: 1.5
             }}
           >
-            <div>{errorMsg}</div>
-            {(errorMsg.includes('Billing') || errorMsg.includes('billing-not-enabled') || errorMsg.includes('region') || errorMsg.includes('testing')) && phone && (
-              <button
-                type="button"
-                onClick={async () => {
-                  if (loginWithPhoneDirect) {
-                    setIsLoading(true);
-                    await loginWithPhoneDirect(phone);
-                    setIsLoading(false);
-                    onSuccess();
-                  }
-                }}
-                style={{
-                  marginTop: '10px',
-                  width: '100%',
-                  padding: '10px 12px',
-                  background: 'var(--accent-emerald)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '0.82rem',
-                  cursor: 'pointer'
-                }}
-              >
-                {isKannada ? `+91 ${phone} ಮೂಲಕ ನೇರವಾಗಿ ಪ್ರವೇಶಿಸಿ (ಉಚಿತ)` : `Instant Sign In as +91 ${phone} (Free Testing)`}
-              </button>
-            )}
+            {errorMsg}
           </div>
         )}
 
-        {authMethod === 'PHONE' ? (
-          !otpSent ? (
-            <form onSubmit={handleSendPhoneOtp}>
-              <div className="form-group" style={{ textAlign: 'left' }}>
-                <label className="form-label">
-                  {isKannada ? 'ಮೊಬೈಲ್ ಸಂಖ್ಯೆ (+91)' : 'Mobile Phone Number (+91)'}
-                </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span
-                    style={{
-                      background: 'rgba(0,0,0,0.3)',
-                      border: '1px solid var(--glass-border)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '12px 14px',
-                      fontWeight: 700,
-                      color: 'var(--text-secondary)'
-                    }}
-                  >
-                    +91
-                  </span>
-                  <input
-                    type="tel"
-                    className="form-input"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    placeholder="9845012345"
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary"
-                style={{ width: '100%', height: '48px', fontSize: '0.95rem', marginBottom: '16px' }}
-              >
-                <span>{isLoading ? (isKannada ? 'ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ...' : 'Sending...') : (isKannada ? 'OTP SMS ಕಳುಹಿಸಿ' : 'Send 6-Digit OTP')}</span>
-                <ArrowRight size={18} />
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyPhoneOtp}>
-              <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                  {isKannada ? `OTP ಕೋಡ್ ಅನ್ನು ${phone} ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ` : `OTP sent via SMS to +91 ${phone}`}
-                </p>
-              </div>
-
-              <div className="form-group" style={{ textAlign: 'left' }}>
-                <label className="form-label">
-                  {isKannada ? '6 ಅಂಕಿಗಳ OTP ಕೋಡ್' : 'Enter 6-Digit OTP'}
-                </label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="123456"
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    textAlign: 'center',
-                    fontSize: '1.4rem',
-                    letterSpacing: '8px',
-                    fontWeight: 800,
-                    borderRadius: 'var(--radius-md)',
-                    background: 'rgba(0, 0, 0, 0.25)',
-                    border: '1px solid var(--glass-border)',
-                    color: '#FFFFFF'
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary"
-                style={{ width: '100%', height: '48px', fontSize: '0.95rem', marginBottom: '12px' }}
-              >
-                <span>{isLoading ? (isKannada ? 'ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...' : 'Verifying...') : (isKannada ? 'ದೃಢೀಕರಿಸಿ ಮತ್ತು ಪ್ರವೇಶಿಸಿ' : 'Verify & Sign In')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setOtpSent(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-secondary)',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  marginBottom: '16px'
-                }}
-              >
-                {isKannada ? '← ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಬದಲಾಯಿಸಿ' : '← Change Phone Number'}
-              </button>
-            </form>
-          )
-        ) : verificationEmail ? (
+        {verificationEmail ? (
           <div style={{ textAlign: 'center', padding: '12px 4px' }}>
             <div
               style={{
@@ -409,7 +239,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               {isKannada ? 'ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ' : 'Verify Your Email'}
             </h3>
 
-            {/* Exact Required Verification Message */}
             <p
               style={{
                 fontSize: '0.9rem',
@@ -425,7 +254,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               We have sent you a verification email to <strong style={{ color: '#60A5FA' }}>{verificationEmail}</strong>. Please verify it and log in.
             </p>
 
-            {/* Login Button on Verification Screen */}
             <button
               type="button"
               onClick={() => {
@@ -453,67 +281,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
         ) : (
           <form onSubmit={handleEmailSubmit}>
-            {/* Email Mode Toggle (Sign In / Register) */}
-            <div
-              style={{
-                display: 'flex',
-                background: 'rgba(0, 0, 0, 0.25)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '3px',
-                marginBottom: '16px'
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setEmailMode('LOGIN');
-                  setErrorMsg(null);
-                }}
-                style={{
-                  flex: 1,
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  background: emailMode === 'LOGIN' ? 'var(--accent-emerald)' : 'transparent',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '5px'
-                }}
-              >
-                <LogIn size={13} />
-                <span>{isKannada ? 'ಸೈನ್ ಇನ್' : 'Sign In'}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmailMode('REGISTER');
-                  setErrorMsg(null);
-                }}
-                style={{
-                  flex: 1,
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  background: emailMode === 'REGISTER' ? 'var(--accent-emerald)' : 'transparent',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '5px'
-                }}
-              >
-                <UserPlus size={13} />
-                <span>{isKannada ? 'ನೋಂದಣಿ' : 'Register'}</span>
-              </button>
-            </div>
+            {emailMode === 'REGISTER' && (
+              <div className="form-group" style={{ textAlign: 'left', marginBottom: '14px' }}>
+                <label className="form-label">{isKannada ? 'ನಿಮ್ಮ ಪೂರ್ಣ ಹೆಸರು' : 'Full Name (Optional)'}</label>
+                <div style={{ position: 'relative' }}>
+                  <User
+                    size={16}
+                    color="#94A3B8"
+                    style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
+                  />
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ paddingLeft: '40px' }}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Ramesh Gowda"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="form-group" style={{ textAlign: 'left' }}>
               <label className="form-label">{isKannada ? 'ಇಮೇಲ್ ವಿಳಾಸ' : 'Email Address'}</label>

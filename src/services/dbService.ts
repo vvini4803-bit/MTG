@@ -463,10 +463,17 @@ class DatabaseService {
     if (isFirebaseConfigured && db) {
       try {
         const q = query(collection(db, 'news'), orderBy('created_at', 'desc'));
-        return onSnapshot(q, (snapshot) => {
-          const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as NewsItem));
-          callback(items.length > 0 ? items : this.news);
-        });
+        return onSnapshot(
+          q,
+          (snapshot) => {
+            const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as NewsItem));
+            callback(items.length > 0 ? items : this.news);
+          },
+          (err) => {
+            console.warn('Firestore news listener fallback:', err);
+            callback(this.news);
+          }
+        );
       } catch (err) {
         console.warn('Firestore news listener fallback:', err);
       }
@@ -887,6 +894,30 @@ class DatabaseService {
 
   // --- GALLERY ---
   public subscribeGallery(callback: (gal: GalleryItem[]) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(collection(db, 'gallery'), orderBy('created_at', 'desc'));
+        return onSnapshot(
+          q,
+          (snapshot) => {
+            const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as GalleryItem));
+            if (items.length > 0) {
+              this.gallery = items;
+              this.saveCollection('gallery', items);
+              callback(items);
+            } else {
+              callback(this.gallery);
+            }
+          },
+          (err) => {
+            console.warn('Firestore gallery listener fallback:', err);
+            callback(this.gallery);
+          }
+        );
+      } catch (err) {
+        console.warn('Firestore gallery query fallback:', err);
+      }
+    }
     return this.subscribe('gallery', this.gallery, callback);
   }
 
@@ -899,6 +930,15 @@ class DatabaseService {
       created_at: new Date().toISOString(),
       is_demo: false
     };
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'gallery', newItem.id), newItem);
+      } catch (e) {
+        console.warn('Firestore gallery setDoc fallback:', e);
+      }
+    }
+
     this.gallery = [newItem, ...this.gallery];
     this.saveCollection('gallery', this.gallery);
     realtimeSync.broadcast('PHOTO_ADDED', newItem);

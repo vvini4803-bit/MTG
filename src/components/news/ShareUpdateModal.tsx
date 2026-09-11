@@ -135,7 +135,7 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
     e.preventDefault();
     if (!headline.trim()) return;
 
-    // Create new news record with CHECKING status
+    // Create new news record with COMMUNITY_REPORT status so it displays instantly
     await dbService.addNews({
       author_id: currentUser?.uid || 'guest_resident',
       author_name: currentUser?.name || (isKannada ? 'ಗ್ರಾಮಸ್ಥರು' : 'Village Resident'),
@@ -147,7 +147,7 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
       category: category as any,
       media_url: imagePreview || undefined,
       media_type: imagePreview ? 'IMAGE' : undefined,
-      verification_status: 'PENDING', // Displayed as 🟡 CHECKING in trust badge
+      verification_status: 'COMMUNITY_REPORT', // Displayed as Community Report immediately
       urgent: false,
       pinned: false,
       is_demo: false
