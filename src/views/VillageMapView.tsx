@@ -49,6 +49,7 @@ export interface MapLocationItem {
   phone?: string;
   coords: { lat: number; lng: number };
   verified: boolean;
+  map_url?: string;
 }
 
 // Authentic Verified Landmarks for Muttagundi, Hosadurga Taluk, Chitradurga District
@@ -67,7 +68,8 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     timings_en: '8:00 AM - 9:00 PM',
     timings_kn: 'ಬೆಳಗ್ಗೆ ೮:೦೦ - ರಾತ್ರಿ ೯:೦೦',
     phone: '+91 98450 00001',
-    coords: { lat: 13.8052, lng: 76.2915 },
+    coords: { lat: 13.7562, lng: 76.3335 },
+    map_url: 'https://maps.app.goo.gl/sAMg2991XNuzLqNt6?g_st=ac',
     verified: true
   },
   {
@@ -83,23 +85,25 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     distance_kn: 'ಪೂರ್ವ ಬಡಾವಣೆ',
     timings_en: '6:00 AM - 12:30 PM & 5:30 PM - 8:30 PM',
     timings_kn: 'ಬೆಳಗ್ಗೆ ೬:೦೦ - ೧೨:೩೦ & ಸಂಜೆ ೫:೩೦ - ೮:೩೦',
-    coords: { lat: 13.8061, lng: 76.2928 },
+    coords: { lat: 13.7565, lng: 76.3340 },
+    map_url: 'https://maps.app.goo.gl/njPyjtKZy3bfkx4s8?g_st=ac',
     verified: true
   },
   {
     id: 'mtg_temple_kalle_devar',
-    name_en: 'Kalle Devar Gudi',
-    name_kn: 'ಕಲ್ಲೇ ದೇವರ ಗುಡಿ',
+    name_en: 'Kalle Devar Gudi (Sri Kalleshwara Swamy)',
+    name_kn: 'ಕಲ್ಲೇ ದೇವರ ಗುಡಿ (ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ)',
     category: 'TEMPLE',
     icon: '🛕',
     color: '#8B5CF6',
-    desc_en: 'Traditional sacred village deity shrine of Kalle Devaru.',
-    desc_kn: 'ಗ್ರಾಮದ ಶ್ರದ್ಧಾ ಕೇಂದ್ರವಾದ ಕಲ್ಲೇ ದೇವರ ಗುಡಿ ಮತ್ತು ವಾರ್ಷಿಕ ಪೂಜಾ ಆಚರಣೆ.',
+    desc_en: 'Traditional sacred village deity shrine of Sri Kalleshwara Swamy (Kalle Devaru).',
+    desc_kn: 'ಗ್ರಾಮದ ಶ್ರದ್ಧಾ ಕೇಂದ್ರವಾದ ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ (ಕಲ್ಲೇ ದೇವರ ಗುಡಿ) ಮತ್ತು ವಾರ್ಷಿಕ ಪೂಜಾ ಆಚರಣೆ.',
     distance_en: 'South Side',
     distance_kn: 'ದಕ್ಷಿಣ ಭಾಗ',
     timings_en: 'Open all day for darshan',
     timings_kn: 'ದಿನವಿಡೀ ದರ್ಶನ ಲಭ್ಯ',
-    coords: { lat: 13.8070, lng: 76.2935 },
+    coords: { lat: 13.756878, lng: 76.333628 },
+    map_url: 'https://maps.app.goo.gl/6P79MeqguXf8jnMm6?g_st=ac',
     verified: true
   },
   {
@@ -115,7 +119,7 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     distance_kn: 'ಶಾಲೆ ರಸ್ತೆ',
     timings_en: '9:30 AM - 4:30 PM',
     timings_kn: 'ಬೆಳಗ್ಗೆ ೯:೩೦ - ಸಂಜೆ ೪:೩೦',
-    coords: { lat: 13.8040, lng: 76.2905 },
+    coords: { lat: 13.7554, lng: 76.3330 },
     verified: true
   },
   {
@@ -132,7 +136,8 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     timings_en: '9:00 AM - 4:00 PM',
     timings_kn: 'ಬೆಳಗ್ಗೆ ೯:೦೦ - ಸಂಜೆ ೪:೦೦',
     phone: '108',
-    coords: { lat: 13.8035, lng: 76.2898 },
+    coords: { lat: 13.755753, lng: 76.333753 },
+    map_url: 'https://maps.app.goo.gl/macDiSpwTv3XUxNfA?g_st=ac',
     verified: true
   },
   {
@@ -148,7 +153,7 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     distance_kn: 'ಕೆರೆ ಏರಿ ಹತ್ತಿರ',
     timings_en: '24 Hours Open',
     timings_kn: '೨೪ ಗಂಟೆ ಲಭ್ಯ',
-    coords: { lat: 13.8048, lng: 76.2920 },
+    coords: { lat: 13.7560, lng: 76.3332 },
     verified: true
   },
   {
@@ -164,7 +169,7 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     distance_kn: 'ಮುಖ್ಯ ರಸ್ತೆ ವೃತ್ತ',
     timings_en: 'Frequent Buses 6:00 AM - 9:00 PM',
     timings_kn: 'ಬೆಳಗ್ಗೆ ೬:೦೦ ರಿಂದ ರಾತ್ರಿ ೯:೦೦ ರವರೆಗೆ ಬಸ್ ಸಂಚಾರ',
-    coords: { lat: 13.8070, lng: 76.2935 },
+    coords: { lat: 13.7570, lng: 76.3345 },
     verified: true
   },
   {
@@ -180,7 +185,7 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     distance_kn: 'ಪಶ್ಚಿಮ ಮತ್ತು ದಕ್ಷಿಣ ಹೊರವಲಯ',
     timings_en: 'Open Field Area',
     timings_kn: 'ಮುಕ್ತ ಕೃಷಿ ಪ್ರದೇಶ',
-    coords: { lat: 13.8055, lng: 76.2885 },
+    coords: { lat: 13.7550, lng: 76.3320 },
     verified: true
   }
 ];
@@ -459,19 +464,23 @@ export const VillageMapView: React.FC = () => {
   }
 
   // Active Coordinates to display on map
-  const activeLat = isFocusedOnUser && userCoords ? userCoords.lat : selectedLocation?.coords.lat || 13.8052;
-  const activeLng = isFocusedOnUser && userCoords ? userCoords.lng : selectedLocation?.coords.lng || 76.2915;
+  const activeLat = isFocusedOnUser && userCoords ? userCoords.lat : selectedLocation?.coords.lat || 13.7562;
+  const activeLng = isFocusedOnUser && userCoords ? userCoords.lng : selectedLocation?.coords.lng || 76.3335;
 
   // Google Maps Directions link from user's current GPS location
   const getGoogleMapsDirectionsUrl = (loc: MapLocationItem, mode: 'driving' | 'walking' = 'driving') => {
     if (userCoords) {
       return `https://www.google.com/maps/dir/?api=1&origin=${userCoords.lat},${userCoords.lng}&destination=${loc.coords.lat},${loc.coords.lng}&travelmode=${mode}`;
     }
+    if (loc.map_url) {
+      return loc.map_url;
+    }
     return `https://www.google.com/maps/search/?api=1&query=${loc.coords.lat},${loc.coords.lng}`;
   };
 
   // Google Maps Native App launcher (deep link for mobile)
-  const getGoogleMapsAppUrl = (lat: number, lng: number, label: string) => {
+  const getGoogleMapsAppUrl = (lat: number, lng: number, label: string, directUrl?: string) => {
+    if (directUrl) return directUrl;
     return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${encodeURIComponent(label)}`;
   };
 
@@ -479,8 +488,8 @@ export const VillageMapView: React.FC = () => {
     e.preventDefault();
     if (!suggestName.trim()) return;
 
-    const lat = suggestLat ? parseFloat(suggestLat) : userCoords ? userCoords.lat : 13.8052;
-    const lng = suggestLng ? parseFloat(suggestLng) : userCoords ? userCoords.lng : 76.2915;
+    const lat = suggestLat ? parseFloat(suggestLat) : userCoords ? userCoords.lat : 13.7562;
+    const lng = suggestLng ? parseFloat(suggestLng) : userCoords ? userCoords.lng : 76.3335;
 
     const newLoc: MapLocationItem = {
       id: 'loc_' + Date.now(),
@@ -832,7 +841,11 @@ export const VillageMapView: React.FC = () => {
 
             {/* Open Active in Google Maps Native App */}
             <a
-              href={getGoogleMapsAppUrl(activeLat, activeLng, isFocusedOnUser ? 'My Location' : selectedLocation?.name_en || 'Muttagundi')}
+              href={
+                isFocusedOnUser && userCoords
+                  ? `https://www.google.com/maps/search/?api=1&query=${userCoords.lat},${userCoords.lng}`
+                  : (selectedLocation?.map_url || getGoogleMapsAppUrl(activeLat, activeLng, selectedLocation?.name_en || 'Muttagundi'))
+              }
               target="_blank"
               rel="noreferrer"
               style={{
@@ -1032,6 +1045,31 @@ export const VillageMapView: React.FC = () => {
                 </a>
               )}
 
+              {/* Official Google Maps Link */}
+              {selectedLocation.map_url && (
+                <a
+                  href={selectedLocation.map_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                    color: '#FFFFFF',
+                    borderRadius: '24px',
+                    padding: '8px 16px',
+                    fontSize: '0.84rem',
+                    fontWeight: 800,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+                  }}
+                >
+                  <ExternalLink size={15} />
+                  <span>{isKannada ? 'ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್ ಲಿಂಕ್' : 'View on Google Maps'}</span>
+                </a>
+              )}
+
               {/* Driving Directions */}
               <a
                 href={getGoogleMapsDirectionsUrl(selectedLocation, 'driving')}
@@ -1149,7 +1187,7 @@ export const VillageMapView: React.FC = () => {
 
                   {/* Quick Google Maps Button */}
                   <a
-                    href={getGoogleMapsDirectionsUrl(loc, 'driving')}
+                    href={loc.map_url || getGoogleMapsDirectionsUrl(loc, 'driving')}
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => e.stopPropagation()}

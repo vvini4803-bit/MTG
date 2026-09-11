@@ -72,6 +72,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     sub_kn: string;
     icon: string;
     color: string;
+    map_url?: string;
   }[] = [
     {
       id: 'panchayat',
@@ -80,7 +81,8 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
       sub_en: 'Shops',
       sub_kn: 'ಅಂಗಡಿಗಳು',
       icon: '🏛️',
-      color: '#10B981'
+      color: '#10B981',
+      map_url: 'https://maps.app.goo.gl/sAMg2991XNuzLqNt6?g_st=ac'
     },
     {
       id: 'temple',
@@ -89,7 +91,8 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
       sub_en: 'Temple',
       sub_kn: 'ದೇವಾಲಯ',
       icon: '🛕',
-      color: '#F59E0B'
+      color: '#F59E0B',
+      map_url: 'https://maps.app.goo.gl/njPyjtKZy3bfkx4s8?g_st=ac'
     },
     {
       id: 'school',
@@ -116,7 +119,8 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
       sub_en: 'Temple',
       sub_kn: 'ದೇವಾಲಯ',
       icon: '🛕',
-      color: '#8B5CF6'
+      color: '#8B5CF6',
+      map_url: 'https://maps.app.goo.gl/6P79MeqguXf8jnMm6?g_st=ac'
     },
     {
       id: 'kindergarden',
@@ -125,7 +129,8 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
       sub_en: 'Children',
       sub_kn: 'ಮಕ್ಕಳು',
       icon: '👶',
-      color: '#FFB3D9'
+      color: '#FFB3D9',
+      map_url: 'https://maps.app.goo.gl/macDiSpwTv3XUxNfA?g_st=ac'
     },
     {
       id: 'water',
