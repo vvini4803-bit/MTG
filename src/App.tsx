@@ -225,8 +225,8 @@ export const App: React.FC = () => {
       id: 'map' as MainSection,
       title_en: 'VILLAGE MAP',
       title_kn: 'ನಮ್ಮ ಊರಿನ ನಕ್ಷೆ',
-      subtitle_en: 'Temples, schools, clinic & places',
-      subtitle_kn: 'ಶಾಲೆ, ಆಸ್ಪತ್ರೆ, ನೀರಿನ ಘಟಕ & ದಾರಿ',
+      subtitle_en: '3D Village model, landmarks & live GPS navigation',
+      subtitle_kn: '3D ಗ್ರಾಮ ಮಾದರಿ, ಪ್ರಮುಖ ಸ್ಥಳಗಳು & ಜಿಪಿಎಸ್ ದಾರಿ',
       icon: '🗺️',
       color: '#3B82F6',
       bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(29, 78, 216, 0.08) 100%)'

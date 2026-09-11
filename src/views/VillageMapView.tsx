@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { realtimeSync } from '../services/realtimeSync';
+import { Village3DScene, LandmarkId } from '../components/3d/Village3DScene';
 import {
   MapPin,
   Navigation,
@@ -229,9 +230,32 @@ export const VillageMapView: React.FC = () => {
   const [sortByNearest, setSortByNearest] = useState(false);
   const [showSuggestModal, setShowSuggestModal] = useState(false);
 
-  // Map view controls: 'satellite' or 'roadmap'
-  const [mapType, setMapType] = useState<'m' | 'k'>('m'); // m = roadmap, k = satellite
+  // Map view mode: '3d', 'roadmap', or 'satellite'
+  const [viewMode, setViewMode] = useState<'3d' | 'roadmap' | 'satellite'>('3d');
   const [isFocusedOnUser, setIsFocusedOnUser] = useState(false);
+
+  // Sync selection from 3D Village model to locations list
+  const handle3DLandmarkSelect = (landmarkId: LandmarkId) => {
+    let match: MapLocationItem | undefined;
+    if (landmarkId === 'temple') {
+      match = locations.find((l) => l.category === 'TEMPLE' || l.id.includes('temple'));
+    } else if (landmarkId === 'panchayat') {
+      match = locations.find((l) => l.category === 'HALL' || l.id.includes('panchayat'));
+    } else if (landmarkId === 'school') {
+      match = locations.find((l) => l.category === 'SCHOOL' || l.id.includes('school'));
+    } else if (landmarkId === 'clinic') {
+      match = locations.find((l) => l.category === 'HEALTH' || l.id.includes('health'));
+    } else if (landmarkId === 'sports') {
+      match = locations.find((l) => l.category === 'SPORTS' || l.id.includes('sports'));
+    } else if (landmarkId === 'water') {
+      match = locations.find((l) => l.category === 'WATER' || l.id.includes('water'));
+    }
+
+    if (match) {
+      setSelectedLocation(match);
+      setIsFocusedOnUser(false);
+    }
+  };
 
   // Suggest Location Form
   const [suggestName, setSuggestName] = useState('');
@@ -701,38 +725,65 @@ export const VillageMapView: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Map Type Toggle: Roadmap vs Satellite */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* View Mode Toggle: 3D Village vs Roadmap vs Satellite */}
             <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '14px', padding: '2px' }}>
               <button
-                onClick={() => setMapType('m')}
+                onClick={() => setViewMode('3d')}
                 style={{
                   padding: '5px 12px',
                   borderRadius: '12px',
                   border: 'none',
-                  background: mapType === 'm' ? '#10B981' : 'transparent',
+                  background: viewMode === '3d' ? '#10B981' : 'transparent',
                   color: '#FFFFFF',
                   fontSize: '0.76rem',
                   fontWeight: 800,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
                 }}
               >
-                {isKannada ? 'ರಸ್ತೆ ನಕ್ಷೆ' : 'Road Map'}
+                <span>🌐</span>
+                <span>{isKannada ? '3D ಗ್ರಾಮ' : '3D Village'}</span>
               </button>
               <button
-                onClick={() => setMapType('k')}
+                onClick={() => setViewMode('roadmap')}
                 style={{
                   padding: '5px 12px',
                   borderRadius: '12px',
                   border: 'none',
-                  background: mapType === 'k' ? '#10B981' : 'transparent',
+                  background: viewMode === 'roadmap' ? '#10B981' : 'transparent',
                   color: '#FFFFFF',
                   fontSize: '0.76rem',
                   fontWeight: 800,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
                 }}
               >
-                {isKannada ? 'ಉಪಗ್ರಹ ನೋಟ' : 'Satellite'}
+                <span>🗺️</span>
+                <span>{isKannada ? 'ರಸ್ತೆ ನಕ್ಷೆ' : 'Road Map'}</span>
+              </button>
+              <button
+                onClick={() => setViewMode('satellite')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: viewMode === 'satellite' ? '#10B981' : 'transparent',
+                  color: '#FFFFFF',
+                  fontSize: '0.76rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>🛰️</span>
+                <span>{isKannada ? 'ಉಪಗ್ರಹ' : 'Satellite'}</span>
               </button>
             </div>
 
@@ -761,18 +812,28 @@ export const VillageMapView: React.FC = () => {
           </div>
         </div>
 
-        {/* Embedded Google Map Iframe */}
-        <div style={{ width: '100%', height: '360px', position: 'relative', background: '#0F1D36' }}>
-          <iframe
-            title="Google Maps Village Viewer"
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            loading="lazy"
-            allowFullScreen
-            src={`https://maps.google.com/maps?q=${activeLat},${activeLng}&t=${mapType}&z=16&ie=UTF8&iwloc=&output=embed`}
-          />
-        </div>
+        {/* View Mode Display: 3D Scene OR Embedded Google Map Iframe */}
+        {viewMode === '3d' ? (
+          <div style={{ width: '100%', position: 'relative' }}>
+            <Village3DScene
+              selectedId={selectedLocation?.id}
+              onSelect={handle3DLandmarkSelect}
+              isKannada={isKannada}
+            />
+          </div>
+        ) : (
+          <div style={{ width: '100%', height: '380px', position: 'relative', background: '#0F1D36' }}>
+            <iframe
+              title="Google Maps Village Viewer"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              loading="lazy"
+              allowFullScreen
+              src={`https://maps.google.com/maps?q=${activeLat},${activeLng}&t=${viewMode === 'satellite' ? 'k' : 'm'}&z=16&ie=UTF8&iwloc=&output=embed`}
+            />
+          </div>
+        )}
       </div>
 
       {/* Search Input */}
