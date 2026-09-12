@@ -53,6 +53,60 @@ import {
   orderBy
 } from 'firebase/firestore';
 
+export const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function isWithinOneWeek(dateStr?: string): boolean {
+  if (!dateStr) return true;
+  const timestamp = new Date(dateStr).getTime();
+  if (isNaN(timestamp)) return true;
+  const now = Date.now();
+  // Within past 7 days (or in future)
+  return (now - timestamp) <= ONE_WEEK_MS;
+}
+
+export function getOneWeekStatus(dateStr?: string): {
+  isWithinWeek: boolean;
+  daysRemaining: number;
+  expiryDateStr: string;
+  labelEn: string;
+  labelKn: string;
+} {
+  if (!dateStr) {
+    return {
+      isWithinWeek: true,
+      daysRemaining: 7,
+      expiryDateStr: '',
+      labelEn: 'Active (This Week)',
+      labelKn: 'ಈ ವಾರ ಸಕ್ರಿಯ'
+    };
+  }
+  const timestamp = new Date(dateStr).getTime();
+  if (isNaN(timestamp)) {
+    return {
+      isWithinWeek: true,
+      daysRemaining: 7,
+      expiryDateStr: '',
+      labelEn: 'Active (This Week)',
+      labelKn: 'ಈ ವಾರ ಸಕ್ರಿಯ'
+    };
+  }
+  const expiryTime = timestamp + ONE_WEEK_MS;
+  const now = Date.now();
+  const diffMs = expiryTime - now;
+  const isWithinWeek = diffMs > 0;
+  const daysRemaining = Math.max(0, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
+  const expiryDate = new Date(expiryTime);
+  const expiryDateStr = expiryDate.toISOString().split('T')[0];
+
+  return {
+    isWithinWeek,
+    daysRemaining,
+    expiryDateStr,
+    labelEn: isWithinWeek ? `Active (${daysRemaining}d left in week)` : 'Archived (Older than 1 week)',
+    labelKn: isWithinWeek ? `ಈ ವಾರ ಸಕ್ರಿಯ (${daysRemaining} ದಿನ ಬಾಕಿ)` : 'ಹಿಂದಿನ ದಾಖಲೆ (1 ವಾರ ಮೀರಿದೆ)'
+  };
+}
+
 class DatabaseService {
   private news: NewsItem[] = [];
   private events: EventItem[] = [];
@@ -122,8 +176,36 @@ class DatabaseService {
     this.userBlocks = this.loadCollection('user_blocks', []);
     this.notifications = this.loadCollection('notifications', []);
 
-    // Purge any stale demo entries from previous sessions
+    // Ensure all stored user updates are auto-verified and have 1-week active status
+    this.ensureAutoVerificationAndRetention();
+
+    // Purge any explicit demo entries from previous sessions (never delete real user uploads)
     this.purgeStaleDemoData();
+  }
+
+  private ensureAutoVerificationAndRetention() {
+    try {
+      let changed = false;
+      this.news = this.news.map((item) => {
+        const needsVerification = item.verification_status !== 'VERIFIED';
+        const needsActiveUntil = !item.active_until;
+        if (needsVerification || needsActiveUntil) {
+          changed = true;
+          return {
+            ...item,
+            verification_status: 'VERIFIED',
+            auto_verified: true,
+            active_until: item.active_until || new Date(new Date(item.created_at || Date.now()).getTime() + ONE_WEEK_MS).toISOString()
+          };
+        }
+        return item;
+      });
+      if (changed) {
+        this.saveCollection('news', this.news);
+      }
+    } catch (e) {
+      console.warn('Could not auto-verify existing news:', e);
+    }
   }
 
   private purgeStaleDemoData() {
@@ -133,10 +215,16 @@ class DatabaseService {
         const itemStr = localStorage.getItem(`gramasiri_${k}`);
         if (itemStr) {
           const parsed = JSON.parse(itemStr);
-          if (Array.isArray(parsed) && parsed.some((item: any) => item.is_demo || (item.id && typeof item.id === 'string' && (item.id.startsWith('news_') || item.id.startsWith('event_') || item.id.startsWith('crop_') || item.id.startsWith('tourn_') || item.id.startsWith('temple_') || item.id.startsWith('ach_') || item.id.startsWith('gal_'))))) {
-            localStorage.setItem(`gramasiri_${k}`, JSON.stringify([]));
-            (this as any)[k] = [];
-            this.emit(k, []);
+          if (Array.isArray(parsed)) {
+            // ONLY remove explicit demo items if demo mode is disabled; NEVER remove real user uploads!
+            if (!this.isDemoMode) {
+              const cleaned = parsed.filter((item: any) => !item.is_demo);
+              if (cleaned.length !== parsed.length) {
+                localStorage.setItem(`gramasiri_${k}`, JSON.stringify(cleaned));
+                (this as any)[k] = cleaned;
+                this.emit(k, cleaned);
+              }
+            }
           }
         }
       }
@@ -482,11 +570,21 @@ class DatabaseService {
   }
 
   public async addNews(newsItem: Omit<NewsItem, 'id' | 'created_at' | 'updated_at' | 'likes_count' | 'liked_by' | 'comments_count' | 'reports_count'>): Promise<NewsItem> {
+    const now = new Date();
+    const created_at = now.toISOString();
+    const active_until = new Date(now.getTime() + ONE_WEEK_MS).toISOString();
+
     const newItem: NewsItem = {
       ...newsItem,
       id: 'news_' + Date.now(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      created_at,
+      updated_at: created_at,
+      active_until,
+      verification_status: 'VERIFIED', // Automatically verified for every upload!
+      auto_verified: true,
+      verified_by: newsItem.verified_by || newsItem.author_id,
+      verified_by_name: newsItem.verified_by_name || newsItem.author_name,
+      verified_at: newsItem.verified_at || created_at,
       likes_count: 0,
       liked_by: [],
       comments_count: 0,
@@ -505,7 +603,7 @@ class DatabaseService {
     this.news = [newItem, ...this.news];
     this.saveCollection('news', this.news);
     realtimeSync.broadcast('NEWS_CREATED', newItem);
-    this.logAudit('CREATE_NEWS', newItem.author_id, newItem.author_name, newItem.id, 'NEWS', `Created: ${newItem.title_en}`);
+    this.logAudit('CREATE_NEWS', newItem.author_id, newItem.author_name, newItem.id, 'NEWS', `Created and auto-verified: ${newItem.title_en}`);
     return newItem;
   }
 
@@ -708,9 +806,12 @@ class DatabaseService {
   }
 
   public async addEvent(event: Omit<EventItem, 'id' | 'participants_count' | 'registered_uids'>): Promise<EventItem> {
+    const now = new Date();
     const newEvent: EventItem = {
       ...event,
       id: 'event_' + Date.now(),
+      created_at: now.toISOString(),
+      active_until: new Date(now.getTime() + ONE_WEEK_MS).toISOString(),
       participants_count: 0,
       registered_uids: [],
       is_demo: false
@@ -922,12 +1023,15 @@ class DatabaseService {
   }
 
   public async addGalleryItem(item: Omit<GalleryItem, 'id' | 'likes_count' | 'liked_by' | 'created_at'>): Promise<GalleryItem> {
+    const now = new Date();
     const newItem: GalleryItem = {
       ...item,
       id: 'gal_' + Date.now(),
       likes_count: 0,
       liked_by: [],
-      created_at: new Date().toISOString(),
+      created_at: now.toISOString(),
+      active_until: new Date(now.getTime() + ONE_WEEK_MS).toISOString(),
+      approved: true,
       is_demo: false
     };
 

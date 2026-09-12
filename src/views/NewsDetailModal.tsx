@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { dbService } from '../services/dbService';
+import { dbService, getOneWeekStatus } from '../services/dbService';
 import { voiceAssistant } from '../services/voiceService';
 import { NewsItem, VerificationStatus } from '../types';
 import {
@@ -48,6 +48,7 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
 
   const title = language === 'kn' ? news.title_kn : news.title_en;
   const content = language === 'kn' ? news.content_kn : news.content_en;
+  const weekStatus = getOneWeekStatus(news.created_at);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -106,7 +107,6 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
       news.verification_status,
       currentUser.uid,
       currentUser.name,
-      correctionInput.trim(),
       correctionInput.trim()
     );
     setShowCorrectionForm(false);
@@ -128,25 +128,32 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {news.verification_status === 'VERIFIED' && (
-              <span className="badge badge-verified">
-                <ShieldCheck size={12} />
-                {isKannada ? 'ದೃಢೀಕೃತ' : 'VERIFIED'}
-              </span>
-            )}
-            {news.verification_status === 'COMMUNITY_REPORT' && (
-              <span className="badge badge-community">
-                {isKannada ? 'ಸಮುದಾಯ ವರದಿ' : 'COMMUNITY REPORT'}
-              </span>
-            )}
-            {news.verification_status === 'PENDING' && (
-              <span className="badge badge-pending">
-                <Clock size={12} />
-                {isKannada ? 'ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ' : 'PENDING VERIFICATION'}
-              </span>
-            )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span className="badge badge-verified">
+              <ShieldCheck size={12} />
+              {isKannada ? 'ದೃಢೀಕೃತ (Auto-Verified)' : 'VERIFIED'}
+            </span>
+
+            {/* 1-Week Active Badge */}
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: '6px',
+                background: weekStatus.isWithinWeek ? 'rgba(16, 185, 129, 0.18)' : 'rgba(148, 163, 184, 0.15)',
+                color: weekStatus.isWithinWeek ? '#34D399' : '#94A3B8',
+                border: `1px solid ${weekStatus.isWithinWeek ? 'rgba(16, 185, 129, 0.35)' : 'rgba(148, 163, 184, 0.2)'}`
+              }}
+            >
+              <Clock size={11} />
+              {isKannada ? weekStatus.labelKn : weekStatus.labelEn}
+            </span>
+
             {news.urgent && (
               <span className="badge badge-urgent">
                 🚨 {isKannada ? 'ತುರ್ತು' : 'URGENT'}

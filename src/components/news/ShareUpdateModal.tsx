@@ -135,19 +135,27 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
     e.preventDefault();
     if (!headline.trim()) return;
 
-    // Create new news record with COMMUNITY_REPORT status so it displays instantly
+    // Create new news record with auto-verified status and 1-week visibility
+    const authorId = currentUser?.uid || ('resident_' + Date.now());
+    const authorName = currentUser?.name || (isKannada ? 'ಗ್ರಾಮಸ್ಥರು' : 'Village Resident');
+    const authorRole = currentUser?.role || 'USER';
+
     await dbService.addNews({
-      author_id: currentUser?.uid || 'guest_resident',
-      author_name: currentUser?.name || (isKannada ? 'ಗ್ರಾಮಸ್ಥರು' : 'Village Resident'),
-      author_role: currentUser?.role || 'USER',
-      title_en: isKannada ? headline : headline,
-      title_kn: isKannada ? headline : headline,
-      content_en: details || headline,
-      content_kn: details || headline,
+      author_id: authorId,
+      author_name: authorName,
+      author_role: authorRole,
+      title_en: headline.trim(),
+      title_kn: headline.trim(),
+      content_en: details.trim() || headline.trim(),
+      content_kn: details.trim() || headline.trim(),
       category: category as any,
       media_url: imagePreview || undefined,
       media_type: imagePreview ? 'IMAGE' : undefined,
-      verification_status: 'COMMUNITY_REPORT', // Displayed as Community Report immediately
+      verification_status: 'VERIFIED', // Auto-verified upon upload!
+      auto_verified: true,
+      verified_by: authorId,
+      verified_by_name: authorName,
+      verified_at: new Date().toISOString(),
       urgent: false,
       pinned: false,
       is_demo: false
@@ -171,7 +179,7 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
           <div>
             <span style={{ fontSize: '0.74rem', color: '#10B981', fontWeight: 800, textTransform: 'uppercase' }}>
-              {isKannada ? 'ಗ್ರಾಮಸ್ಥರ ವರದಿ' : 'Community Contribution'}
+              {isKannada ? '✓ ಸ್ವಯಂಚಾಲಿತ ಪರಿಶೀಲನೆ (Auto-Verified)' : '✓ Auto-Verified Community Feed'}
             </span>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '2px 0 0 0' }}>
               {isKannada ? '➕ ಸುದ್ದಿ / ಮಾಹಿತಿ ಹಂಚಿಕೊಳ್ಳಿ' : '➕ Share Village Update'}
@@ -203,8 +211,8 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
                 width: '64px',
                 height: '64px',
                 borderRadius: '50%',
-                background: 'rgba(245, 158, 11, 0.2)',
-                color: '#F59E0B',
+                background: 'rgba(16, 185, 129, 0.2)',
+                color: '#10B981',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -213,13 +221,13 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
             >
               <CheckCircle2 size={36} />
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px' }}>
-              {isKannada ? 'ವರದಿ ಸಲ್ಲಿಕೆಯಾಗಿದೆ!' : 'Report Submitted!'}
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px', color: '#10B981' }}>
+              {isKannada ? 'ವರದಿ ಯಶಸ್ವಿಯಾಗಿ ಪ್ರಕಟವಾಗಿದೆ (Auto-Verified)!' : 'Update Published & Auto-Verified!'}
             </h3>
-            <p style={{ fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.5, margin: 0 }}>
+            <p style={{ fontSize: '0.88rem', color: '#CBD5E1', lineHeight: 1.5, margin: 0 }}>
               {isKannada
-                ? 'ನಿಮ್ಮ ವರದಿಯನ್ನು 🟡 ಪರಿಶೀಲನೆ (CHECKING) ಹಂತದಲ್ಲಿ ಇರಿಸಲಾಗಿದೆ. ಗ್ರಾಮ ಪಂಚಾಯತಿ ಪರಿಶೀಲಿಸಿದ ಬಳಿಕ ಪ್ರಕಟವಾಗುತ್ತದೆ.'
-                : 'Your report is now marked as 🟡 CHECKING. It will appear on the feed once reviewed by village moderators.'}
+                ? 'ನಿಮ್ಮ ಮಾಹಿತಿ ತಕ್ಷಣವೇ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಪರಿಶೀಲಿಸಲ್ಪಟ್ಟಿದ್ದು 1 ವಾರದವರೆಗೆ ಎಲ್ಲರಿಗೂ ಮುಕ್ತವಾಗಿ ಗೋಚರಿಸುತ್ತದೆ.'
+                : 'Your update has been automatically verified and is stored live for 1 week for everyone.'}
             </p>
           </div>
         ) : (
@@ -467,11 +475,11 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
                 color: '#FCD34D'
               }}
             >
-              <AlertTriangle size={18} color="#F59E0B" style={{ flexShrink: 0 }} />
-              <span>
+              <CheckCircle2 size={18} color="#10B981" style={{ flexShrink: 0 }} />
+              <span style={{ color: '#A7F3D0' }}>
                 {isKannada
-                  ? 'ದೃಢೀಕರಣ ನಿಯಮ: ಸಲ್ಲಿಕೆಯಾದ ಮಾಹಿತಿಯು ಮೊದಲು 🟡 CHECKING ಹಂತದಲ್ಲಿರುತ್ತದೆ. ಪಂಚಾಯತಿ ಅಧಿಕಾರಿಗಳು ಪರಿಶೀಲಿಸಿದ ಬಳಿಕ 🟢 VERIFIED ಆಗುತ್ತದೆ.'
-                  : 'Trust System: Posts start as 🟡 CHECKING and community report. Official verification is granted only by authorized moderators.'}
+                  ? '✅ ಸ್ವಯಂ-ದೃಢೀಕರಣ ಸಕ್ರಿಯ: ನೀವು ಹಂಚಿಕೊಳ್ಳುವ ಎಲ್ಲಾ ಅಪ್‌ಡೇಟ್‌ಗಳು ತಕ್ಷಣವೇ ದೃಢೀಕೃತಗೊಂಡು 1 ವಾರದವರೆಗೆ ಎಲ್ಲರಿಗೂ ಮುಕ್ತವಾಗಿ ಗೋಚರಿಸುತ್ತವೆ.'
+                  : '✅ Auto-Verification Active: All updates uploaded by residents are automatically verified and visible to everyone for 1 week.'}
               </span>
             </div>
 
@@ -497,7 +505,7 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
               }}
             >
               <Send size={18} />
-              <span>{isKannada ? 'ಸಲ್ಲಿಸಿ (SUBMIT)' : 'SUBMIT UPDATE'}</span>
+              <span>{isKannada ? 'ನೇರವಾಗಿ ಪ್ರಕಟಿಸಿ (Auto-Verified)' : 'PUBLISH UPDATE (AUTO-VERIFIED)'}</span>
             </button>
           </form>
         )}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { dbService } from '../services/dbService';
+import { dbService, isWithinOneWeek, getOneWeekStatus } from '../services/dbService';
 import { NewsItem, NewsCategory, VerificationStatus } from '../types';
 import {
   Plus,
@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   Flame,
   CheckCircle,
-  Flag
+  Flag,
+  Calendar
 } from 'lucide-react';
 
 interface NewsFeedScreenProps {
@@ -38,6 +39,7 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [timeFilter, setTimeFilter] = useState<'WEEK' | 'ALL'>('WEEK');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
   }, []);
 
   const categories: Array<{ id: string; label_en: string; label_kn: string }> = [
-    { id: 'ALL', label_en: 'All Updates', label_kn: 'ಎಲ್ಲಾ ಅಪ್‌ಡೇಟ್‌ಗಳು' },
+    { id: 'ALL', label_en: 'All Categories', label_kn: 'ಎಲ್ಲಾ ವರ್ಗಗಳು' },
     { id: 'WATER', label_en: 'Water', label_kn: 'ನೀರು' },
     { id: 'ELECTRICITY', label_en: 'Electricity', label_kn: 'ವಿದ್ಯುತ್' },
     { id: 'ROAD', label_en: 'Road & Transport', label_kn: 'ರಸ್ತೆ & ಸಾರಿಗೆ' },
@@ -64,9 +66,12 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
     await dbService.toggleLikeNews(id, currentUser.uid);
   };
 
+  const activeWeekCount = newsList.filter((item) => isWithinOneWeek(item.created_at)).length;
+
   const filteredNews = newsList.filter((item) => {
     if (selectedCategory !== 'ALL' && item.category !== selectedCategory) return false;
     if (statusFilter !== 'ALL' && item.verification_status !== statusFilter) return false;
+    if (timeFilter === 'WEEK' && !isWithinOneWeek(item.created_at)) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchTitle = item.title_en.toLowerCase().includes(q) || item.title_kn.toLowerCase().includes(q);
@@ -95,8 +100,8 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
           </h1>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
             {isKannada
-              ? 'ದೃಢೀಕೃತ ಪಂಚಾಯತಿ ಪ್ರಕಟಣೆಗಳು ಮತ್ತು ಸಮುದಾಯ ವರದಿಗಳು'
-              : 'Grounded community reports, official updates, and verified news'}
+              ? 'ಪ್ರತಿಯೊಬ್ಬರೂ ಮಾಹಿತಿ ಅಪ್‌ಲೋಡ್ ಮಾಡಬಹುದು • ತಕ್ಷಣ ದೃಢೀಕರಣ (Auto-Verified) • 1 ವಾರ ಲೈವ್'
+              : 'All residents can upload data • Auto-verified upon post • Visible to all for 1 week'}
           </p>
         </div>
 
@@ -110,25 +115,119 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
         </button>
       </div>
 
-      {/* Verification Notice Banner */}
+      {/* 1-Week Active & Auto-Verification Notice Banner */}
       <div
         style={{
-          background: 'rgba(2, 132, 199, 0.1)',
-          border: '1px solid rgba(2, 132, 199, 0.3)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 95, 70, 0.1) 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.35)',
           borderRadius: 'var(--radius-md)',
-          padding: '12px 16px',
+          padding: '14px 18px',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
-          marginBottom: '20px'
+          gap: '14px',
+          marginBottom: '18px',
+          boxShadow: '0 4px 20px rgba(16, 185, 129, 0.08)'
         }}
       >
-        <ShieldCheck size={22} color="#38BDF8" style={{ flexShrink: 0 }} />
-        <span style={{ fontSize: '0.8rem', color: '#BAE6FD', lineHeight: 1.5 }}>
-          {isKannada
-            ? 'ಮಾಹಿತಿ ಶುದ್ಧತೆಯ ನೀತಿ: ನಾಗರಿಕರು ಸಲ್ಲಿಸಿದ ಯಾವುದೇ ವರದಿಯನ್ನು ಪರಿಶೀಲಿಸದೆ ಸತ್ಯವೆಂದು ಪರಿಗಣಿಸಲಾಗುವುದಿಲ್ಲ. ಪರಿಶೀಲನೆಯ ನಂತರ ಹಸಿರು ಬ್ಯಾಡ್ಜ್ ನೀಡಲಾಗುತ್ತದೆ.'
-            : 'Responsible Reporting: Community posts are never automatically marked as true. Authorized moderators verify vital updates.'}
-        </span>
+        <div style={{
+          width: '42px',
+          height: '42px',
+          borderRadius: '50%',
+          background: 'rgba(16, 185, 129, 0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <ShieldCheck size={24} color="#10B981" />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#10B981' }}>
+              {isKannada ? '✓ ಸ್ವಯಂಚಾಲಿತ ಪರಿಶೀಲನೆ & 1 ವಾರ ಲೈವ್ ಸಂಗ್ರಹಣೆ' : '✓ Auto-Verified & 1-Week Live Storage'}
+            </span>
+            <span style={{
+              fontSize: '0.72rem',
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              background: 'rgba(16, 185, 129, 0.3)',
+              color: '#A7F3D0',
+              fontWeight: 800
+            }}>
+              {activeWeekCount} {isKannada ? 'ಈ ವಾರ ಸಕ್ರಿಯ' : 'Active This Week'}
+            </span>
+          </div>
+          <p style={{ fontSize: '0.8rem', color: '#D1FAE5', margin: 0, lineHeight: 1.45 }}>
+            {isKannada
+              ? 'ಗ್ರಾಮಸ್ಥರು ಅಪ್‌ಲೋಡ್ ಮಾಡುವ ಎಲ್ಲಾ ಅಪ್‌ಡೇಟ್‌ಗಳು ತಕ್ಷಣವೇ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ದೃಢೀಕೃತಗೊಂಡು (Auto-Verified) ಅಪ್‌ಲೋಡ್ ದಿನದಿಂದ 1 ವಾರದವರೆಗೆ ಎಲ್ಲರಿಗೂ ಮುಂಭಾಗದಲ್ಲೇ ಸ್ಪಷ್ಟವಾಗಿ ಗೋಚರಿಸುತ್ತವೆ.'
+              : 'All updates uploaded by residents are automatically verified upon post and prominently stored & visible to everyone for 1 week from upload day onwards.'}
+          </p>
+        </div>
+      </div>
+
+      {/* 1-Week Active vs All Time Filter Tabs */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => setTimeFilter('WEEK')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 18px',
+            borderRadius: '9999px',
+            border: timeFilter === 'WEEK' ? '1.5px solid #10B981' : '1px solid var(--glass-border)',
+            background: timeFilter === 'WEEK' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.04)',
+            color: timeFilter === 'WEEK' ? '#10B981' : 'var(--text-secondary)',
+            fontWeight: 700,
+            fontSize: '0.84rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Calendar size={15} />
+          <span>{isKannada ? 'ಈ ವಾರದ ಅಪ್‌ಡೇಟ್‌ಗಳು (1 ವಾರ ಸಕ್ರಿಯ)' : 'Past 7 Days (1-Week Live)'}</span>
+          <span style={{
+            fontSize: '0.72rem',
+            background: timeFilter === 'WEEK' ? '#10B981' : 'rgba(255,255,255,0.1)',
+            color: timeFilter === 'WEEK' ? '#000000' : '#FFFFFF',
+            padding: '1px 7px',
+            borderRadius: '10px',
+            fontWeight: 800
+          }}>
+            {activeWeekCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setTimeFilter('ALL')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 18px',
+            borderRadius: '9999px',
+            border: timeFilter === 'ALL' ? '1.5px solid #0284C7' : '1px solid var(--glass-border)',
+            background: timeFilter === 'ALL' ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255,255,255,0.04)',
+            color: timeFilter === 'ALL' ? '#38BDF8' : 'var(--text-secondary)',
+            fontWeight: 700,
+            fontSize: '0.84rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Clock size={15} />
+          <span>{isKannada ? 'ಎಲ್ಲಾ ಅಪ್‌ಡೇಟ್‌ಗಳು (All Time)' : 'All Updates (All Time)'}</span>
+          <span style={{
+            fontSize: '0.72rem',
+            background: timeFilter === 'ALL' ? '#0284C7' : 'rgba(255,255,255,0.1)',
+            color: '#FFFFFF',
+            padding: '1px 7px',
+            borderRadius: '10px',
+            fontWeight: 800
+          }}>
+            {newsList.length}
+          </span>
+        </button>
       </div>
 
       {/* Search & Status Filters */}
@@ -152,10 +251,9 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
           onChange={(e) => setStatusFilter(e.target.value)}
           style={{ width: 'auto', minWidth: '170px', height: '42px' }}
         >
-          <option value="ALL">{isKannada ? 'ಎಲ್ಲಾ ಸ್ಥಿತಿಗಳು' : 'All Statuses'}</option>
-          <option value="VERIFIED">🟢 {isKannada ? 'ದೃಢೀಕೃತ ಮಾತ್ರ' : 'Verified Only'}</option>
+          <option value="ALL">{isKannada ? 'ಎಲ್ಲಾ ಅಪ್‌ಡೇಟ್‌ಗಳು' : 'All Updates'}</option>
+          <option value="VERIFIED">🟢 {isKannada ? 'ದೃಢೀಕೃತ (Auto-Verified)' : 'Verified (Auto-Verified)'}</option>
           <option value="COMMUNITY_REPORT">🔵 {isKannada ? 'ಸಮುದಾಯ ವರದಿ' : 'Community Reports'}</option>
-          <option value="PENDING">🟡 {isKannada ? 'ಪರಿಶೀಲನೆ ಬಾಕಿ' : 'Pending Verification'}</option>
         </select>
       </div>
 
@@ -201,6 +299,7 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
         ) : (
           filteredNews.map((item) => {
             const isLiked = currentUser ? item.liked_by.includes(currentUser.uid) : false;
+            const weekStatus = getOneWeekStatus(item.created_at);
 
             return (
               <article
@@ -211,30 +310,31 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
               >
                 {/* Top Metabar */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {/* Status Badge */}
-                    {item.verification_status === 'VERIFIED' && (
-                      <span className="badge badge-verified">
-                        <ShieldCheck size={12} />
-                        {isKannada ? 'ದೃಢೀಕೃತ' : 'VERIFIED'}
-                      </span>
-                    )}
-                    {item.verification_status === 'COMMUNITY_REPORT' && (
-                      <span className="badge badge-community">
-                        {isKannada ? 'ಸಮುದಾಯ ವರದಿ' : 'COMMUNITY REPORT'}
-                      </span>
-                    )}
-                    {item.verification_status === 'PENDING' && (
-                      <span className="badge badge-pending">
-                        <Clock size={12} />
-                        {isKannada ? 'ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ' : 'PENDING'}
-                      </span>
-                    )}
-                    {item.verification_status === 'REJECTED' && (
-                      <span className="badge badge-rejected">
-                        {isKannada ? 'ತಿರಸ್ಕೃತ' : 'REJECTED'}
-                      </span>
-                    )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    {/* Auto-Verified Badge */}
+                    <span className="badge badge-verified">
+                      <ShieldCheck size={12} />
+                      {isKannada ? 'ದೃಢೀಕೃತ (Auto-Verified)' : 'VERIFIED'}
+                    </span>
+
+                    {/* 1-Week Active Badge */}
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        background: weekStatus.isWithinWeek ? 'rgba(16, 185, 129, 0.18)' : 'rgba(148, 163, 184, 0.15)',
+                        color: weekStatus.isWithinWeek ? '#34D399' : '#94A3B8',
+                        border: `1px solid ${weekStatus.isWithinWeek ? 'rgba(16, 185, 129, 0.35)' : 'rgba(148, 163, 184, 0.2)'}`
+                      }}
+                    >
+                      <Clock size={11} />
+                      {isKannada ? weekStatus.labelKn : weekStatus.labelEn}
+                    </span>
 
                     {item.urgent && (
                       <span className="badge badge-urgent">
@@ -248,7 +348,7 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
                   </div>
 
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    {item.created_at.replace('T', ' ').slice(0, 16)}
+                    📅 {item.created_at.replace('T', ' ').slice(0, 16)}
                   </span>
                 </div>
 
@@ -304,18 +404,16 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
                   paddingTop: '12px',
                   fontSize: '0.78rem'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                       {item.author_name}
                     </span>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
                       ({item.author_role.replace('_', ' ')})
                     </span>
-                    {item.verified_by_name && (
-                      <span style={{ color: '#34D399', fontSize: '0.7rem' }}>
-                        ✓ {item.verified_by_name}
-                      </span>
-                    )}
+                    <span style={{ color: '#34D399', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+                      <CheckCircle size={12} /> {isKannada ? 'ಸ್ವಯಂ-ದೃಢೀಕೃತ' : 'Auto-Verified'}
+                    </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

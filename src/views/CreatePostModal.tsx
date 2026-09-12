@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { dbService } from '../services/dbService';
 import { compressImage } from '../services/imageOptimizer';
 import { NewsCategory, VerificationStatus } from '../types';
-import { X, Image, MapPin, ShieldAlert, Send } from 'lucide-react';
+import { X, Image, MapPin, ShieldAlert, Send, ShieldCheck, User } from 'lucide-react';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { isKannada } = useLanguage();
   const { currentUser, isModerator } = useAuth();
 
+  const [guestName, setGuestName] = useState('');
   const [titleEn, setTitleEn] = useState('');
   const [titleKn, setTitleKn] = useState('');
   const [contentEn, setContentEn] = useState('');
@@ -46,10 +47,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
-      setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು ಮೊದಲು ಲಾಗಿನ್ ಆಗಿ' : 'Please log in to post');
-      return;
-    }
     if (!titleEn.trim() && !titleKn.trim()) {
       setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು ಶೀರ್ಷಿಕೆ ನಮೂದಿಸಿ' : 'Please enter post title');
       return;
@@ -58,17 +55,18 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setIsSubmitting(true);
     setErrorMsg(null);
 
-    // Initial status: If moderator/admin creates, it is VERIFIED immediately. Any resident user's post is live immediately as COMMUNITY_REPORT.
-    const initialStatus: VerificationStatus = isModerator
-      ? 'VERIFIED'
-      : 'COMMUNITY_REPORT';
+    const authorId = currentUser ? currentUser.uid : ('resident_' + Date.now());
+    const authorName = currentUser
+      ? (isKannada && currentUser.name_kn ? currentUser.name_kn : currentUser.name)
+      : (guestName.trim() || (isKannada ? 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮಸ್ಥರು' : 'Muttagundi Resident'));
+    const authorRole = currentUser ? currentUser.role : 'USER';
 
     try {
       await dbService.addNews({
-        author_id: currentUser.uid,
-        author_name: currentUser.name,
-        author_photo: currentUser.photoUrl,
-        author_role: currentUser.role,
+        author_id: authorId,
+        author_name: authorName,
+        author_photo: currentUser?.photoUrl,
+        author_role: authorRole,
         title_en: titleEn.trim() || titleKn.trim(),
         title_kn: titleKn.trim() || titleEn.trim(),
         content_en: contentEn.trim() || contentKn.trim(),
@@ -77,11 +75,12 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         media_url: photoDataUrl || undefined,
         media_type: photoDataUrl ? 'IMAGE' : undefined,
         location: location.trim() || undefined,
-        verification_status: initialStatus,
-        verified_by: isModerator ? currentUser.uid : undefined,
-        verified_by_name: isModerator ? currentUser.name : undefined,
-        verified_at: isModerator ? new Date().toISOString() : undefined,
-        urgent: isModerator ? isUrgent : false,
+        verification_status: 'VERIFIED', // Auto-verified upon upload!
+        auto_verified: true,
+        verified_by: authorId,
+        verified_by_name: authorName,
+        verified_at: new Date().toISOString(),
+        urgent: isUrgent,
         pinned: false
       });
 
@@ -102,9 +101,14 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
-            {isKannada ? 'ಗ್ರಾಮ ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಿ' : 'Post Community News / Report'}
-          </h3>
+          <div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
+              {isKannada ? 'ಗ್ರಾಮ ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಿ' : 'Post Community News & Update'}
+            </h3>
+            <span style={{ fontSize: '0.72rem', color: '#10B981', fontWeight: 700 }}>
+              {isKannada ? '✓ ಸ್ವಯಂಚಾಲಿತ ಪರಿಶೀಲನೆ (Auto-Verified) & 1 ವಾರ ಸಕ್ರಿಯ' : '✓ Auto-Verified & Active for 1 Week'}
+            </span>
+          </div>
           <button
             onClick={onClose}
             style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
@@ -113,11 +117,11 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
           </button>
         </div>
 
-        {/* Responsible Submission Advisory */}
+        {/* 1-Week Active & Auto-Verification Notice */}
         <div
           style={{
-            background: 'rgba(245, 158, 11, 0.1)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
             borderRadius: 'var(--radius-md)',
             padding: '10px 14px',
             display: 'flex',
@@ -126,11 +130,11 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             marginBottom: '16px'
           }}
         >
-          <ShieldAlert size={18} color="#F59E0B" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: '0.75rem', color: '#FEF3C7', lineHeight: 1.4 }}>
+          <ShieldCheck size={20} color="#10B981" style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '0.76rem', color: '#A7F3D0', lineHeight: 1.45 }}>
             {isKannada
-              ? 'ಗಮನಿಸಿ: ನಿಮ್ಮ ವರದಿಯು ಆರಂಭದಲ್ಲಿ "ಸಮುದಾಯ ವರದಿ" ಎಂದು ಪ್ರಕಟವಾಗುತ್ತದೆ. ನಿರ್ವಾಹಕರು ಪರಿಶೀಲಿಸಿದ ನಂತರವೇ ದೃಢೀಕೃತಗೊಳ್ಳುತ್ತದೆ.'
-              : 'Notice: Your submission will appear as a "Community Report" until verified by authorized village moderators.'}
+              ? '✅ ಸ್ವಯಂ-ದೃಢೀಕರಣ ಸಕ್ರಿಯ: ನೀವು ಅಪ್‌ಲೋಡ್ ಮಾಡುವ ಯಾವುದೇ ಮಾಹಿತಿ ತಕ್ಷಣವೇ ದೃಢೀಕೃತಗೊಂಡು (Auto-Verified) ಅಪ್‌ಲೋಡ್ ದಿನದಿಂದ 1 ವಾರದವರೆಗೆ ಎಲ್ಲರಿಗೂ ಮುಕ್ತವಾಗಿ ಗೋಚರಿಸುತ್ತದೆ.'
+              : '✅ Auto-Verification Active: All data and updates you upload are immediately verified and prominently stored & visible to everyone for 1 week onwards.'}
           </span>
         </div>
 
@@ -151,6 +155,23 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         )}
 
         <form onSubmit={handleSubmit}>
+          {!currentUser && (
+            <div className="form-group" style={{ marginBottom: '14px' }}>
+              <label className="form-label">{isKannada ? 'ನಿಮ್ಮ ಹೆಸರು (ಐಚ್ಛಿಕ)' : 'Your Name (Optional)'}</label>
+              <div style={{ position: 'relative' }}>
+                <User size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '14px' }} />
+                <input
+                  type="text"
+                  className="form-input"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  placeholder={isKannada ? 'ಉದಾ: ರಮೇಶ್ ಗೌಡ (ಗ್ರಾಮಸ್ಥರು)' : 'e.g. Ramesh Gowda (Resident)'}
+                  style={{ paddingLeft: '34px' }}
+                />
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
               <label className="form-label">{isKannada ? 'ವಿಭಾಗ' : 'Category *'}</label>
@@ -297,38 +318,41 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </div>
           </div>
 
-          {/* Moderator Only Option: Urgent Broadcast */}
-          {isModerator && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 14px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              marginBottom: '18px'
-            }}>
-              <input
-                type="checkbox"
-                id="urgent-check"
-                checked={isUrgent}
-                onChange={(e) => setIsUrgent(e.target.checked)}
-              />
-              <label htmlFor="urgent-check" style={{ fontSize: '0.8rem', color: '#FCA5A5', fontWeight: 600 }}>
-                {isKannada ? '🚨 ತುರ್ತು ಪ್ರಕಟಣೆಯಾಗಿ ಗುರುತಿಸಿ (ಅಡ್ಮಿನ್ ಮಾತ್ರ)' : '🚨 Mark as Urgent Village Alert (Moderator Action)'}
-              </label>
-            </div>
-          )}
+          {/* Urgent Village Alert Checkbox */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '10px 14px',
+            background: 'rgba(239, 68, 68, 0.1)',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            marginBottom: '18px'
+          }}>
+            <input
+              type="checkbox"
+              id="urgent-check"
+              checked={isUrgent}
+              onChange={(e) => setIsUrgent(e.target.checked)}
+              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+            />
+            <label htmlFor="urgent-check" style={{ fontSize: '0.8rem', color: '#FCA5A5', fontWeight: 600, cursor: 'pointer' }}>
+              {isKannada ? '🚨 ತುರ್ತು ಪ್ರಕಟಣೆಯಾಗಿ ಗುರುತಿಸಿ (ನೀರು, ವಿದ್ಯುತ್ ಅಥವಾ ತುರ್ತು ವಿಷಯ)' : '🚨 Mark as Urgent Alert (Water, electricity or emergency)'}
+            </label>
+          </div>
 
           <button
             type="submit"
             className="btn-primary"
             disabled={isSubmitting}
-            style={{ width: '100%', height: '48px' }}
+            style={{ width: '100%', height: '48px', fontSize: '0.95rem' }}
           >
             <Send size={18} />
-            <span>{isSubmitting ? 'Posting...' : isKannada ? 'ಪ್ರಕಟಿಸಿ' : 'Submit for Verification'}</span>
+            <span>
+              {isSubmitting
+                ? (isKannada ? 'ಪ್ರಕಟಿಸಲಾಗುತ್ತಿದೆ...' : 'Publishing...')
+                : (isKannada ? 'ನೇರವಾಗಿ ಪ್ರಕಟಿಸಿ (Auto-Verified)' : 'Publish Update (Auto-Verified)')}
+            </span>
           </button>
         </form>
       </div>

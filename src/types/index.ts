@@ -79,6 +79,8 @@ export interface NewsItem {
   comments_count: number;
   created_at: string;
   updated_at: string;
+  active_until?: string;
+  auto_verified?: boolean;
   is_demo?: boolean;
 }
 
@@ -116,6 +118,8 @@ export interface EventItem {
   status: EventStatus;
   participants_count: number;
   registered_uids: string[];
+  active_until?: string;
+  created_at?: string;
   is_demo?: boolean;
 }
 
@@ -324,6 +328,7 @@ export interface GalleryItem {
   likes_count: number;
   liked_by: string[];
   created_at: string;
+  active_until?: string;
   is_demo?: boolean;
 }
 

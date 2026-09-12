@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { dbService } from '../services/dbService';
+import { dbService, isWithinOneWeek } from '../services/dbService';
 import {
   NewsItem,
   EventItem,
@@ -65,7 +65,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   useEffect(() => {
     const unsubStats = dbService.subscribeVillageStats(setStats);
-    const unsubNews = dbService.subscribeNews((items) => setNewsList(items.slice(0, 3)));
+    const unsubNews = dbService.subscribeNews((items) => {
+      const weekItems = items.filter((i) => isWithinOneWeek(i.created_at));
+      setNewsList(weekItems.length > 0 ? weekItems.slice(0, 3) : items.slice(0, 3));
+    });
     const unsubEvents = dbService.subscribeEvents((items) => setEventsList(items.slice(0, 2)));
     const unsubTourn = dbService.subscribeTournaments(setTournaments);
     const unsubCrops = dbService.subscribeCrops((items) => setCrops(items.slice(0, 3)));
@@ -350,13 +353,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         {/* 📰 LATEST VILLAGE NEWS SECTION */}
         <section style={{ marginBottom: '48px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
-              <h2 style={{ fontSize: '1.45rem', fontWeight: 800 }}>
-                {isKannada ? '📰 ಗ್ರಾಮದ ಇತ್ತೀಚಿನ ಸುದ್ದಿ & ಫೀಡ್' : '📰 Latest Village News & Feed'}
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0 }}>
+                  {isKannada ? '📰 ಗ್ರಾಮದ ನೇರ ಅಪ್‌ಡೇಟ್‌ಗಳು' : '📰 Real-Time Village Updates'}
+                </h2>
+                <span style={{
+                  fontSize: '0.72rem',
+                  padding: '2px 8px',
+                  borderRadius: '9999px',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  color: '#10B981',
+                  fontWeight: 800
+                }}>
+                  {isKannada ? '1 ವಾರ ಲೈವ್' : '1-Week Live'}
+                </span>
+              </div>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                {isKannada ? 'ನಾಗರಿಕರು ಮತ್ತು ಪಂಚಾಯತಿಯಿಂದ ದೃಢೀಕೃತ ಮಾಹಿತಿ' : 'Verified reports from Panchayat and citizens'}
+                {isKannada ? 'ಕಳೆದ 1 ವಾರದಲ್ಲಿ ಅಪ್‌ಲೋಡ್ ಆದ ಎಲ್ಲಾ ಸ್ವಯಂ-ದೃಢೀಕೃತ ಮಾಹಿತಿಗಳು' : 'Auto-verified village updates from the past week (7 days)'}
               </p>
             </div>
             <button
@@ -381,10 +396,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {newsList.length === 0 ? (
             <div className="glass-card" style={{ padding: '36px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
               <p style={{ fontSize: '0.92rem', color: '#CBD5E1', marginBottom: '14px' }}>
-                {isKannada ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಇನ್ನೂ ಯಾವುದೇ ಸುದ್ದಿ ಪ್ರಕಟವಾಗಿಲ್ಲ. ಮೊದಲ ಅಧಿಕೃತ ಸುದ್ದಿ ಅಥವಾ ಮಾಹಿತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಿ!' : 'No news published yet for Muttagundi. Be the first to share an update!'}
+                {isKannada ? 'ಕಳೆದ 1 ವಾರದಲ್ಲಿ ಯಾವುದೇ ಹೊಸ ಸುದ್ದಿ ಪ್ರಕಟವಾಗಿಲ್ಲ. ಮೊದಲ ಅಧಿಕೃತ ಸುದ್ದಿ ಅಥವಾ ಮಾಹಿತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಿ!' : 'No new updates published this week. Be the first to share an update!'}
               </p>
               <button onClick={() => onNavigateTab('news')} className="btn-primary" style={{ display: 'inline-flex' }}>
-                <span>{isKannada ? 'ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಿ' : 'Share News'}</span>
+                <span>{isKannada ? 'ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಿ (1 ವಾರ ಲೈವ್)' : 'Share News (1-Week Live)'}</span>
               </button>
             </div>
           ) : (
@@ -396,27 +411,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 className="glass-card glass-card-interactive card-3d"
                 style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
               >
-                {/* Verification Badge */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  {item.verification_status === 'VERIFIED' && (
+                {/* Verification & 1-Week Active Badge */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span className="badge badge-verified">
                       <ShieldCheck size={12} />
                       {isKannada ? 'ದೃಢೀಕೃತ' : 'VERIFIED'}
                     </span>
-                  )}
-                  {item.verification_status === 'COMMUNITY_REPORT' && (
-                    <span className="badge badge-community">
-                      {isKannada ? 'ಸಮುದಾಯ ವರದಿ' : 'COMMUNITY REPORT'}
+                    <span style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      color: '#34D399',
+                      border: '1px solid rgba(16, 185, 129, 0.3)'
+                    }}>
+                      {isKannada ? '1 ವಾರ ಸಕ್ರಿಯ' : '1-Wk Active'}
                     </span>
-                  )}
-                  {item.verification_status === 'PENDING' && (
-                    <span className="badge badge-pending">
-                      {isKannada ? 'ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ' : 'PENDING'}
-                    </span>
-                  )}
+                  </div>
 
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    {item.created_at.split('T')[0]}
+                    📅 {item.created_at.split('T')[0]}
                   </span>
                 </div>
 
