@@ -21,7 +21,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     signUpWithEmail,
     unverifiedEmail,
     setUnverifiedEmail,
-    claimAdminRole
+    claimAdminRole,
+    sendPasswordReset
   } = useAuth();
 
   const [emailMode, setEmailMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
@@ -30,7 +31,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState<string | null>(unverifiedEmail);
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು ಮೊದಲು ನಿಮ್ಮ ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ' : 'Please enter your email address to receive reset link');
+      return;
+    }
+    setIsResetting(true);
+    setErrorMsg(null);
+    setResetMsg(null);
+    const res = await sendPasswordReset(email);
+    setIsResetting(false);
+    if (res.success) {
+      setResetMsg(res.message);
+    } else {
+      setErrorMsg(res.message);
+    }
+  };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,6 +197,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
         )}
 
+        {resetMsg && (
+          <div
+            style={{
+              background: 'rgba(16, 185, 129, 0.18)',
+              border: '1px solid #10B981',
+              borderRadius: 'var(--radius-md)',
+              padding: '12px 14px',
+              color: '#6EE7B7',
+              fontSize: '0.82rem',
+              marginBottom: '16px',
+              textAlign: 'left',
+              lineHeight: 1.5
+            }}
+          >
+            ✓ {resetMsg}
+          </div>
+        )}
+
         {verificationEmail ? (
           <div style={{ textAlign: 'center', padding: '12px 4px' }}>
             <div
@@ -301,6 +339,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   required
                 />
               </div>
+              {emailMode === 'LOGIN' && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={isResetting}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#FBBF24',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      padding: '2px 0',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    {isResetting
+                      ? (isKannada ? 'ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ...' : 'Sending link...')
+                      : (isKannada ? 'ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ? (Forgot Password?)' : 'Forgot Password?')}
+                  </button>
+                </div>
+              )}
             </div>
 
             <button

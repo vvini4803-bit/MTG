@@ -19,7 +19,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     signInWithEmail,
     signUpWithEmail,
     unverifiedEmail,
-    setUnverifiedEmail
+    setUnverifiedEmail,
+    sendPasswordReset
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'REGISTER' | 'LOGIN'>(defaultTab);
@@ -31,6 +32,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Local verification screen email holder
   const [verificationEmail, setVerificationEmail] = useState<string | null>(unverifiedEmail);
@@ -82,6 +85,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setErrorMsg(res.error);
     } else if (res.success) {
       onClose();
+    }
+  };
+
+  // Handle Forgot Password
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು ಮೊದಲು ನಿಮ್ಮ ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ' : 'Please enter your email address above to receive reset link');
+      return;
+    }
+    setIsResetting(true);
+    setErrorMsg(null);
+    setResetMsg(null);
+    const res = await sendPasswordReset(email);
+    setIsResetting(false);
+    if (res.success) {
+      setResetMsg(res.message);
+    } else {
+      setErrorMsg(res.message);
     }
   };
 
@@ -298,6 +319,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
+            {/* Reset Success Banner */}
+            {resetMsg && (
+              <div
+                style={{
+                  background: 'rgba(16, 185, 129, 0.18)',
+                  border: '1px solid #10B981',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  color: '#6EE7B7',
+                  fontSize: '0.82rem',
+                  marginBottom: '16px',
+                  lineHeight: 1.5,
+                  textAlign: 'left'
+                }}
+              >
+                <div>✓ {resetMsg}</div>
+              </div>
+            )}
+
             {/* REGISTER TAB */}
             {activeTab === 'REGISTER' && (
               <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -445,6 +485,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         fontSize: '0.9rem'
                       }}
                     />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      disabled={isResetting}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#FBBF24',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        padding: '2px 0',
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      {isResetting
+                        ? (isKannada ? 'ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ...' : 'Sending link...')
+                        : (isKannada ? 'ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ? (Forgot Password?)' : 'Forgot Password?')}
+                    </button>
                   </div>
                 </div>
 

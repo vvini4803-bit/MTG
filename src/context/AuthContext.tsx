@@ -12,7 +12,8 @@ import {
   ConfirmationResult,
   sendEmailVerification,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -49,6 +50,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   claimAdminRole: (targetEmail?: string) => Promise<{ success: boolean; message: string }>;
+  sendPasswordReset: (email: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -75,7 +77,8 @@ const AuthContext = createContext<AuthContextType>({
   registerUser: async () => ({} as UserProfile),
   logout: async () => {},
   updateProfile: async () => {},
-  claimAdminRole: async () => ({ success: false, message: '' })
+  claimAdminRole: async () => ({ success: false, message: '' }),
+  sendPasswordReset: async () => ({ success: false, message: '' })
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -591,6 +594,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
+  const sendPasswordReset = async (targetEmail: string): Promise<{ success: boolean; message: string }> => {
+    const cleanEmail = targetEmail.trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, message: 'Please enter your email address' };
+    }
+    if (!auth) {
+      return { success: false, message: 'Authentication service unavailable' };
+    }
+    try {
+      await sendPasswordResetEmail(auth, cleanEmail);
+      return {
+        success: true,
+        message: `Password reset link sent to ${cleanEmail}! Please check your Inbox and Spam folder.`
+      };
+    } catch (err: any) {
+      console.warn('sendPasswordReset error:', err);
+      let msg = err.message || 'Failed to send password reset email';
+      if (err.code === 'auth/user-not-found') {
+        msg = 'No user registered with this email address.';
+      } else if (err.code === 'auth/invalid-email') {
+        msg = 'Invalid email address format.';
+      }
+      return { success: false, message: msg };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -617,7 +646,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerUser,
         logout,
         updateProfile,
-        claimAdminRole
+        claimAdminRole,
+        sendPasswordReset
       }}
     >
       {children}
