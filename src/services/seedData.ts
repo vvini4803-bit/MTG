@@ -17,17 +17,20 @@ import {
 } from '../types';
 
 export const isSuperAdminEmail = (email?: string | null, name?: string | null): boolean => {
-  if (!email && !name) return false;
   const e = (email || '').toLowerCase().trim();
   const n = (name || '').toLowerCase().trim();
-  return (
-    e === 'vvini4803@gmail.com' ||
-    e.startsWith('vvini4803@') ||
-    e.includes('vvini4803') ||
-    n === 'vvini4803' ||
-    n.includes('vvini4803') ||
-    e === 'admin@muttagundi.org'
-  );
+
+  // If an email exists, it MUST be one of the authorized admin emails
+  if (e) {
+    return (
+      e === 'vvini4803@gmail.com' ||
+      e === 'vvini@gmail.com' ||
+      e === 'admin@muttagundi.org'
+    );
+  }
+
+  // Fallback only for internal seed admin without an email
+  return n === 'vvini4803' || n === 'vvini';
 };
 
 // Clean Default Users (Village Admin & Moderator for initial login)

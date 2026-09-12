@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, isSuperAdminEmail } from '../context/AuthContext';
 import { UserRole } from '../types';
 import {
   User,
@@ -38,6 +38,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   const [hideContact, setHideContact] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [claimNotice, setClaimNotice] = useState('');
+  const isSuperAdminUser = currentUser ? isSuperAdminEmail(currentUser.email, currentUser.name) : false;
 
   if (!currentUser) {
     return (
@@ -52,29 +53,8 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
               ? 'ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ವೀಕ್ಷಿಸಲು ಅಥವಾ ಸುದ್ದಿ ಪ್ರಕಟಿಸಲು ದಯವಿಟ್ಟು ಲಾಗಿನ್ ಆಗಿ'
               : 'Sign in to access your posts, registered events, and community permissions'}
           </p>
-          <button onClick={onOpenLogin} className="btn-primary" style={{ width: '100%', height: '48px', marginBottom: '12px' }}>
+          <button onClick={onOpenLogin} className="btn-primary" style={{ width: '100%', height: '48px' }}>
             {isKannada ? 'ಲಾಗಿನ್ / ಸೈನ್ ಅಪ್' : 'Sign In / Register'}
-          </button>
-          <button
-            onClick={() => claimAdminRole('vvini4803@gmail.com')}
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
-              border: '1px solid #F59E0B',
-              color: '#FBBF24',
-              fontSize: '0.85rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
-          >
-            <span>👑</span>
-            <span>{isKannada ? 'vvini4803@gmail.com ಅಡ್ಮಿನ್ ಲಾಗಿನ್' : 'Login as Super Admin (vvini4803@gmail.com)'}</span>
           </button>
         </div>
       </div>
@@ -267,153 +247,157 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
           </div>
         </div>
 
-        {/* 👑 Super Admin Governance Hub / Claim Super Admin Desk */}
-        {role === 'SUPER_ADMIN' || currentUser.email?.toLowerCase().includes('vvini4803') ? (
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(217, 119, 6, 0.08) 100%)',
-              border: '1.5px solid rgba(245, 158, 11, 0.6)',
-              borderRadius: 'var(--radius-md)',
-              padding: '18px',
-              marginBottom: '20px',
-              boxShadow: '0 4px 16px rgba(245, 158, 11, 0.2)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '1.8rem' }}>👑</span>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#FBBF24' }}>
-                    {isKannada ? 'ದೃಢೀಕರಿಸಿದ ಮುಖ್ಯ ಸೂಪರ್ ಅಡ್ಮಿನ್' : 'Verified Root Super Administrator'}
-                  </h4>
-                  <span style={{ fontSize: '0.78rem', color: '#FEF3C7' }}>
-                    vvini4803@gmail.com • {isKannada ? 'ಸಂಪೂರ್ಣ ಗ್ರಾಮ ಆಡಳಿತ ಹಕ್ಕುಗಳು ಸಕ್ರಿಯ' : 'Full Village Governance & RBAC Access'}
-                  </span>
+        {/* 👑 Super Admin Governance Hub / Claim Super Admin Desk (Strictly for vvini@gmail.com / vvini4803@gmail.com) */}
+        {isSuperAdminUser && (
+          <>
+            {role === 'SUPER_ADMIN' ? (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(217, 119, 6, 0.08) 100%)',
+                  border: '1.5px solid rgba(245, 158, 11, 0.6)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '18px',
+                  marginBottom: '20px',
+                  boxShadow: '0 4px 16px rgba(245, 158, 11, 0.2)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '1.8rem' }}>👑</span>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#FBBF24' }}>
+                        {isKannada ? 'ದೃಢೀಕರಿಸಿದ ಮುಖ್ಯ ಸೂಪರ್ ಅಡ್ಮಿನ್' : 'Verified Root Super Administrator'}
+                      </h4>
+                      <span style={{ fontSize: '0.78rem', color: '#FEF3C7' }}>
+                        {currentUser.email || 'vvini@gmail.com'} • {isKannada ? 'ಸಂಪೂರ್ಣ ಗ್ರಾಮ ಆಡಳಿತ ಹಕ್ಕುಗಳು ಸಕ್ರಿಯ' : 'Full Village Governance & RBAC Access'}
+                      </span>
+                    </div>
+                  </div>
+                  {onNavigateToAdmin && (
+                    <button
+                      onClick={onNavigateToAdmin}
+                      style={{
+                        background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '10px',
+                        padding: '10px 18px',
+                        fontSize: '0.85rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 10px rgba(245, 158, 11, 0.4)'
+                      }}
+                    >
+                      <span>🛡️</span>
+                      <span>{isKannada ? 'ಆಡಳಿತ ಕೇಂದ್ರ ತೆರೆಯಿರಿ' : 'Open Admin Hub'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
-              {onNavigateToAdmin && (
+            ) : (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(217, 119, 6, 0.05) 100%)',
+                  border: '1.5px solid rgba(245, 158, 11, 0.45)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '18px',
+                  marginBottom: '20px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '1.4rem' }}>👑</span>
+                  <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, color: '#FBBF24' }}>
+                    {isKannada ? 'ಅಡ್ಮಿನ್ ಪಾತ್ರ ಪಡೆಯಿರಿ' : 'Claim Super Admin Role'}
+                  </h4>
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.5 }}>
+                  {isKannada
+                    ? 'ಈ ಖಾತೆಯನ್ನು ಸೂಪರ್ ಅಡ್ಮಿನ್ ಆಗಿ ಮೇಲ್ದರ್ಜೆಗೇರಿಸಿ ಮತ್ತು ಗ್ರಾಮ ಪಂಚಾಯತಿ ಆಡಳಿತ ನಿಯಂತ್ರಣಗಳನ್ನು ತಕ್ಷಣ ಪಡೆಯಿರಿ.'
+                    : 'Elevate your session to Super Admin status to manage residents, verify news, and control all village portals.'}
+                </p>
+
+                {claimNotice && (
+                  <div style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#34D399', borderRadius: '8px', padding: '8px', fontSize: '0.8rem', marginBottom: '10px' }}>
+                    {claimNotice}
+                  </div>
+                )}
+
                 <button
-                  onClick={onNavigateToAdmin}
+                  onClick={async () => {
+                    setClaiming(true);
+                    const res = await claimAdminRole(currentUser.email);
+                    setClaiming(false);
+                    setClaimNotice(res.message);
+                  }}
+                  disabled={claiming}
                   style={{
                     background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
                     color: '#FFFFFF',
                     border: 'none',
                     borderRadius: '10px',
-                    padding: '10px 18px',
+                    padding: '10px 20px',
                     fontSize: '0.85rem',
                     fontWeight: 800,
                     cursor: 'pointer',
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    boxShadow: '0 2px 10px rgba(245, 158, 11, 0.4)'
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)'
                   }}
                 >
-                  <span>🛡️</span>
-                  <span>{isKannada ? 'ಆಡಳಿತ ಕೇಂದ್ರ ತೆರೆಯಿರಿ' : 'Open Admin Hub'}</span>
+                  <span>👑</span>
+                  <span>{claiming ? 'Activating...' : (isKannada ? 'ಸೂಪರ್ ಅಡ್ಮಿನ್ ಪಾತ್ರ ಪಡೆಯಿರಿ' : 'Claim Super Admin Role')}</span>
                 </button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(217, 119, 6, 0.05) 100%)',
-              border: '1.5px solid rgba(245, 158, 11, 0.45)',
-              borderRadius: 'var(--radius-md)',
-              padding: '18px',
-              marginBottom: '20px'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '1.4rem' }}>👑</span>
-              <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, color: '#FBBF24' }}>
-                {isKannada ? 'vvini4803@gmail.com ಅಡ್ಮಿನ್ ಪಾತ್ರ ಪಡೆಯಿರಿ' : 'Claim Super Admin Role (vvini4803@gmail.com)'}
-              </h4>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.5 }}>
-              {isKannada
-                ? 'ಈ ಖಾತೆಯನ್ನು ಸೂಪರ್ ಅಡ್ಮಿನ್ ಆಗಿ ಮೇಲ್ದರ್ಜೆಗೇರಿಸಿ ಮತ್ತು ಗ್ರಾಮ ಪಂಚಾಯತಿ ಆಡಳಿತ ನಿಯಂತ್ರಣಗಳನ್ನು ತಕ್ಷಣ ಪಡೆಯಿರಿ.'
-                : 'Elevate your session to Super Admin status to manage residents, verify news, and control all village portals.'}
-            </p>
-
-            {claimNotice && (
-              <div style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#34D399', borderRadius: '8px', padding: '8px', fontSize: '0.8rem', marginBottom: '10px' }}>
-                {claimNotice}
               </div>
             )}
 
-            <button
-              onClick={async () => {
-                setClaiming(true);
-                const res = await claimAdminRole('vvini4803@gmail.com');
-                setClaiming(false);
-                setClaimNotice(res.message);
-              }}
-              disabled={claiming}
+            {/* Quick Demo Role Switcher - strictly for authorized admin developer */}
+            <div
               style={{
-                background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '10px 20px',
-                fontSize: '0.85rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)'
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                padding: '16px',
+                marginBottom: '24px'
               }}
             >
-              <span>👑</span>
-              <span>{claiming ? 'Activating...' : (isKannada ? 'ಸೂಪರ್ ಅಡ್ಮಿನ್ ಪಾತ್ರ ಪಡೆಯಿರಿ' : 'Claim Super Admin Role')}</span>
-            </button>
-          </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <UserCheck size={15} color="#F59E0B" />
+                <strong style={{ fontSize: '0.82rem', color: '#FEF08A' }}>
+                  Switch Test Role (RBAC Simulation)
+                </strong>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {[
+                  { r: 'SUPER_ADMIN', label: 'Super Admin' },
+                  { r: 'MODERATOR', label: 'Moderator' },
+                  { r: 'SPORTS_ORGANIZER', label: 'Sports Organizer' },
+                  { r: 'USER', label: 'Resident' }
+                ].map((item) => (
+                  <button
+                    key={item.r}
+                    onClick={() => loginWithDemo(item.r as UserRole)}
+                    style={{
+                      fontSize: '0.75rem',
+                      padding: '5px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--glass-border)',
+                      background: role === item.r ? 'var(--accent-emerald)' : 'rgba(255,255,255,0.06)',
+                      color: '#FFFFFF',
+                      cursor: 'pointer',
+                      fontWeight: role === item.r ? 700 : 500
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
-
-        {/* Quick Demo Role Switcher */}
-        <div
-          style={{
-            background: 'rgba(245, 158, 11, 0.08)',
-            border: '1px solid rgba(245, 158, 11, 0.25)',
-            borderRadius: 'var(--radius-md)',
-            padding: '16px',
-            marginBottom: '24px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-            <UserCheck size={15} color="#F59E0B" />
-            <strong style={{ fontSize: '0.82rem', color: '#FEF08A' }}>
-              Switch Test Role (RBAC Simulation)
-            </strong>
-          </div>
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            {[
-              { r: 'SUPER_ADMIN', label: 'Super Admin' },
-              { r: 'MODERATOR', label: 'Moderator' },
-              { r: 'SPORTS_ORGANIZER', label: 'Sports Organizer' },
-              { r: 'USER', label: 'Resident' }
-            ].map((item) => (
-              <button
-                key={item.r}
-                onClick={() => loginWithDemo(item.r as UserRole)}
-                style={{
-                  fontSize: '0.75rem',
-                  padding: '5px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--glass-border)',
-                  background: role === item.r ? 'var(--accent-emerald)' : 'rgba(255,255,255,0.06)',
-                  color: '#FFFFFF',
-                  cursor: 'pointer',
-                  fontWeight: role === item.r ? 700 : 500
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Actions */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

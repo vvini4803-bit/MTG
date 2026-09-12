@@ -341,32 +341,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={async () => {
-              await claimAdminRole('vvini4803@gmail.com');
-              onSuccess();
-            }}
-            className="btn-secondary"
-            style={{
-              width: '100%',
-              marginBottom: '10px',
-              padding: '10px 14px',
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
-              border: '1px solid #F59E0B',
-              color: '#FBBF24',
-              fontSize: '0.8rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
-          >
-            <span>👑</span>
-            <span>{isKannada ? 'vvini4803@gmail.com ಸೂಪರ್ ಅಡ್ಮಿನ್ ಆಗಿ ಲಾಗಿನ್' : 'Login as Super Admin (vvini4803@gmail.com)'}</span>
-          </button>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button
               type="button"

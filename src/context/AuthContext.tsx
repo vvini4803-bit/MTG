@@ -486,6 +486,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithDemo = (demoRole: UserRole) => {
+    if (demoRole === 'SUPER_ADMIN' && currentUser && !isSuperAdminEmail(currentUser.email, currentUser.name)) {
+      console.warn('Unauthorized attempt to elevate to SUPER_ADMIN');
+      return;
+    }
     const matched = SEED_USERS.find((u) => u.role === demoRole) || SEED_USERS[0];
     setCurrentUser(matched);
   };
@@ -539,51 +543,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const claimAdminRole = async (targetEmail?: string): Promise<{ success: boolean; message: string }> => {
-    const emailToClaim = (targetEmail || currentUser?.email || 'vvini4803@gmail.com').toLowerCase().trim();
-
-    if (currentUser) {
-      const updated: UserProfile = {
-        ...currentUser,
-        role: 'SUPER_ADMIN',
-        email: currentUser.email || emailToClaim,
-        account_status: 'ACTIVE',
-        last_login: new Date().toISOString()
-      };
-
-      setCurrentUser(updated);
-      localStorage.setItem('gramasiri_active_user', JSON.stringify(updated));
-
-      // Persist to Firestore
-      if (db && currentUser.uid) {
-        try {
-          await setDoc(
-            doc(db, 'users', currentUser.uid),
-            {
-              role: 'SUPER_ADMIN',
-              email: updated.email,
-              account_status: 'ACTIVE',
-              last_login: updated.last_login
-            },
-            { merge: true }
-          );
-        } catch (e) {
-          console.warn('Firestore claimAdminRole fallback:', e);
-        }
-      }
-
+    if (!currentUser) {
       return {
-        success: true,
-        message: 'Super Admin role successfully claimed and activated!'
-      };
-    } else {
-      const adminUser = SEED_USERS.find((u) => isSuperAdminEmail(u.email, u.name)) || SEED_USERS[0];
-      setCurrentUser(adminUser);
-      localStorage.setItem('gramasiri_active_user', JSON.stringify(adminUser));
-      return {
-        success: true,
-        message: 'Logged in as Super Admin (vvini4803@gmail.com)'
+        success: false,
+        message: 'Please sign in with your authorized admin account (vvini@gmail.com) first.'
       };
     }
+
+    if (!isSuperAdminEmail(currentUser.email, currentUser.name)) {
+      return {
+        success: false,
+        message: 'Access Denied: Only vvini@gmail.com / vvini4803@gmail.com can claim the Super Admin role.'
+      };
+    }
+
+    const updated: UserProfile = {
+      ...currentUser,
+      role: 'SUPER_ADMIN',
+      account_status: 'ACTIVE',
+      last_login: new Date().toISOString()
+    };
+
+    setCurrentUser(updated);
+    localStorage.setItem('gramasiri_active_user', JSON.stringify(updated));
+
+    // Persist to Firestore
+    if (db && currentUser.uid) {
+      try {
+        await setDoc(
+          doc(db, 'users', currentUser.uid),
+          {
+            role: 'SUPER_ADMIN',
+            email: updated.email,
+            account_status: 'ACTIVE',
+            last_login: updated.last_login
+          },
+          { merge: true }
+        );
+      } catch (e) {
+        console.warn('Firestore claimAdminRole fallback:', e);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Super Admin role successfully claimed and activated!'
+    };
   };
 
   return (
