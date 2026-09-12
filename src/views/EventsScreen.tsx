@@ -36,6 +36,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
   const [eventTime, setEventTime] = useState('');
   const [eventVenue, setEventVenue] = useState('');
   const [eventDesc, setEventDesc] = useState('');
+  const [eventPhone, setEventPhone] = useState('+91 7483254968');
   const [eventCategory, setEventCategory] = useState<'FESTIVAL' | 'SABHA' | 'SPORTS' | 'AGRICULTURAL'>('FESTIVAL');
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
       venue_kn: eventVenue.trim() || 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮ ಕೇಂದ್ರ',
       organizer_en: currentUser ? currentUser.name : 'Muttagundi Resident',
       organizer_kn: currentUser ? (currentUser.name_kn || currentUser.name) : 'ಮುತ್ತಗುಂಡಿ ನಿವಾಸಿ',
-      organizer_phone: '+91 98450 00001',
+      organizer_phone: eventPhone.trim() || '+91 7483254968',
       cover_image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
       status: 'UPCOMING'
     });
@@ -70,6 +71,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
     setEventTime('');
     setEventVenue('');
     setEventDesc('');
+    setEventPhone('+91 7483254968');
   };
 
   const filteredEvents = events.filter((e) => {
@@ -340,6 +342,17 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
                   value={eventDesc}
                   onChange={(e) => setEventDesc(e.target.value)}
                   placeholder={isKannada ? 'ಕಾರ್ಯಕ್ರಮದ ಮುಖ್ಯ ಅಂಶಗಳು...' : 'Event itinerary and guest details...'}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{isKannada ? 'ಸಂಪರ್ಕ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ' : 'Contact Mobile Number'}</label>
+                <input
+                  type="tel"
+                  className="form-input"
+                  value={eventPhone}
+                  onChange={(e) => setEventPhone(e.target.value)}
+                  placeholder="+91 7483254968"
                 />
               </div>
 

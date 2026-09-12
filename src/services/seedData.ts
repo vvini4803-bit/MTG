@@ -22,7 +22,7 @@ export const SEED_USERS: UserProfile[] = [
     uid: 'admin_101',
     name: 'Muttagundi Admin',
     name_kn: 'ಮುಟ್ಟಗುಂಡಿ ಆಡಳಿತಾಧಿಕಾರಿ',
-    phone: '+91 98450 00001',
+    phone: '+91 7483254968',
     email: 'admin@muttagundi.org',
     role: 'SUPER_ADMIN',
     language: 'kn',

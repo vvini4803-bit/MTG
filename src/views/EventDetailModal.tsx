@@ -146,17 +146,28 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               </div>
             </div>
 
-            {event.organizer_phone && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <PhoneCall size={18} color="#A855F7" />
-                <div>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Contact</span>
-                  <a href={`tel:${event.organizer_phone}`} style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--accent-emerald)', textDecoration: 'none' }}>
-                    {event.organizer_phone}
-                  </a>
+            {(() => {
+              const contactPhone = (event.organizer_phone && !event.organizer_phone.includes('98450'))
+                ? event.organizer_phone
+                : '+91 7483254968';
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <PhoneCall size={18} color="#A855F7" />
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
+                      {isKannada ? 'ಸಂಪರ್ಕ' : 'Contact'}
+                    </span>
+                    <a
+                      href={`tel:${contactPhone.replace(/\s+/g, '')}`}
+                      style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--accent-emerald)', textDecoration: 'none' }}
+                      title="Call Organizer"
+                    >
+                      {contactPhone}
+                    </a>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           <div style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '24px' }}>

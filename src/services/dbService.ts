@@ -190,6 +190,39 @@ class DatabaseService {
 
     // Hydrate permanent photos from IndexedDB (preserves all village photos without quota loss)
     this.initPersistentPhotos();
+
+    // Migrate any legacy dummy contact numbers to +91 7483254968
+    this.migrateContactPhoneNumbers();
+  }
+
+  private migrateContactPhoneNumbers() {
+    try {
+      let eventsModified = false;
+      this.events = this.events.map((evt) => {
+        if (!evt.organizer_phone || evt.organizer_phone.includes('98450') || evt.organizer_phone.includes('99000')) {
+          eventsModified = true;
+          return { ...evt, organizer_phone: '+91 7483254968' };
+        }
+        return evt;
+      });
+      if (eventsModified) {
+        this.saveCollection('events', this.events);
+      }
+
+      let usersModified = false;
+      this.users = this.users.map((u) => {
+        if (u.phone && (u.phone.includes('98450') || u.phone.includes('99000'))) {
+          usersModified = true;
+          return { ...u, phone: '+91 7483254968' };
+        }
+        return u;
+      });
+      if (usersModified) {
+        this.saveCollection('users', this.users);
+      }
+    } catch (e) {
+      console.warn('Contact phone migration error:', e);
+    }
   }
 
   private async initPersistentPhotos() {
@@ -907,37 +940,53 @@ class DatabaseService {
 
   // --- EVENTS ---
   public subscribeEvents(callback: (events: EventItem[]) => void): () => void {
+    const sanitizeEvents = (items: EventItem[]): EventItem[] => {
+      return items.map((e) => {
+        if (!e.organizer_phone || e.organizer_phone.includes('98450') || e.organizer_phone.includes('99000')) {
+          return { ...e, organizer_phone: '+91 7483254968' };
+        }
+        return e;
+      });
+    };
+
     if (isFirebaseConfigured && db) {
       try {
         const q = query(collection(db, 'events'), orderBy('event_date', 'asc'));
         return onSnapshot(
           q,
           (snapshot) => {
-            const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as EventItem));
+            const rawItems = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as EventItem));
+            const items = sanitizeEvents(rawItems);
             if (items.length > 0) {
               this.events = items;
               this.saveCollection('events', items);
               callback(items);
             } else {
-              callback(this.events);
+              callback(sanitizeEvents(this.events));
             }
           },
           (error) => {
             console.warn('Firestore events listener error (using local):', error);
-            callback(this.events);
+            callback(sanitizeEvents(this.events));
           }
         );
       } catch (err) {
         console.warn('Firestore events listener fallback:', err);
       }
     }
-    return this.subscribe('events', this.events, callback);
+    const cleanList = sanitizeEvents(this.events);
+    return this.subscribe('events', cleanList, (updated) => callback(sanitizeEvents(updated)));
   }
 
   public async addEvent(event: Omit<EventItem, 'id' | 'participants_count' | 'registered_uids'>): Promise<EventItem> {
     const now = new Date();
+    const cleanPhone = (!event.organizer_phone || event.organizer_phone.includes('98450') || event.organizer_phone.includes('99000'))
+      ? '+91 7483254968'
+      : event.organizer_phone;
+
     const newEvent: EventItem = {
       ...event,
+      organizer_phone: cleanPhone,
       id: 'event_' + Date.now(),
       created_at: now.toISOString(),
       active_until: new Date(now.getTime() + ONE_WEEK_MS).toISOString(),

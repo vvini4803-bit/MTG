@@ -67,7 +67,7 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     distance_kn: 'ಗ್ರಾಮ ಕೇಂದ್ರ',
     timings_en: '8:00 AM - 9:00 PM',
     timings_kn: 'ಬೆಳಗ್ಗೆ ೮:೦೦ - ರಾತ್ರಿ ೯:೦೦',
-    phone: '+91 98450 00001',
+    phone: '+91 7483254968',
     coords: { lat: 13.7562, lng: 76.3335 },
     map_url: 'https://maps.app.goo.gl/sAMg2991XNuzLqNt6?g_st=ac',
     verified: true

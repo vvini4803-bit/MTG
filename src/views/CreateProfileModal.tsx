@@ -59,7 +59,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
       uid: 'user_' + Date.now(),
       name: name.trim(),
       name_kn: nameKn.trim() || undefined,
-      phone: phone || '+91 99000 00000',
+      phone: phone || '+91 7483254968',
       email: email || undefined,
       role: requestedRole,
       language: isKannada ? 'kn' : 'en',
