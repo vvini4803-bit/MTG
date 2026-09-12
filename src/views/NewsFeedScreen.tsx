@@ -3,6 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { dbService, isWithinOneWeek, getOneWeekStatus } from '../services/dbService';
 import { NewsItem, NewsCategory, VerificationStatus } from '../types';
+import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
 import {
   Plus,
   Search,
@@ -33,7 +34,7 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
   onOpenComments,
   onOpenReportModal
 }) => {
-  const { isKannada } = useLanguage();
+  const { language, isKannada } = useLanguage();
   const { currentUser, isModerator, isAdmin } = useAuth();
 
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
@@ -62,8 +63,9 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
 
   const handleLike = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (!currentUser) return;
-    await dbService.toggleLikeNews(id, currentUser.uid);
+    triggerHapticFeedback();
+    const effectiveUid = getEffectiveUserId(currentUser);
+    await dbService.toggleLikeNews(id, effectiveUid);
   };
 
   const activeWeekCount = newsList.filter((item) => isWithinOneWeek(item.created_at)).length;
@@ -298,7 +300,8 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
           </div>
         ) : (
           filteredNews.map((item) => {
-            const isLiked = currentUser ? item.liked_by.includes(currentUser.uid) : false;
+            const effectiveUid = getEffectiveUserId(currentUser);
+            const isLiked = Array.isArray(item.liked_by) && item.liked_by.includes(effectiveUid);
             const weekStatus = getOneWeekStatus(item.created_at);
 
             return (
@@ -420,17 +423,27 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
                     <button
                       onClick={(e) => handleLike(e, item.id)}
                       style={{
-                        background: 'none',
-                        border: 'none',
+                        background: isLiked ? 'rgba(239, 68, 68, 0.12)' : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${isLiked ? 'rgba(239, 68, 68, 0.35)' : 'var(--glass-border)'}`,
+                        borderRadius: 'var(--radius-full)',
+                        padding: '4px 10px',
                         color: isLiked ? '#EF4444' : 'var(--text-muted)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '5px',
-                        fontWeight: 600
+                        gap: '6px',
+                        fontWeight: 600,
+                        minHeight: '34px',
+                        transition: 'all 0.15s ease'
                       }}
+                      title={isLiked ? 'Liked' : 'Like'}
                     >
-                      <Heart size={15} fill={isLiked ? '#EF4444' : 'none'} />
+                      <Heart
+                        size={15}
+                        fill={isLiked ? '#EF4444' : 'none'}
+                        color={isLiked ? '#EF4444' : 'currentColor'}
+                        style={{ animation: isLiked ? 'heartPop 0.3s ease' : 'none' }}
+                      />
                       <span>{item.likes_count}</span>
                     </button>
 

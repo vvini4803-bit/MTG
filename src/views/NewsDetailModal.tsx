@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { dbService, getOneWeekStatus } from '../services/dbService';
 import { voiceAssistant } from '../services/voiceService';
 import { NewsItem, VerificationStatus } from '../types';
+import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
 import {
   X,
   ShieldCheck,
@@ -43,6 +44,26 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [correctionInput, setCorrectionInput] = useState('');
   const [showCorrectionForm, setShowCorrectionForm] = useState(false);
+
+  const effectiveUid = getEffectiveUserId(currentUser);
+  const [isLiked, setIsLiked] = useState<boolean>(false);
+  const [likesCount, setLikesCount] = useState<number>(0);
+
+  React.useEffect(() => {
+    if (news) {
+      setIsLiked(Array.isArray(news.liked_by) && news.liked_by.includes(effectiveUid));
+      setLikesCount(news.likes_count || 0);
+    }
+  }, [news, effectiveUid]);
+
+  const handleToggleLike = async () => {
+    if (!news) return;
+    triggerHapticFeedback();
+    const nextLiked = !isLiked;
+    setIsLiked(nextLiked);
+    setLikesCount((prev) => Math.max(0, prev + (nextLiked ? 1 : -1)));
+    await dbService.toggleLikeNews(news.id, effectiveUid);
+  };
 
   if (!isOpen || !news) return null;
 
@@ -354,18 +375,48 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
         )}
 
         {/* Footer Actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
-          <button
-            onClick={() => {
-              onClose();
-              onOpenComments(news);
-            }}
-            className="btn-secondary"
-            style={{ fontSize: '0.82rem' }}
-          >
-            <MessageSquare size={16} />
-            <span>Comments ({news.comments_count})</span>
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={handleToggleLike}
+              style={{
+                background: isLiked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${isLiked ? 'rgba(239, 68, 68, 0.4)' : 'var(--glass-border)'}`,
+                borderRadius: 'var(--radius-md)',
+                color: isLiked ? '#EF4444' : 'var(--text-primary)',
+                padding: '8px 14px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                minHeight: '40px',
+                transition: 'all 0.15s ease'
+              }}
+              title={isLiked ? 'Liked' : 'Like'}
+            >
+              <Heart
+                size={18}
+                fill={isLiked ? '#EF4444' : 'none'}
+                color={isLiked ? '#EF4444' : 'currentColor'}
+                style={{ animation: isLiked ? 'heartPop 0.3s ease' : 'none' }}
+              />
+              <span>{likesCount} {isKannada ? 'ಮೆಚ್ಚುಗೆ' : 'Likes'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onClose();
+                onOpenComments(news);
+              }}
+              className="btn-secondary"
+              style={{ fontSize: '0.82rem', minHeight: '40px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <MessageSquare size={16} />
+              <span>{isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'} ({news.comments_count})</span>
+            </button>
+          </div>
 
           <button
             onClick={() => {
@@ -384,7 +435,7 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
             }}
           >
             <Flag size={14} />
-            <span>Report Misinformation</span>
+            <span>{isKannada ? 'ವರದಿ ಮಾಡಿ' : 'Report'}</span>
           </button>
         </div>
       </div>

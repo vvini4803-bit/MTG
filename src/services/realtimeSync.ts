@@ -13,6 +13,9 @@ export type SyncEventType =
   | 'CROP_ADDED'
   | 'TEMPLE_ADDED'
   | 'PHOTO_ADDED'
+  | 'PHOTO_LIKED'
+  | 'COMMENT_ADDED'
+  | 'COMMENT_LIKED'
   | 'CHAT_MESSAGE'
   | 'SYNC_REQUEST'
   | 'SYNC_RESPONSE';

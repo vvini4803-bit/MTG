@@ -52,6 +52,12 @@ import {
   where,
   orderBy
 } from 'firebase/firestore';
+import {
+  savePhotoPermanently,
+  saveMultiplePhotosPermanently,
+  getAllPermanentPhotos,
+  deletePermanentPhoto
+} from './persistentPhotoStorage';
 
 export const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -181,6 +187,35 @@ class DatabaseService {
 
     // Purge any explicit demo entries from previous sessions (never delete real user uploads)
     this.purgeStaleDemoData();
+
+    // Hydrate permanent photos from IndexedDB (preserves all village photos without quota loss)
+    this.initPersistentPhotos();
+  }
+
+  private async initPersistentPhotos() {
+    try {
+      const permanentPhotos = await getAllPermanentPhotos();
+      if (permanentPhotos && permanentPhotos.length > 0) {
+        let merged = false;
+        permanentPhotos.forEach((p) => {
+          if (!this.gallery.some((g) => g.id === p.id)) {
+            this.gallery.push(p);
+            merged = true;
+          }
+        });
+        if (merged) {
+          this.gallery.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          this.saveCollection('gallery', this.gallery);
+          this.emit('gallery', this.gallery);
+        }
+      }
+      // Backup current gallery into IndexedDB permanently as well
+      if (this.gallery.length > 0) {
+        await saveMultiplePhotosPermanently(this.gallery);
+      }
+    } catch (err) {
+      console.warn('Persistent photo storage hydration fallback:', err);
+    }
   }
 
   private ensureAutoVerificationAndRetention() {
@@ -307,6 +342,61 @@ class DatabaseService {
           if (!this.gallery.some((g) => g.id === gal.id)) {
             this.gallery = [gal, ...this.gallery];
             this.saveCollection('gallery', this.gallery);
+            savePhotoPermanently(gal).catch(() => {});
+          }
+          break;
+        }
+
+        case 'PHOTO_LIKED': {
+          const { photoId, uid, isLiked } = envelope.payload || {};
+          const photo = this.gallery.find((g) => g.id === photoId);
+          if (photo) {
+            if (!Array.isArray(photo.liked_by)) photo.liked_by = [];
+            if (isLiked && !photo.liked_by.includes(uid)) {
+              photo.liked_by.push(uid);
+              photo.likes_count = Math.max((photo.likes_count || 0) + 1, photo.liked_by.length);
+            } else if (!isLiked && photo.liked_by.includes(uid)) {
+              photo.liked_by = photo.liked_by.filter((id) => id !== uid);
+              photo.likes_count = Math.max(0, (photo.likes_count || 1) - 1);
+            }
+            this.saveCollection('gallery', [...this.gallery]);
+            this.emit('gallery', this.gallery);
+            savePhotoPermanently(photo).catch(() => {});
+          }
+          break;
+        }
+
+        case 'COMMENT_ADDED': {
+          const comment: CommentItem = envelope.payload;
+          if (!comment || !comment.id) return;
+          if (!this.comments.some((c) => c.id === comment.id)) {
+            this.comments = [comment, ...this.comments];
+            this.saveCollection('comments', this.comments);
+            const post = this.news.find((n) => n.id === comment.post_id);
+            if (post) {
+              post.comments_count = Math.max(post.comments_count + 1, this.comments.filter((c) => c.post_id === post.id).length);
+              this.saveCollection('news', [...this.news]);
+              this.emit('news', this.news);
+            }
+            this.emit(`comments_${comment.post_id}`, this.comments.filter((c) => c.post_id === comment.post_id));
+          }
+          break;
+        }
+
+        case 'COMMENT_LIKED': {
+          const { commentId, postId, uid, isLiked } = envelope.payload || {};
+          const comment = this.comments.find((c) => c.id === commentId);
+          if (comment) {
+            if (!Array.isArray(comment.liked_by)) comment.liked_by = [];
+            if (isLiked && !comment.liked_by.includes(uid)) {
+              comment.liked_by.push(uid);
+              comment.likes_count = Math.max((comment.likes_count || 0) + 1, comment.liked_by.length);
+            } else if (!isLiked && comment.liked_by.includes(uid)) {
+              comment.liked_by = comment.liked_by.filter((id) => id !== uid);
+              comment.likes_count = Math.max(0, (comment.likes_count || 1) - 1);
+            }
+            this.saveCollection('comments', [...this.comments]);
+            this.emit(`comments_${postId || comment.post_id}`, this.comments.filter((c) => c.post_id === (postId || comment.post_id)));
           }
           break;
         }
@@ -674,16 +764,26 @@ class DatabaseService {
     const item = this.news.find((n) => n.id === newsId);
     if (!item) return;
 
+    if (!Array.isArray(item.liked_by)) {
+      item.liked_by = [];
+    }
     const alreadyLiked = item.liked_by.includes(uid);
     if (alreadyLiked) {
       item.liked_by = item.liked_by.filter((id) => id !== uid);
-      item.likes_count = Math.max(0, item.likes_count - 1);
+      item.likes_count = Math.max(0, (item.likes_count || 1) - 1);
     } else {
       item.liked_by.push(uid);
-      item.likes_count += 1;
+      item.likes_count = (item.likes_count || 0) + 1;
     }
 
     this.saveCollection('news', [...this.news]);
+    this.emit('news', this.news);
+    if (isFirebaseConfigured && db) {
+      updateDoc(doc(db, 'news', item.id), {
+        likes_count: item.likes_count,
+        liked_by: item.liked_by
+      }).catch(() => {});
+    }
     realtimeSync.broadcast('NEWS_LIKED', { newsId, uid, isLiked: !alreadyLiked });
   }
 
@@ -767,13 +867,42 @@ class DatabaseService {
     if (post) {
       post.comments_count += 1;
       this.saveCollection('news', [...this.news]);
+      this.emit('news', this.news);
       if (isFirebaseConfigured && db) {
         updateDoc(doc(db, 'news', post.id), { comments_count: post.comments_count }).catch(() => {});
       }
     }
 
     this.emit(`comments_${comment.post_id}`, this.comments.filter((c) => c.post_id === comment.post_id));
+    realtimeSync.broadcast('COMMENT_ADDED', newComment);
     return newComment;
+  }
+
+  public async toggleLikeComment(commentId: string, uid: string): Promise<void> {
+    const item = this.comments.find((c) => c.id === commentId);
+    if (!item) return;
+
+    if (!Array.isArray(item.liked_by)) {
+      item.liked_by = [];
+    }
+    const alreadyLiked = item.liked_by.includes(uid);
+    if (alreadyLiked) {
+      item.liked_by = item.liked_by.filter((id) => id !== uid);
+      item.likes_count = Math.max(0, (item.likes_count || 1) - 1);
+    } else {
+      item.liked_by.push(uid);
+      item.likes_count = (item.likes_count || 0) + 1;
+    }
+
+    this.saveCollection('comments', [...this.comments]);
+    if (isFirebaseConfigured && db) {
+      updateDoc(doc(db, 'comments', item.id), {
+        likes_count: item.likes_count,
+        liked_by: item.liked_by
+      }).catch(() => {});
+    }
+    this.emit(`comments_${item.post_id}`, this.comments.filter((c) => c.post_id === item.post_id));
+    realtimeSync.broadcast('COMMENT_LIKED', { commentId, postId: item.post_id, uid, isLiked: !alreadyLiked });
   }
 
   // --- EVENTS ---
@@ -1035,6 +1164,13 @@ class DatabaseService {
       is_demo: false
     };
 
+    // Permanently save into IndexedDB (multi-gigabyte storage, immune to 5MB localStorage limits)
+    try {
+      await savePhotoPermanently(newItem);
+    } catch (e) {
+      console.warn('Persistent photo save error:', e);
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         await setDoc(doc(db, 'gallery', newItem.id), newItem);
@@ -1045,8 +1181,62 @@ class DatabaseService {
 
     this.gallery = [newItem, ...this.gallery];
     this.saveCollection('gallery', this.gallery);
+    this.emit('gallery', this.gallery);
     realtimeSync.broadcast('PHOTO_ADDED', newItem);
     return newItem;
+  }
+
+  public async toggleLikeGalleryItem(itemId: string, uid: string): Promise<void> {
+    const item = this.gallery.find((g) => g.id === itemId);
+    if (!item) return;
+
+    if (!Array.isArray(item.liked_by)) {
+      item.liked_by = [];
+    }
+    const alreadyLiked = item.liked_by.includes(uid);
+    if (alreadyLiked) {
+      item.liked_by = item.liked_by.filter((id) => id !== uid);
+      item.likes_count = Math.max(0, (item.likes_count || 1) - 1);
+    } else {
+      item.liked_by.push(uid);
+      item.likes_count = (item.likes_count || 0) + 1;
+    }
+
+    this.saveCollection('gallery', [...this.gallery]);
+    this.emit('gallery', this.gallery);
+    savePhotoPermanently(item).catch(() => {});
+
+    if (isFirebaseConfigured && db) {
+      updateDoc(doc(db, 'gallery', item.id), {
+        likes_count: item.likes_count,
+        liked_by: item.liked_by
+      }).catch(() => {});
+    }
+
+    realtimeSync.broadcast('PHOTO_LIKED', { photoId: itemId, uid, isLiked: !alreadyLiked });
+  }
+
+  public async deleteGalleryItem(itemId: string, uid: string, role: string): Promise<boolean> {
+    const item = this.gallery.find((g) => g.id === itemId);
+    if (!item) return false;
+
+    if (item.author_id !== uid && !['SUPER_ADMIN', 'ADMIN', 'MODERATOR'].includes(role)) {
+      throw new Error('Unauthorized deletion attempt.');
+    }
+
+    this.gallery = this.gallery.filter((g) => g.id !== itemId);
+    this.saveCollection('gallery', this.gallery);
+    this.emit('gallery', this.gallery);
+    deletePermanentPhoto(itemId).catch(() => {});
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await deleteDoc(doc(db, 'gallery', itemId));
+      } catch (e) {
+        console.warn('Firestore gallery deleteDoc error:', e);
+      }
+    }
+    return true;
   }
 
   // --- SOCIAL LINKS ---

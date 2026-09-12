@@ -471,6 +471,47 @@ button, input, textarea, select {
   border-radius: var(--radius-md);
 }
 
+/* Heart Pop & Interactive Micro-Animations */
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+@keyframes slideUpMobile {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile Bottom Sheet & Touch Optimization */
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-content.mobile-bottom-sheet {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 92vh;
+    width: 100%;
+    margin: 0;
+    animation: slideUpMobile 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+  }
+
+  /* Thumb-friendly touch targets */
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+}
+
 /* Reduced Motion Override */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
@@ -480,3 +521,4 @@ button, input, textarea, select {
     scroll-behavior: auto !important;
   }
 }
+
