@@ -31,7 +31,9 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   onNavigateTab
 }) => {
   const { isKannada } = useLanguage();
-  const { currentUser, role, isAdmin, isModerator } = useAuth();
+  const { currentUser, role, isAdmin, isModerator, claimAdminRole } = useAuth();
+  const [claiming, setClaiming] = useState(false);
+  const [claimMsg, setClaimMsg] = useState('');
 
   const [usersCount, setUsersCount] = useState(0);
   const [pendingNewsCount, setPendingNewsCount] = useState(0);
@@ -53,19 +55,80 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   }, []);
 
   if (!isModerator && !isAdmin) {
+    const handleClaim = async () => {
+      setClaiming(true);
+      const res = await claimAdminRole('vvini4803@gmail.com');
+      setClaiming(false);
+      if (res.success) {
+        setClaimMsg(res.message);
+      }
+    };
+
     return (
-      <div className="container" style={{ padding: '60px 16px', maxWidth: '500px', textAlign: 'center' }}>
-        <div className="glass-card" style={{ padding: '36px' }}>
+      <div className="container" style={{ padding: '60px 16px', maxWidth: '540px', textAlign: 'center' }}>
+        <div className="glass-card" style={{ padding: '36px 24px' }}>
           <Lock size={44} color="#EF4444" style={{ margin: '0 auto 16px' }} />
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>
             {isKannada ? 'ನಿರ್ವಾಹಕ ಪ್ರವೇಶ ನಿರಾಕರಿಸಲಾಗಿದೆ' : 'Administrative Access Restricted'}
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '18px' }}>
             {isKannada
               ? 'ಈ ವಿಭಾಗವನ್ನು ಪ್ರವೇಶಿಸಲು ಸೂಪರ್ ಅಡ್ಮಿನ್ ಅಥವಾ ವಿಷಯ ಪರಿಶೀಲಕ (Moderator) ರೋಲ್ ಅಗತ್ಯವಿದೆ.'
-              : 'This portal is strictly protected by RBAC permissions. Log in with Super Admin or Moderator credentials to view.'}
+              : 'This portal is strictly protected by RBAC permissions. Currently logged in as: ' +
+                (currentUser?.email || currentUser?.name || 'Resident') + ' (Role: ' + role + ').'}
           </p>
-          <button onClick={() => onNavigateTab('profile')} className="btn-primary">
+
+          {/* 👑 Instant 1-Tap Claim Super Admin Role button */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%)',
+              border: '1px solid rgba(245, 158, 11, 0.5)',
+              borderRadius: '16px',
+              padding: '20px',
+              marginBottom: '20px',
+              boxShadow: '0 4px 20px rgba(245, 158, 11, 0.15)'
+            }}
+          >
+            <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>👑</div>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FBBF24', margin: '0 0 6px' }}>
+              {isKannada ? 'vvini4803@gmail.com ಅಡ್ಮಿನ್ ಪಾತ್ರ ಪಡೆಯಿರಿ' : 'Claim Super Admin Role (vvini4803@gmail.com)'}
+            </h3>
+            <p style={{ fontSize: '0.78rem', color: '#E2E8F0', lineHeight: 1.5, margin: '0 0 14px' }}>
+              {isKannada
+                ? 'ನೀವು ಡೆವಲಪರ್ ಅಥವಾ ಗ್ರಾಮ ಆಡಳಿತಾಧಿಕಾರಿಯಾಗಿದ್ದರೆ, ನಿಮ್ಮ ಸೂಪರ್ ಅಡ್ಮಿನ್ ಹಕ್ಕನ್ನು ತಕ್ಷಣ ಸಕ್ರಿಯಗೊಳಿಸಲು ಇಲ್ಲಿ ಕ್ಲಿಕ್ ಮಾಡಿ.'
+                : 'Click below to claim and activate full Super Admin role and unlock all 7 governance desks.'}
+            </p>
+
+            {claimMsg && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#34D399', borderRadius: '8px', padding: '8px', fontSize: '0.8rem', marginBottom: '12px' }}>
+                {claimMsg}
+              </div>
+            )}
+
+            <button
+              onClick={handleClaim}
+              disabled={claiming}
+              style={{
+                background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 24px',
+                fontSize: '0.9rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.4)'
+              }}
+            >
+              <span>👑</span>
+              <span>{claiming ? 'Activating...' : (isKannada ? 'ಅಡ್ಮಿನ್ ಪಾತ್ರ ಸಕ್ರಿಯಗೊಳಿಸಿ' : 'Claim Super Admin Role Now')}</span>
+            </button>
+          </div>
+
+          <button onClick={() => onNavigateTab('profile')} className="btn-secondary" style={{ width: '100%' }}>
             Back to Profile
           </button>
         </div>

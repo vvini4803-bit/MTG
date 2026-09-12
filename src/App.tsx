@@ -392,6 +392,31 @@ export const App: React.FC = () => {
               {isKannada ? 'English' : 'ಕನ್ನಡ'}
             </button>
 
+            {/* 🛡️ Dedicated Admin Quick Access Header Button */}
+            {(isAdmin || isModerator || currentUser?.email?.toLowerCase().includes('vvini4803')) && (
+              <button
+                onClick={() => navigateTo('admin')}
+                style={{
+                  background: currentSection === 'admin' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(245, 158, 11, 0.18)',
+                  border: '1px solid #F59E0B',
+                  color: '#FBBF24',
+                  borderRadius: '20px',
+                  padding: '7px 12px',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  boxShadow: '0 0 12px rgba(245, 158, 11, 0.25)'
+                }}
+                title={isKannada ? 'ಗ್ರಾಮ ಆಡಳಿತ ಕೇಂದ್ರ' : 'Admin Hub & Controls'}
+              >
+                <span>🛡️</span>
+                <span>{isKannada ? 'ಅಡ್ಮಿನ್' : 'Admin'}</span>
+              </button>
+            )}
+
             {/* User Profile / Join Village Community Button */}
             {currentUser ? (
               <button
@@ -1131,22 +1156,24 @@ export const App: React.FC = () => {
               onOpenCreateProfile={() => setIsAuthModalOpen(true)}
               onNavigateToPeople={() => navigateTo('people')}
               onNavigateToMessages={() => navigateTo('messages')}
+              onNavigateToAdmin={() => navigateTo('admin')}
             />
 
             {/* Discrete Admin Dashboard Entry for Authorized Roles */}
-            {(isAdmin || isModerator) && (
+            {(isAdmin || isModerator || currentUser?.email?.toLowerCase().includes('vvini4803')) && (
               <div style={{ marginTop: '20px', textAlign: 'center' }}>
                 <button
                   onClick={() => navigateTo('admin')}
                   style={{
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    border: '1px solid #F59E0B',
+                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.15) 100%)',
+                    border: '1.5px solid #F59E0B',
                     color: '#FBBF24',
                     borderRadius: '16px',
-                    padding: '12px 24px',
-                    fontSize: '0.9rem',
+                    padding: '14px 28px',
+                    fontSize: '0.95rem',
                     fontWeight: 800,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 18px rgba(245, 158, 11, 0.3)'
                   }}
                 >
                   🛡️ {isKannada ? 'ಗ್ರಾಮ ಪಂಚಾಯತಿ ಅಡ್ಮಿನ್ ಪೋರ್ಟಲ್ ತೆರೆಯಿರಿ' : 'Open Panchayat Admin Portal'}

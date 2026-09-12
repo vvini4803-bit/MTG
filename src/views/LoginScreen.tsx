@@ -21,7 +21,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     signUpWithEmail,
     signInWithGoogle,
     unverifiedEmail,
-    setUnverifiedEmail
+    setUnverifiedEmail,
+    claimAdminRole
   } = useAuth();
 
   const [emailMode, setEmailMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
@@ -137,6 +138,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </svg>
           <span>{isKannada ? 'ಗೂಗಲ್ ಮೂಲಕ ಮುಂದುವರಿಯಿರಿ' : 'Continue with Google'}</span>
         </button>
+
+        <div
+          style={{
+            background: 'rgba(245, 158, 11, 0.1)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            borderRadius: '10px',
+            padding: '8px 12px',
+            marginBottom: '16px',
+            fontSize: '0.75rem',
+            color: '#FDE68A',
+            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span style={{ fontSize: '1rem' }}>👑</span>
+          <span>
+            {isKannada
+              ? 'vvini4803@gmail.com ಖಾತೆಯ ಮೂಲಕ ಲಾಗಿನ್ ಆದರೆ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸೂಪರ್ ಅಡ್ಮಿನ್ ಹಕ್ಕುಗಳನ್ನು ಪಡೆಯುವಿರಿ.'
+              : 'Google sign-in with vvini4803@gmail.com automatically grants full Super Admin role.'}
+          </span>
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0 16px', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
@@ -387,6 +411,32 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               {isKannada ? 'ತ್ವರಿತ ಡೆಮೊ ರೋಲ್ ಆಯ್ಕೆ (RBAC ಪರೀಕ್ಷೆಗಾಗಿ):' : 'Instant Demo Role Test Login:'}
             </span>
           </div>
+
+          <button
+            type="button"
+            onClick={async () => {
+              await claimAdminRole('vvini4803@gmail.com');
+              onSuccess();
+            }}
+            className="btn-secondary"
+            style={{
+              width: '100%',
+              marginBottom: '10px',
+              padding: '10px 14px',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
+              border: '1px solid #F59E0B',
+              color: '#FBBF24',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <span>👑</span>
+            <span>{isKannada ? 'vvini4803@gmail.com ಸೂಪರ್ ಅಡ್ಮಿನ್ ಆಗಿ ಲಾಗಿನ್' : 'Login as Super Admin (vvini4803@gmail.com)'}</span>
+          </button>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button

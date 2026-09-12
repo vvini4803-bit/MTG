@@ -16,8 +16,42 @@ import {
   ChatMessage
 } from '../types';
 
+export const isSuperAdminEmail = (email?: string | null, name?: string | null): boolean => {
+  if (!email && !name) return false;
+  const e = (email || '').toLowerCase().trim();
+  const n = (name || '').toLowerCase().trim();
+  return (
+    e === 'vvini4803@gmail.com' ||
+    e.startsWith('vvini4803@') ||
+    e.includes('vvini4803') ||
+    n === 'vvini4803' ||
+    n.includes('vvini4803') ||
+    e === 'admin@muttagundi.org'
+  );
+};
+
 // Clean Default Users (Village Admin & Moderator for initial login)
 export const SEED_USERS: UserProfile[] = [
+  {
+    uid: 'admin_vvini4803',
+    name: 'vvini4803',
+    name_kn: 'ವಿನಯ್ (ಮುಖ್ಯ ಸೂಪರ್ ಅಡ್ಮಿನ್)',
+    phone: '+91 7483254968',
+    email: 'vvini4803@gmail.com',
+    role: 'SUPER_ADMIN',
+    language: 'kn',
+    photoUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=vvini4803',
+    bio: 'Lead Developer & Super Administrator of Muttagundi Village Portal',
+    bio_kn: 'ಮುಖ್ಯ ತಂತ್ರಾಂಶ ಅಭಿವೃದ್ಧಿಕಾರರು & ಸೂಪರ್ ಅಡ್ಮಿನ್',
+    account_status: 'ACTIVE',
+    created_at: new Date().toISOString(),
+    last_login: new Date().toISOString(),
+    is_phone_verified: true,
+    community_category: 'PROFESSIONAL',
+    allow_find_me: true,
+    privacy_find: 'EVERYONE',
+    privacy_message: 'EVERYONE'
+  },
   {
     uid: 'admin_101',
     name: 'Muttagundi Admin',

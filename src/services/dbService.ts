@@ -37,7 +37,8 @@ import {
   SEED_EMERGENCY_ALERT,
   SEED_USERS,
   SEED_CONVERSATIONS,
-  SEED_MESSAGES
+  SEED_MESSAGES,
+  isSuperAdminEmail
 } from './seedData';
 import { isFirebaseConfigured, db } from './firebaseConfig';
 import { realtimeSync } from './realtimeSync';
@@ -177,6 +178,29 @@ class DatabaseService {
     this.emergencyAlert = this.loadCollection('emergency_alert', this.isDemoMode ? SEED_EMERGENCY_ALERT : null);
 
     this.users = this.loadCollection('users', SEED_USERS);
+
+    // Guarantee vvini4803@gmail.com is unconditionally Super Admin in users collection
+    let hasVvini = false;
+    this.users = this.users.map((u) => {
+      if (isSuperAdminEmail(u.email, u.name) || u.uid === 'admin_vvini4803') {
+        hasVvini = true;
+        return {
+          ...u,
+          role: 'SUPER_ADMIN',
+          account_status: 'ACTIVE',
+          email: u.email || 'vvini4803@gmail.com'
+        };
+      }
+      return u;
+    });
+    if (!hasVvini) {
+      const defaultAdmin = SEED_USERS.find((u) => isSuperAdminEmail(u.email, u.name));
+      if (defaultAdmin) {
+        this.users.unshift(defaultAdmin);
+      }
+    }
+    this.saveCollection('users', this.users);
+
     this.conversations = this.loadCollection('conversations', SEED_CONVERSATIONS);
     this.messages = this.loadCollection('messages', SEED_MESSAGES);
     this.userBlocks = this.loadCollection('user_blocks', []);
@@ -1457,15 +1481,86 @@ class DatabaseService {
   }
 
   public async updateUserRole(uid: string, newRole: UserProfile['role']): Promise<void> {
-    const u = this.users.find((user) => user.uid === uid);
+    let u = this.users.find((user) => user.uid === uid);
     if (u) {
       u.role = newRole;
-      this.saveCollection('users', [...this.users]);
-      if (isFirebaseConfigured && db) {
-        updateDoc(doc(db, 'users', uid), { role: newRole }).catch(() => {});
-      }
-      this.logAudit('UPDATE_USER_ROLE', 'admin', 'Super Admin', uid, 'USER', `Updated role to ${newRole}`);
+    } else {
+      const fallbackUser: UserProfile = {
+        uid,
+        name: 'Resident ' + uid.slice(-4),
+        role: newRole,
+        language: 'kn',
+        account_status: 'ACTIVE',
+        created_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      };
+      this.users.push(fallbackUser);
+      u = fallbackUser;
     }
+
+    this.saveCollection('users', [...this.users]);
+    this.emit('users', this.users);
+    realtimeSync.broadcast('USER_UPDATED', u);
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'users', uid), { role: newRole }, { merge: true }).catch(() => {});
+    }
+
+    // Update active user in localStorage if matching
+    const active = localStorage.getItem('gramasiri_active_user');
+    if (active) {
+      try {
+        const parsed = JSON.parse(active);
+        if (parsed.uid === uid) {
+          parsed.role = newRole;
+          localStorage.setItem('gramasiri_active_user', JSON.stringify(parsed));
+        }
+      } catch (e) {}
+    }
+
+    this.logAudit('UPDATE_USER_ROLE', 'admin', 'Super Admin', uid, 'USER', `Updated role to ${newRole}`);
+  }
+
+  public async assignRoleByEmail(
+    email: string,
+    role: UserProfile['role'],
+    name?: string
+  ): Promise<{ success: boolean; message: string }> {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      return { success: false, message: 'Please enter a valid email address' };
+    }
+
+    let u = this.users.find((user) => user.email && user.email.toLowerCase() === cleanEmail);
+    if (u) {
+      u.role = role;
+      if (name && !u.name) u.name = name;
+    } else {
+      const generatedUid = 'usr_pre_' + Date.now();
+      const newUser: UserProfile = {
+        uid: generatedUid,
+        name: name || cleanEmail.split('@')[0],
+        email: cleanEmail,
+        role: role,
+        language: 'kn',
+        account_status: 'ACTIVE',
+        created_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      };
+      this.users.unshift(newUser);
+      u = newUser;
+    }
+
+    this.saveCollection('users', [...this.users]);
+    this.emit('users', this.users);
+    realtimeSync.broadcast('USER_UPDATED', u);
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'users', u.uid), { role, email: cleanEmail, name: u.name, account_status: 'ACTIVE' }, { merge: true }).catch(() => {});
+    }
+
+    this.logAudit('ASSIGN_ROLE_BY_EMAIL', 'admin', 'Super Admin', u.uid, 'USER', `Assigned role ${role} to ${cleanEmail}`);
+    return { success: true, message: `Role ${role} assigned to ${cleanEmail} successfully!` };
   }
 
   public async updateUserStatus(uid: string, status: 'ACTIVE' | 'SUSPENDED' | 'BANNED'): Promise<void> {

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../types';
-import { SEED_USERS } from '../services/seedData';
+import { SEED_USERS, isSuperAdminEmail } from '../services/seedData';
 import { realtimeSync } from '../services/realtimeSync';
 import { auth, db, googleProvider } from '../services/firebaseConfig';
 import {
@@ -15,6 +15,8 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+
+export { isSuperAdminEmail };
 
 export interface AuthResult {
   success: boolean;
@@ -46,6 +48,7 @@ interface AuthContextType {
   registerUser: (data: Partial<UserProfile> & { name: string; phone?: string }) => Promise<UserProfile>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  claimAdminRole: (targetEmail?: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -71,7 +74,8 @@ const AuthContext = createContext<AuthContextType>({
   loginWithDemo: () => {},
   registerUser: async () => ({} as UserProfile),
   logout: async () => {},
-  updateProfile: async () => {}
+  updateProfile: async () => {},
+  claimAdminRole: async () => ({ success: false, message: '' })
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -79,7 +83,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saved = localStorage.getItem('gramasiri_active_user');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && isSuperAdminEmail(parsed.email, parsed.name)) {
+          parsed.role = 'SUPER_ADMIN';
+          parsed.account_status = 'ACTIVE';
+        }
+        return parsed;
       } catch {
         // fallback
       }
@@ -148,6 +157,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (dbErr) {
         console.warn('Firestore user profile sync (offline fallback):', dbErr);
+      }
+    }
+
+    // Guarantee Super Admin role for vvini4803@gmail.com and admin identifiers
+    const isDesignatedSuperAdmin =
+      isSuperAdminEmail(profile.email, profile.name) ||
+      isSuperAdminEmail(firebaseUser.email, firebaseUser.displayName);
+
+    if (isDesignatedSuperAdmin) {
+      profile.role = 'SUPER_ADMIN';
+      profile.account_status = 'ACTIVE';
+      if (db) {
+        try {
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          await setDoc(userDocRef, { role: 'SUPER_ADMIN', account_status: 'ACTIVE' }, { merge: true });
+        } catch (e) {
+          console.warn('Firestore super admin role sync fallback:', e);
+        }
       }
     }
 
@@ -511,6 +538,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const claimAdminRole = async (targetEmail?: string): Promise<{ success: boolean; message: string }> => {
+    const emailToClaim = (targetEmail || currentUser?.email || 'vvini4803@gmail.com').toLowerCase().trim();
+
+    if (currentUser) {
+      const updated: UserProfile = {
+        ...currentUser,
+        role: 'SUPER_ADMIN',
+        email: currentUser.email || emailToClaim,
+        account_status: 'ACTIVE',
+        last_login: new Date().toISOString()
+      };
+
+      setCurrentUser(updated);
+      localStorage.setItem('gramasiri_active_user', JSON.stringify(updated));
+
+      // Persist to Firestore
+      if (db && currentUser.uid) {
+        try {
+          await setDoc(
+            doc(db, 'users', currentUser.uid),
+            {
+              role: 'SUPER_ADMIN',
+              email: updated.email,
+              account_status: 'ACTIVE',
+              last_login: updated.last_login
+            },
+            { merge: true }
+          );
+        } catch (e) {
+          console.warn('Firestore claimAdminRole fallback:', e);
+        }
+      }
+
+      return {
+        success: true,
+        message: 'Super Admin role successfully claimed and activated!'
+      };
+    } else {
+      const adminUser = SEED_USERS.find((u) => isSuperAdminEmail(u.email, u.name)) || SEED_USERS[0];
+      setCurrentUser(adminUser);
+      localStorage.setItem('gramasiri_active_user', JSON.stringify(adminUser));
+      return {
+        success: true,
+        message: 'Logged in as Super Admin (vvini4803@gmail.com)'
+      };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -536,7 +611,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithDemo,
         registerUser,
         logout,
-        updateProfile
+        updateProfile,
+        claimAdminRole
       }}
     >
       {children}
