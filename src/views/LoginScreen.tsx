@@ -19,7 +19,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     loginWithDemo,
     signInWithEmail,
     signUpWithEmail,
-    signInWithGoogle,
     unverifiedEmail,
     setUnverifiedEmail,
     claimAdminRole
@@ -32,18 +31,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [verificationEmail, setVerificationEmail] = useState<string | null>(unverifiedEmail);
-
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setErrorMsg(null);
-    const res = await signInWithGoogle();
-    setIsLoading(false);
-    if (res.error) {
-      setErrorMsg(res.error);
-    } else if (res.success) {
-      onSuccess();
-    }
-  };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,64 +96,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             ? 'ಸುದ್ದಿ ಪ್ರಕಟಣೆ, ವರದಿ ಹಾಗೂ ಕಾರ್ಯಕ್ರಮಗಳಿಗೆ ಸುರಕ್ಷಿತವಾಗಿ ಲಾಗಿನ್ ಆಗಿ'
             : 'Secure access for news posting, event RSVP, and village updates'}
         </p>
-
-
-        {/* Google Sign-in Option */}
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={isLoading}
-          className="btn-secondary"
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            marginBottom: '16px',
-            fontWeight: 700,
-            fontSize: '0.88rem'
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-          </svg>
-          <span>{isKannada ? 'ಗೂಗಲ್ ಮೂಲಕ ಮುಂದುವರಿಯಿರಿ' : 'Continue with Google'}</span>
-        </button>
-
-        <div
-          style={{
-            background: 'rgba(245, 158, 11, 0.1)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
-            borderRadius: '10px',
-            padding: '8px 12px',
-            marginBottom: '16px',
-            fontSize: '0.75rem',
-            color: '#FDE68A',
-            textAlign: 'left',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <span style={{ fontSize: '1rem' }}>👑</span>
-          <span>
-            {isKannada
-              ? 'vvini4803@gmail.com ಖಾತೆಯ ಮೂಲಕ ಲಾಗಿನ್ ಆದರೆ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸೂಪರ್ ಅಡ್ಮಿನ್ ಹಕ್ಕುಗಳನ್ನು ಪಡೆಯುವಿರಿ.'
-              : 'Google sign-in with vvini4803@gmail.com automatically grants full Super Admin role.'}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0 16px', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-          <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
-          <span style={{ padding: '0 10px', textTransform: 'uppercase' }}>{isKannada ? 'ಅಥವಾ' : 'OR'}</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
-        </div>
 
         {/* Mode Toggle (Sign In / Register) */}
         <div
