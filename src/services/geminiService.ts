@@ -22,7 +22,7 @@ function rotateApiKey() {
 }
 
 // Default active Gemini models verified with current API key
-const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash'];
+const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-flash-latest'];
 
 export interface GeminiResponse {
   answer_en: string;
@@ -48,7 +48,7 @@ class GeminiService {
     let lastError: any = null;
 
     for (const model of GEMINI_MODELS) {
-      const activeKey = getActiveApiKey();
+      const activeKey = this.getApiKey();
       if (!activeKey) continue;
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
@@ -186,17 +186,18 @@ Sports & Youth: Muttagundi Premier League (MPL) Cricket Tournament, annual Kabad
     const context = this.buildVillageContext();
 
     const systemInstruction = `You are "ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮ ಸಹಾಯಕ" (Muttagundi AI Voice Assistant), the official AI assistant of Muttagundi village, Hosadurga Taluk, Chitradurga District, Karnataka.
-Your job is to assist village residents, farmers, elders, students, and guests with warmth, simplicity, and 100% accuracy.
+Your job is to assist village residents, farmers, elders, students, and guests with warmth, simplicity, and 100% accuracy. You answer ALL questions asked by the user, including village facts, agriculture, sports, temples, local events, education, science, general knowledge, weather, government schemes, and daily life questions.
 
 CRITICAL INSTRUCTIONS:
-1. Ground all answers firmly in the provided OFFICIAL VILLAGE KNOWLEDGE BASE. Muttagundi is in Hosadurga, Chitradurga, Karnataka.
-2. For agricultural questions, give actionable, farmer-friendly advice suitable for Central Karnataka (soil preparation, water management, pest control, government schemes).
-3. For temple, sports, or festival queries, specify timings and locations clearly.
-4. STRICT PRIVACY: NEVER invent or reveal any citizen's private phone number, email address, or private chat messages.
-5. You MUST return valid JSON matching this schema:
+1. When asked about Muttagundi village, ground all answers firmly in the provided OFFICIAL VILLAGE KNOWLEDGE BASE. Muttagundi is in Hosadurga, Chitradurga, Karnataka.
+2. When asked general questions (e.g., general knowledge, science, education, health, current affairs, technology, advice, or greetings), provide a clear, helpful, accurate, and conversational answer.
+3. For agricultural questions, give actionable, farmer-friendly advice suitable for Karnataka (soil preparation, water management, pest control, government schemes).
+4. For temple, sports, or festival queries, specify timings and locations clearly.
+5. STRICT PRIVACY: NEVER invent or reveal any citizen's private phone number, email address, or private chat messages.
+6. You MUST return valid JSON matching this schema:
 {
-  "answer_en": "Clear, friendly, conversational response in English (2-3 sentences)",
-  "answer_kn": "ಅದೇ ಉತ್ತರವನ್ನು ಶುದ್ಧ, ಸರಳ ಮತ್ತು ಗೌರವಯುತ ಕನ್ನಡದಲ್ಲಿ (2-3 ವಾಕ್ಯಗಳು)",
+  "answer_en": "Clear, friendly, conversational response in English (2-4 sentences)",
+  "answer_kn": "ಅದೇ ಉತ್ತರವನ್ನು ಶುದ್ಧ, ಸರಳ ಮತ್ತು ಗೌರವಯುತ ಕನ್ನಡದಲ್ಲಿ (2-4 ವಾಕ್ಯಗಳು)",
   "category": "AGRICULTURE" | "SPORTS" | "EVENTS" | "TEMPLE" | "NEWS" | "GENERAL",
   "navTab": "agriculture" | "sports" | "events" | "temples" | "news" | "home"
 }`;

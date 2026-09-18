@@ -13,7 +13,8 @@ import {
   ShieldCheck,
   AlertCircle,
   ArrowRight,
-  Globe
+  Globe,
+  Loader2
 } from 'lucide-react';
 
 interface VoiceAssistantModalProps {
@@ -30,6 +31,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   const { language, setLanguage, isKannada } = useLanguage();
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [queryText, setQueryText] = useState('');
   const [lastQuery, setLastQuery] = useState('');
   const [response, setResponse] = useState<VoiceQueryResponse | null>(null);
@@ -42,6 +44,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       voiceAssistant.stopSpeaking();
       setIsListening(false);
       setIsSpeaking(false);
+      setIsProcessing(false);
     }
   }, [isOpen]);
 
@@ -72,23 +75,37 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   };
 
   const handleProcessQuery = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || isProcessing) return;
     setLastQuery(text);
     setErrorMessage(null);
+    setIsProcessing(true);
+    voiceAssistant.stopSpeaking();
+    setIsSpeaking(false);
 
-    const res = await voiceAssistant.query(text, language);
-    setResponse(res);
-    setQueryText('');
+    try {
+      const res = await voiceAssistant.query(text, language);
+      setResponse(res);
+      setQueryText('');
 
-    if (!isSpeechMuted) {
-      const speechAnswer = language === 'kn' ? res.answer_kn : res.answer_en;
-      setIsSpeaking(true);
-      voiceAssistant.speak(
-        speechAnswer,
-        language,
-        () => setIsSpeaking(false),
-        () => setIsSpeaking(false)
+      if (!isSpeechMuted) {
+        const speechAnswer = language === 'kn' ? res.answer_kn : res.answer_en;
+        setIsSpeaking(true);
+        voiceAssistant.speak(
+          speechAnswer,
+          language,
+          () => setIsSpeaking(false),
+          () => setIsSpeaking(false)
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(
+        isKannada
+          ? 'ಉತ್ತರ ಪಡೆಯುವಲ್ಲಿ ಸಮಸ್ಯೆಯಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸಿ.'
+          : 'Could not get answer. Please try again.'
       );
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -204,16 +221,18 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
         <div style={{ margin: '10px 0 20px' }}>
           <VoiceOrb isListening={isListening} isSpeaking={isSpeaking} size={160} />
           <p style={{
-            fontSize: '0.82rem',
-            color: isListening ? '#EF4444' : isSpeaking ? '#10B981' : 'var(--text-secondary)',
+            fontSize: '0.85rem',
+            color: isProcessing ? '#F59E0B' : isListening ? '#EF4444' : isSpeaking ? '#10B981' : 'var(--text-secondary)',
             fontWeight: 600,
             marginTop: '8px'
           }}>
-            {isListening
+            {isProcessing
+              ? isKannada ? 'AI ಚಿಂತಿಸುತ್ತಿದೆ... ಉತ್ತರ ಸಿದ್ಧವಾಗುತ್ತಿದೆ' : 'AI is thinking... finding the best answer'
+              : isListening
               ? isKannada ? 'ಕೇಳಿಸಿಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ... ಮಾತನಾಡಿ' : 'Listening... speak now'
               : isSpeaking
               ? isKannada ? 'ಉತ್ತರಿಸುತ್ತಿದ್ದೇನೆ...' : 'Speaking answer...'
-              : isKannada ? 'ಧ್ವನಿ ಬಟನ್ ಒತ್ತಿ ಪ್ರಶ್ನೆ ಕೇಳಿ' : 'Tap microphone or ask below'}
+              : isKannada ? 'ಪ್ರಶ್ನೆ ಕೇಳಿ ಅಥವಾ ಟೈಪ್ ಮಾಡಿ ಸಲ್ಲಿಸಿ' : 'Ask any question or type & submit'}
           </p>
         </div>
 
@@ -221,19 +240,22 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
           <button
             onClick={isListening ? () => setIsListening(false) : handleStartListening}
+            disabled={isProcessing}
             style={{
               width: '64px',
               height: '64px',
               borderRadius: '50%',
               background: isListening
                 ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+                : isProcessing
+                ? 'rgba(255,255,255,0.1)'
                 : 'linear-gradient(135deg, #10B981 0%, #047857 100%)',
               border: '2px solid rgba(255,255,255,0.3)',
               color: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
+              cursor: isProcessing ? 'not-allowed' : 'pointer',
               boxShadow: isListening
                 ? '0 0 24px rgba(239, 68, 68, 0.6)'
                 : '0 0 24px rgba(16, 185, 129, 0.5)',
@@ -284,7 +306,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
               ) : (
                 <span className="badge badge-pending" style={{ fontSize: '0.65rem' }}>
                   <AlertCircle size={11} />
-                  {isKannada ? 'ದಾಖಲೆ ಪರಿಶೀಲಿಸಿಲ್ಲ' : 'UNVERIFIED'}
+                  {isKannada ? 'AI ಉತ್ತರ' : 'AI ANSWER'}
                 </span>
               )}
             </div>
@@ -435,6 +457,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                   setQueryText(prompt);
                   handleProcessQuery(prompt);
                 }}
+                disabled={isProcessing}
                 style={{
                   background: 'rgba(255,255,255,0.06)',
                   border: '1px solid var(--glass-border)',
@@ -442,7 +465,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
                   padding: '4px 10px',
                   fontSize: '0.72rem',
                   color: 'var(--text-secondary)',
-                  cursor: 'pointer',
+                  cursor: isProcessing ? 'not-allowed' : 'pointer',
                   textAlign: 'left'
                 }}
               >
@@ -452,29 +475,59 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
           </div>
         </div>
 
-        {/* Text Input Fallback */}
+        {/* Text Input & Dedicated Submit Button */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleProcessQuery(queryText);
           }}
-          style={{ display: 'flex', gap: '8px' }}
+          style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}
         >
           <input
             type="text"
             className="form-input"
             value={queryText}
             onChange={(e) => setQueryText(e.target.value)}
-            placeholder={isKannada ? 'ಪ್ರಶ್ನೆ ಟೈಪ್ ಮಾಡಿ...' : 'Type your question here...'}
-            style={{ flex: 1, height: '44px' }}
+            placeholder={isKannada ? 'ಯಾವುದೇ ಪ್ರಶ್ನೆ ಕೇಳಿ (ಟೈಪ್ ಮಾಡಿ)...' : 'Ask any question (type here)...'}
+            disabled={isProcessing}
+            style={{
+              flex: 1,
+              height: '48px',
+              fontSize: '0.9rem',
+              borderRadius: 'var(--radius-md)'
+            }}
           />
           <button
             type="submit"
             className="btn-primary"
-            style={{ width: '48px', height: '44px', padding: 0 }}
-            disabled={!queryText.trim()}
+            style={{
+              height: '48px',
+              padding: '0 16px',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              fontWeight: 700,
+              fontSize: '0.88rem',
+              whiteSpace: 'nowrap',
+              minWidth: '105px',
+              cursor: (!queryText.trim() || isProcessing) ? 'not-allowed' : 'pointer',
+              opacity: (!queryText.trim() || isProcessing) ? 0.7 : 1
+            }}
+            disabled={!queryText.trim() || isProcessing}
           >
-            <Send size={18} />
+            {isProcessing ? (
+              <>
+                <Loader2 size={16} className="spinner animate-spin" />
+                <span>{isKannada ? 'ಸಲ್ಲಿಸುತ್ತಿದೆ...' : 'Submitting...'}</span>
+              </>
+            ) : (
+              <>
+                <Send size={15} />
+                <span>{isKannada ? 'ಸಲ್ಲಿಸಿ' : 'Submit'}</span>
+              </>
+            )}
           </button>
         </form>
       </div>

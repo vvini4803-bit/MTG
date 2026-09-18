@@ -13,8 +13,10 @@ import {
   Clock,
   Pin,
   Flame,
-  Radio
+  Radio,
+  Maximize2
 } from 'lucide-react';
+import { ImageLightboxModal } from '../components/common/ImageLightboxModal';
 
 interface NewsVerificationScreenProps {
   onBack: () => void;
@@ -25,6 +27,7 @@ export const NewsVerificationScreen: React.FC<NewsVerificationScreenProps> = ({ 
   const { currentUser } = useAuth();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [filter, setFilter] = useState<'PENDING' | 'VERIFIED' | 'COMMUNITY_REPORT' | 'ALL'>('PENDING');
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     return dbService.subscribeNews(setNews);
@@ -144,8 +147,39 @@ export const NewsVerificationScreen: React.FC<NewsVerificationScreenProps> = ({ 
               </p>
 
               {item.media_url && (
-                <div style={{ maxHeight: '200px', width: '320px', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '14px' }}>
-                  <img src={item.media_url} alt="Post attachment" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div
+                  onClick={() => setLightboxImage({ url: item.media_url!, title: language === 'kn' ? item.title_kn : item.title_en })}
+                  style={{
+                    maxHeight: '220px',
+                    maxWidth: '360px',
+                    borderRadius: 'var(--radius-md)',
+                    overflow: 'hidden',
+                    marginBottom: '14px',
+                    cursor: 'zoom-in',
+                    position: 'relative',
+                    border: '1px solid var(--glass-border)'
+                  }}
+                  title="Click to enlarge attachment"
+                >
+                  <img src={item.media_url} alt="Post attachment" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '6px',
+                      right: '6px',
+                      background: 'rgba(0,0,0,0.7)',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                      color: '#FFFFFF',
+                      fontSize: '0.68rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Maximize2 size={11} />
+                    <span>View</span>
+                  </div>
                 </div>
               )}
 
@@ -189,6 +223,14 @@ export const NewsVerificationScreen: React.FC<NewsVerificationScreenProps> = ({ 
           ))
         )}
       </div>
+
+      {/* Fullscreen Image Lightbox Modal */}
+      <ImageLightboxModal
+        isOpen={Boolean(lightboxImage)}
+        imageUrl={lightboxImage?.url || null}
+        title={lightboxImage?.title}
+        onClose={() => setLightboxImage(null)}
+      />
     </div>
   );
 };

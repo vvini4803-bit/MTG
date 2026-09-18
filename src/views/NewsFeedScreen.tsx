@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { dbService, isWithinOneWeek, getOneWeekStatus } from '../services/dbService';
 import { NewsItem, NewsCategory, VerificationStatus } from '../types';
 import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
+import { ImageLightboxModal } from '../components/common/ImageLightboxModal';
 import {
   Plus,
   Search,
@@ -18,7 +19,8 @@ import {
   Flame,
   CheckCircle,
   Flag,
-  Calendar
+  Calendar,
+  Maximize2
 } from 'lucide-react';
 
 interface NewsFeedScreenProps {
@@ -42,6 +44,7 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [timeFilter, setTimeFilter] = useState<'WEEK' | 'ALL'>('WEEK');
   const [searchQuery, setSearchQuery] = useState('');
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
 
   useEffect(() => {
     return dbService.subscribeNews((items) => {
@@ -367,18 +370,53 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
 
                 {/* Media Image if present */}
                 {item.media_url && (
-                  <div style={{
-                    borderRadius: 'var(--radius-md)',
-                    overflow: 'hidden',
-                    maxHeight: '340px',
-                    marginBottom: '14px',
-                    border: '1px solid var(--glass-border)'
-                  }}>
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxImage({
+                        url: item.media_url!,
+                        title: isKannada ? item.title_kn : item.title_en,
+                        subtitle: `${item.author_name} • ${item.created_at.replace('T', ' ').slice(0, 16)}`
+                      });
+                    }}
+                    style={{
+                      position: 'relative',
+                      borderRadius: 'var(--radius-md)',
+                      overflow: 'hidden',
+                      maxHeight: '340px',
+                      marginBottom: '14px',
+                      border: '1px solid var(--glass-border)',
+                      cursor: 'zoom-in',
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                    }}
+                    title={isKannada ? 'ದೊಡ್ಡದಾಗಿ ವೀಕ್ಷಿಸಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to enlarge photo'}
+                  >
                     <img
                       src={item.media_url}
                       alt={item.title_en}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                     />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '8px',
+                        right: '8px',
+                        background: 'rgba(0, 0, 0, 0.72)',
+                        backdropFilter: 'blur(6px)',
+                        color: '#FFFFFF',
+                        borderRadius: '6px',
+                        padding: '3px 8px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        pointerEvents: 'none'
+                      }}
+                    >
+                      <Maximize2 size={11} />
+                      <span>{isKannada ? 'ದೊಡ್ಡದಾಗಿ ನೋಡಿ' : 'Tap to expand'}</span>
+                    </div>
                   </div>
                 )}
 
@@ -490,6 +528,15 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
           })
         )}
       </div>
+
+      {/* Fullscreen Image Lightbox Modal */}
+      <ImageLightboxModal
+        isOpen={Boolean(lightboxImage)}
+        imageUrl={lightboxImage?.url || null}
+        title={lightboxImage?.title}
+        subtitle={lightboxImage?.subtitle}
+        onClose={() => setLightboxImage(null)}
+      />
     </div>
   );
 };

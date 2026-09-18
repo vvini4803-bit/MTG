@@ -27,10 +27,11 @@ import {
   Trophy,
   Award,
   ChevronRight,
-  Camera,
   Heart,
-  MessageSquare
+  MessageSquare,
+  Maximize2
 } from 'lucide-react';
+import { ImageLightboxModal } from '../components/common/ImageLightboxModal';
 
 interface HomeScreenProps {
   onNavigateTab: (tab: ViewTab) => void;
@@ -52,7 +53,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenVoice
 }) => {
   const { language, isKannada } = useLanguage();
-  const { role } = useAuth();
+  const { currentUser } = useAuth();
+  const [activeHeritageTab, setActiveHeritageTab] = useState<'NONE' | 'STATS' | 'HISTORY' | 'ACHIEVERS'>('NONE');
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
 
   const [stats, setStats] = useState<VillageStats>(dbService['villageStats']);
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
@@ -439,6 +442,58 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '8px', lineHeight: 1.4 }}>
                   {isKannada ? item.title_kn : item.title_en}
                 </h3>
+
+                {/* News Thumbnail if present */}
+                {item.media_url && (
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxImage({
+                        url: item.media_url!,
+                        title: isKannada ? item.title_kn : item.title_en,
+                        subtitle: `${item.author_name} • ${item.created_at.split('T')[0]}`
+                      });
+                    }}
+                    style={{
+                      position: 'relative',
+                      borderRadius: 'var(--radius-md)',
+                      overflow: 'hidden',
+                      height: '160px',
+                      marginBottom: '12px',
+                      cursor: 'zoom-in',
+                      border: '1px solid var(--glass-border)',
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                    }}
+                    title={isKannada ? 'ದೊಡ್ಡದಾಗಿ ವೀಕ್ಷಿಸಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to enlarge photo'}
+                  >
+                    <img
+                      src={item.media_url}
+                      alt={item.title_en}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '6px',
+                        right: '6px',
+                        background: 'rgba(0, 0, 0, 0.72)',
+                        backdropFilter: 'blur(4px)',
+                        color: '#FFFFFF',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '0.65rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                        pointerEvents: 'none'
+                      }}
+                    >
+                      <Maximize2 size={10} />
+                      <span>{isKannada ? 'ವೀಕ್ಷಿಸಿ' : 'View'}</span>
+                    </div>
+                  </div>
+                )}
 
                 <p style={{
                   fontSize: '0.85rem',
@@ -881,6 +936,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </section>
       </div>
+
+      {/* Fullscreen Image Lightbox Modal */}
+      <ImageLightboxModal
+        isOpen={Boolean(lightboxImage)}
+        imageUrl={lightboxImage?.url || null}
+        title={lightboxImage?.title}
+        subtitle={lightboxImage?.subtitle}
+        onClose={() => setLightboxImage(null)}
+      />
     </div>
   );
 };

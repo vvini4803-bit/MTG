@@ -13,7 +13,8 @@ import {
   AlertCircle,
   ArrowRight,
   Globe,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 
 interface VoiceAssistantScreenProps {
@@ -24,6 +25,7 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
   const { language, setLanguage, isKannada } = useLanguage();
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [queryText, setQueryText] = useState('');
   const [lastQuery, setLastQuery] = useState('');
   const [response, setResponse] = useState<VoiceQueryResponse | null>(null);
@@ -36,6 +38,7 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
       voiceAssistant.stopSpeaking();
       setIsSpeaking(false);
       setIsListening(false);
+      setIsProcessing(false);
     };
   }, []);
 
@@ -64,23 +67,37 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
   };
 
   const handleProcessQuery = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || isProcessing) return;
     setLastQuery(text);
     setErrorMessage(null);
+    setIsProcessing(true);
+    voiceAssistant.stopSpeaking();
+    setIsSpeaking(false);
 
-    const res = await voiceAssistant.query(text, language);
-    setResponse(res);
-    setQueryText('');
+    try {
+      const res = await voiceAssistant.query(text, language);
+      setResponse(res);
+      setQueryText('');
 
-    if (!isSpeechMuted) {
-      const speechAnswer = language === 'kn' ? res.answer_kn : res.answer_en;
-      setIsSpeaking(true);
-      voiceAssistant.speak(
-        speechAnswer,
-        language,
-        () => setIsSpeaking(false),
-        () => setIsSpeaking(false)
+      if (!isSpeechMuted) {
+        const speechAnswer = language === 'kn' ? res.answer_kn : res.answer_en;
+        setIsSpeaking(true);
+        voiceAssistant.speak(
+          speechAnswer,
+          language,
+          () => setIsSpeaking(false),
+          () => setIsSpeaking(false)
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(
+        isKannada
+          ? 'ಉತ್ತರ ಪಡೆಯುವಲ್ಲಿ ಸಮಸ್ಯೆಯಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸಿ.'
+          : 'Could not get answer. Please try again.'
       );
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -133,8 +150,8 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
 
       <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>
         {isKannada
-          ? 'ನಮ್ಮ ಗ್ರಾಮದ ದೃಢೀಕೃತ ಮಾಹಿತಿ, ಕೃಷಿ, ದೇಗುಲಗಳು ಮತ್ತು ಕ್ರೀಡಾ ಸ್ಕೋರ್‌ಗಳನ್ನು ಕನ್ನಡ ಅಥವಾ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ಕೇಳಿ'
-          : 'Ask questions about verified news, crops, temple schedules, or live sports'}
+          ? 'ನಮ್ಮ ಗ್ರಾಮದ ದೃಢೀಕೃತ ಮಾಹಿತಿ, ಕೃಷಿ, ದೇಗುಲಗಳು, ಶಿಕ್ಷಣ, ಅಥವಾ ಯಾವುದೇ ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಿ'
+          : 'Ask any question about village news, farming, temples, education, or general topics'}
       </p>
 
       {/* Language switcher & Mute toggle */}
@@ -155,7 +172,7 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
           }}
         >
           <Globe size={14} color="#10B981" />
-          <span>{language === 'en' ? 'ಭಾಷೆ: ಕನ್ನಡ' : 'Language: English'}</span>
+          <span>{language === 'en' ? 'ಕನ್ನಡಕ್ಕೆ ಬದಲಾಯಿಸಿ' : 'Switch to English'}</span>
         </button>
 
         <button
@@ -168,7 +185,7 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
             border: '1px solid var(--glass-border)',
             padding: '6px 14px',
             borderRadius: '9999px',
-            color: isSpeechMuted ? 'var(--text-muted)' : '#10B981',
+            color: isSpeechMuted ? 'var(--text-muted)' : 'var(--accent-emerald)',
             fontSize: '0.8rem',
             cursor: 'pointer',
             display: 'flex',
@@ -177,24 +194,26 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
           }}
         >
           {isSpeechMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-          <span>{isSpeechMuted ? 'Speech Muted' : 'Voice Readout On'}</span>
+          <span>{isSpeechMuted ? 'Voice Off' : 'Voice On'}</span>
         </button>
       </div>
 
-      {/* 3D Animated Canvas Orb */}
-      <div style={{ marginBottom: '24px' }}>
+      {/* Interactive 3D Soundwave Orb */}
+      <div style={{ margin: '16px 0 24px' }}>
         <VoiceOrb isListening={isListening} isSpeaking={isSpeaking} size={200} />
         <p style={{
-          fontSize: '0.9rem',
-          color: isListening ? '#EF4444' : isSpeaking ? '#10B981' : 'var(--text-secondary)',
+          fontSize: '0.92rem',
+          color: isProcessing ? '#F59E0B' : isListening ? '#EF4444' : isSpeaking ? '#10B981' : 'var(--text-secondary)',
           fontWeight: 700,
           marginTop: '12px'
         }}>
-          {isListening
+          {isProcessing
+            ? isKannada ? 'AI ಚಿಂತಿಸುತ್ತಿದೆ... ಉತ್ತರ ಸಿದ್ಧವಾಗುತ್ತಿದೆ' : 'AI is thinking... finding the best answer'
+            : isListening
             ? isKannada ? 'ಕೇಳಿಸಿಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ... ಮಾತನಾಡಿ' : 'Listening... Speak now'
             : isSpeaking
             ? isKannada ? 'ಉತ್ತರಿಸುತ್ತಿದ್ದೇನೆ...' : 'Speaking answer...'
-            : isKannada ? 'ಧ್ವನಿ ಬಟನ್ ಒತ್ತಿ ಮಾತನಾಡಿ' : 'Tap the microphone or choose a question'}
+            : isKannada ? 'ಧ್ವನಿ ಬಟನ್ ಒತ್ತಿ ಅಥವಾ ಪ್ರಶ್ನೆ ಟೈಪ್ ಮಾಡಿ ಸಲ್ಲಿಸಿ' : 'Tap microphone or type & submit your question'}
         </p>
       </div>
 
@@ -202,19 +221,22 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
         <button
           onClick={isListening ? () => setIsListening(false) : handleStartListening}
+          disabled={isProcessing}
           style={{
             width: '72px',
             height: '72px',
             borderRadius: '50%',
             background: isListening
               ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+              : isProcessing
+              ? 'rgba(255,255,255,0.1)'
               : 'linear-gradient(135deg, #10B981 0%, #047857 100%)',
             border: '3px solid rgba(255,255,255,0.3)',
             color: '#FFFFFF',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
+            cursor: isProcessing ? 'not-allowed' : 'pointer',
             boxShadow: isListening
               ? '0 0 30px rgba(239, 68, 68, 0.6)'
               : '0 0 30px rgba(16, 185, 129, 0.5)',
@@ -239,42 +261,41 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
         </div>
       )}
 
-      {/* Answer Display */}
+      {/* Response Box */}
       {response && (
         <div
           className="glass-card"
           style={{
-            padding: '24px',
+            padding: '20px',
+            marginBottom: '28px',
             textAlign: 'left',
-            marginBottom: '24px',
+            background: 'rgba(15, 23, 42, 0.75)',
             border: response.isVerified ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(245, 158, 11, 0.4)',
-            borderRadius: '20px',
-            background: 'rgba(15, 23, 42, 0.75)'
+            borderRadius: '16px'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               Q: "{lastQuery}"
             </span>
             {response.isVerified ? (
-              <span className="badge badge-verified">
+              <span className="badge badge-verified" style={{ fontSize: '0.68rem' }}>
                 <ShieldCheck size={12} />
                 {isKannada ? 'ದೃಢೀಕೃತ ಗ್ರಾಮ ಮಾಹಿತಿ' : 'VERIFIED RECORD'}
               </span>
             ) : (
-              <span className="badge badge-pending">
+              <span className="badge badge-pending" style={{ fontSize: '0.68rem' }}>
                 <AlertCircle size={12} />
-                {isKannada ? 'ದಾಖಲೆ ಪರಿಶೀಲಿಸಿಲ್ಲ' : 'UNVERIFIED'}
+                {isKannada ? 'AI ಉತ್ತರ' : 'AI ANSWER'}
               </span>
             )}
           </div>
 
-          <p style={{ fontSize: '1.05rem', color: '#FFFFFF', lineHeight: 1.65, marginBottom: '14px', fontWeight: 500 }}>
+          <p style={{ fontSize: '1.02rem', color: '#FFFFFF', lineHeight: 1.65, marginBottom: '14px', fontWeight: 500 }}>
             {isKannada ? response.answer_kn : response.answer_en}
           </p>
 
-          {/* Secondary Language Translation Preview */}
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: '14px' }}>
             <button
               type="button"
               onClick={() => setShowOtherLang(!showOtherLang)}
@@ -282,7 +303,7 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
                 background: 'none',
                 border: 'none',
                 color: '#34D399',
-                fontSize: '0.78rem',
+                fontSize: '0.75rem',
                 cursor: 'pointer',
                 padding: 0,
                 textDecoration: 'underline',
@@ -297,22 +318,21 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
             </button>
             {showOtherLang && (
               <div style={{
-                marginTop: '10px',
-                padding: '12px 14px',
+                marginTop: '8px',
+                padding: '12px',
                 background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '10px',
+                borderRadius: '8px',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
-                fontSize: '0.92rem',
+                fontSize: '0.88rem',
                 color: '#CBD5E1',
-                lineHeight: 1.6
+                lineHeight: 1.55
               }}>
                 {isKannada ? response.answer_en : response.answer_kn}
               </div>
             )}
           </div>
 
-          {/* Dual Audio & Action Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -320,20 +340,19 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
                 style={{
                   background: 'rgba(16, 185, 129, 0.15)',
                   border: '1px solid rgba(16, 185, 129, 0.4)',
-                  borderRadius: '10px',
-                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  padding: '6px 12px',
                   color: '#34D399',
-                  fontSize: '0.78rem',
+                  fontSize: '0.75rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '5px'
                 }}
-                title="Listen in Kannada"
               >
-                <Volume2 size={15} />
-                <span>🔊 ಕನ್ನಡದಲ್ಲಿ ಆಲಿಸಿ</span>
+                <Volume2 size={14} />
+                <span>🔊 ಕನ್ನಡ</span>
               </button>
 
               <button
@@ -342,20 +361,19 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
                 style={{
                   background: 'rgba(59, 130, 246, 0.15)',
                   border: '1px solid rgba(59, 130, 246, 0.4)',
-                  borderRadius: '10px',
-                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  padding: '6px 12px',
                   color: '#60A5FA',
-                  fontSize: '0.78rem',
+                  fontSize: '0.75rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '5px'
                 }}
-                title="Listen in English"
               >
-                <Volume2 size={15} />
-                <span>🔊 Listen in English</span>
+                <Volume2 size={14} />
+                <span>🔊 English</span>
               </button>
 
               {isSpeaking && (
@@ -365,14 +383,13 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
                   style={{
                     background: 'rgba(239, 68, 68, 0.2)',
                     border: '1px solid rgba(239, 68, 68, 0.5)',
-                    borderRadius: '10px',
-                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
                     color: '#F87171',
-                    fontSize: '0.78rem',
+                    fontSize: '0.75rem',
                     fontWeight: 700,
                     cursor: 'pointer'
                   }}
-                  title="Stop Audio"
                 >
                   ⏹️ {isKannada ? 'ನಿಲ್ಲಿಸಿ' : 'Stop'}
                 </button>
@@ -383,20 +400,25 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
               <button
                 onClick={() => onNavigateTab(response.navTab as ViewTab)}
                 className="btn-primary"
-                style={{ padding: '8px 18px', fontSize: '0.82rem' }}
+                style={{
+                  fontSize: '0.78rem',
+                  padding: '6px 14px',
+                  minHeight: '34px',
+                  gap: '4px'
+                }}
               >
-                <span>{isKannada ? 'ವಿಭಾಗಕ್ಕೆ ತೆರಳಿ' : 'Open Section in App'}</span>
-                <ArrowRight size={14} />
+                <span>{isKannada ? 'ವಿಭಾಗಕ್ಕೆ ತೆರಳಿ' : 'Open Section'}</span>
+                <ArrowRight size={13} />
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Sample Query Suggestions */}
-      <div style={{ textAlign: 'left', marginBottom: '24px' }}>
-        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
-          {isKannada ? 'ಸೂಚಿಸಲಾದ ಪ್ರಶ್ನೆಗಳು (ಒತ್ತಿ ಕೇಳಿ):' : 'Suggested Questions (Tap to Ask):'}
+      {/* Suggested Chips */}
+      <div style={{ marginBottom: '24px', textAlign: 'left' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+          {isKannada ? 'ಸೂಚಿಸಲಾದ ಪ್ರಶ್ನೆಗಳು:' : 'Suggested Questions:'}
         </span>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
           {samplePrompts.map((p, i) => (
@@ -406,6 +428,7 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
                 setQueryText(p);
                 handleProcessQuery(p);
               }}
+              disabled={isProcessing}
               style={{
                 background: 'rgba(255,255,255,0.06)',
                 border: '1px solid var(--glass-border)',
@@ -413,7 +436,7 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
                 padding: '6px 14px',
                 fontSize: '0.78rem',
                 color: 'var(--text-secondary)',
-                cursor: 'pointer'
+                cursor: isProcessing ? 'not-allowed' : 'pointer'
               }}
             >
               {p}
@@ -422,29 +445,54 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
         </div>
       </div>
 
-      {/* Fallback Text Input */}
+      {/* Text Input & Dedicated Submit Button */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleProcessQuery(queryText);
         }}
-        style={{ display: 'flex', gap: '10px' }}
+        style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}
       >
         <input
           type="text"
           className="form-input"
           value={queryText}
           onChange={(e) => setQueryText(e.target.value)}
-          placeholder={isKannada ? 'ಪ್ರಶ್ನೆ ಟೈಪ್ ಮಾಡಿ...' : 'Type your question here...'}
-          style={{ flex: 1, height: '48px' }}
+          placeholder={isKannada ? 'ಯಾವುದೇ ಪ್ರಶ್ನೆ ಕೇಳಿ (ಟೈಪ್ ಮಾಡಿ)...' : 'Ask any question (type here)...'}
+          disabled={isProcessing}
+          style={{ flex: 1, height: '50px', fontSize: '0.92rem', borderRadius: 'var(--radius-md)' }}
         />
         <button
           type="submit"
           className="btn-primary"
-          style={{ width: '52px', height: '48px', padding: 0 }}
-          disabled={!queryText.trim()}
+          style={{
+            height: '50px',
+            padding: '0 20px',
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            fontWeight: 700,
+            fontSize: '0.92rem',
+            whiteSpace: 'nowrap',
+            minWidth: '110px',
+            cursor: (!queryText.trim() || isProcessing) ? 'not-allowed' : 'pointer',
+            opacity: (!queryText.trim() || isProcessing) ? 0.7 : 1
+          }}
+          disabled={!queryText.trim() || isProcessing}
         >
-          <Send size={18} />
+          {isProcessing ? (
+            <>
+              <Loader2 size={18} className="spinner animate-spin" />
+              <span>{isKannada ? 'ಸಲ್ಲಿಸುತ್ತಿದೆ...' : 'Submitting...'}</span>
+            </>
+          ) : (
+            <>
+              <Send size={16} />
+              <span>{isKannada ? 'ಸಲ್ಲಿಸಿ' : 'Submit'}</span>
+            </>
+          )}
         </button>
       </form>
     </div>

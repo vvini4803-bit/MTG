@@ -5,6 +5,7 @@ import { dbService, getOneWeekStatus } from '../services/dbService';
 import { voiceAssistant } from '../services/voiceService';
 import { NewsItem, VerificationStatus } from '../types';
 import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
+import { ImageLightboxModal } from '../components/common/ImageLightboxModal';
 import {
   X,
   ShieldCheck,
@@ -19,7 +20,8 @@ import {
   XCircle,
   AlertOctagon,
   Trash2,
-  Check
+  Check,
+  Maximize2
 } from 'lucide-react';
 
 interface NewsDetailModalProps {
@@ -38,12 +40,13 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
   onOpenReportModal
 }) => {
   const { language, isKannada } = useLanguage();
-  const { currentUser, isModerator } = useAuth();
+  const { currentUser, isModerator, isAdmin } = useAuth();
 
   const [isCopied, setIsCopied] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [correctionInput, setCorrectionInput] = useState('');
   const [showCorrectionForm, setShowCorrectionForm] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const effectiveUid = getEffectiveUserId(currentUser);
   const [isLiked, setIsLiked] = useState<boolean>(false);
@@ -233,8 +236,41 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
 
         {/* Media */}
         {news.media_url && (
-          <div style={{ borderRadius: 'var(--radius-md)', overflow: 'hidden', maxHeight: '360px', marginBottom: '16px' }}>
-            <img src={news.media_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div
+            onClick={() => setIsLightboxOpen(true)}
+            style={{
+              position: 'relative',
+              borderRadius: 'var(--radius-md)',
+              overflow: 'hidden',
+              maxHeight: '360px',
+              marginBottom: '16px',
+              cursor: 'zoom-in',
+              backgroundColor: 'rgba(0, 0, 0, 0.2)'
+            }}
+            title={isKannada ? 'ದೊಡ್ಡದಾಗಿ ವೀಕ್ಷಿಸಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to enlarge photo'}
+          >
+            <img src={news.media_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '10px',
+                right: '10px',
+                background: 'rgba(0, 0, 0, 0.72)',
+                backdropFilter: 'blur(6px)',
+                color: '#FFFFFF',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                pointerEvents: 'none'
+              }}
+            >
+              <Maximize2 size={12} />
+              <span>{isKannada ? 'ದೊಡ್ಡದಾಗಿ ನೋಡಿ' : 'Tap to expand'}</span>
+            </div>
           </div>
         )}
 
@@ -439,6 +475,15 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Fullscreen Image Lightbox Modal */}
+      <ImageLightboxModal
+        isOpen={isLightboxOpen}
+        imageUrl={news.media_url || null}
+        title={title}
+        subtitle={`${news.author_name} • ${news.created_at.split('T')[0]}`}
+        onClose={() => setIsLightboxOpen(false)}
+      />
     </div>
   );
 };
