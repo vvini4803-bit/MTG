@@ -20,7 +20,8 @@ import {
   CheckCircle,
   Flag,
   Calendar,
-  Maximize2
+  Maximize2,
+  ChevronRight
 } from 'lucide-react';
 
 interface NewsFeedScreenProps {
@@ -39,7 +40,7 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
   const { language, isKannada } = useLanguage();
   const { currentUser, isModerator, isAdmin } = useAuth();
 
-  const [newsList, setNewsList] = useState<NewsItem[]>([]);
+  const [newsList, setNewsList] = useState<NewsItem[]>(() => dbService.getNews());
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [timeFilter, setTimeFilter] = useState<'WEEK' | 'ALL'>('ALL');
@@ -520,6 +521,34 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
                       title="Report misleading or incorrect info"
                     >
                       <Flag size={14} />
+                    </button>
+
+                    {/* View Details Action Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenNewsDetail(item);
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%)',
+                        border: '1px solid rgba(16, 185, 129, 0.4)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '5px 12px',
+                        color: '#34D399',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        minHeight: '32px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={isKannada ? 'ಸಂಪೂರ್ಣ ವಿವರ ವೀಕ್ಷಿಸಿ' : 'View Details'}
+                    >
+                      <span>{isKannada ? 'ವಿವರ ನೋಡಿ' : 'View Details'}</span>
+                      <ChevronRight size={13} />
                     </button>
                   </div>
                 </div>

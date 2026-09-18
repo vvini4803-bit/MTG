@@ -166,8 +166,12 @@ class DatabaseService {
     const savedDemoMode = localStorage.getItem('gramasiri_demo_mode');
     this.isDemoMode = savedDemoMode !== null ? savedDemoMode === 'true' : false;
 
-    // Load local collections (empty by default in clean production mode unless saved or toggled)
-    this.news = this.loadCollection('news', this.isDemoMode ? SEED_NEWS : []);
+    // Load local collections (defaults to verified seed data)
+    this.news = this.loadCollection('news', SEED_NEWS);
+    if (this.news.length === 0 && SEED_NEWS.length > 0) {
+      this.news = [...SEED_NEWS];
+      this.saveCollection('news', this.news);
+    }
     this.events = this.loadCollection('events', this.isDemoMode ? SEED_EVENTS : []);
     this.tournaments = this.loadCollection('tournaments', this.isDemoMode ? SEED_TOURNAMENTS : []);
     this.crops = this.loadCollection('crops', this.isDemoMode ? SEED_CROPS : []);
@@ -718,9 +722,14 @@ class DatabaseService {
   }
 
   // --- NEWS & COMMUNITY POSTS ---
+  public getNews(): NewsItem[] {
+    return this.news.length > 0 ? [...this.news] : [...SEED_NEWS];
+  }
+
   public subscribeNews(callback: (news: NewsItem[]) => void): () => void {
     // 1. Immediately provide cached news
-    callback(this.news);
+    const initialNews = this.news.length > 0 ? this.news : SEED_NEWS;
+    callback(initialNews);
 
     // 2. Subscribe to local EventEmitter for instant optimistic UI updates
     const unsubLocal = this.subscribe('news', this.news, (items) => {

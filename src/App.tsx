@@ -94,7 +94,7 @@ export const App: React.FC = () => {
 
   // Real-time collections for previews and tickers
   const [emergencyAlert, setEmergencyAlert] = useState<EmergencyAlert | null>(null);
-  const [latestNews, setLatestNews] = useState<NewsItem[]>([]);
+  const [latestNews, setLatestNews] = useState<NewsItem[]>(() => dbService.getNews().slice(0, 5));
   const [upcomingEvents, setUpcomingEvents] = useState<EventItem[]>([]);
   const [activeTournaments, setActiveTournaments] = useState<Tournament[]>([]);
   const [villageStats, setVillageStats] = useState(dbService['villageStats']);
@@ -538,25 +538,30 @@ export const App: React.FC = () => {
 
             {/* 🔴 LIVE VILLAGE UPDATE (Interactive Live Banner - Click shows new update) */}
             {(() => {
-              const currentLiveNews = latestNews.length > 0
+              const liveItem = (latestNews.length > 0 && latestNews[liveNewsIndex % latestNews.length])
                 ? latestNews[liveNewsIndex % latestNews.length]
-                : null;
+                : (latestNews.length > 0 ? latestNews[0] : (dbService.getNews()[0] || null));
+
+              const handleOpenLiveUpdate = (e?: React.MouseEvent | React.KeyboardEvent) => {
+                if (e) {
+                  e.stopPropagation();
+                }
+                const activeItem = liveItem || (latestNews.length > 0 ? latestNews[0] : null) || (dbService.getNews()[0] || null);
+                if (activeItem) {
+                  setSelectedNews(activeItem);
+                } else {
+                  navigateTo('news');
+                }
+              };
 
               return (
                 <div
-                  onClick={() => {
-                    if (currentLiveNews) {
-                      setSelectedNews(currentLiveNews);
-                    } else {
-                      navigateTo('news');
-                    }
-                  }}
+                  onClick={handleOpenLiveUpdate}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
-                      if (currentLiveNews) setSelectedNews(currentLiveNews);
-                      else navigateTo('news');
+                      handleOpenLiveUpdate(e);
                     }
                   }}
                   style={{
@@ -575,7 +580,7 @@ export const App: React.FC = () => {
                     transition: 'all 0.25s ease'
                   }}
                   className="card-3d"
-                  title={isKannada ? 'ಹೊಸ ಅಪ್‌ಡೇಟ್ ಪೂರ್ಣ ವಿವರ ನೋಡಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to view this new update in detail'}
+                  title={isKannada ? 'ಹೊಸ ಲೈವ್ ಅಪ್‌ಡೇಟ್ ವಿವರ ನೋಡಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to view live update details'}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '240px' }}>
                     {/* 🔴 Live Indicator Badge */}
@@ -624,13 +629,13 @@ export const App: React.FC = () => {
                     </div>
 
                     {/* Thumbnail preview if update has image */}
-                    {currentLiveNews?.media_url && (
+                    {liveItem?.media_url && (
                       <img
-                        src={currentLiveNews.media_url}
+                        src={liveItem.media_url}
                         alt="preview"
                         style={{
-                          width: '38px',
-                          height: '38px',
+                          width: '40px',
+                          height: '40px',
                           borderRadius: '8px',
                           objectFit: 'cover',
                           border: '1px solid rgba(16, 185, 129, 0.35)',
@@ -652,13 +657,13 @@ export const App: React.FC = () => {
                           lineHeight: 1.3
                         }}
                       >
-                        {currentLiveNews
-                          ? (isKannada ? currentLiveNews.title_kn : currentLiveNews.title_en)
+                        {liveItem
+                          ? (isKannada ? liveItem.title_kn : liveItem.title_en)
                           : (isKannada ? 'ಪ್ರಸ್ತುತ ಯಾವುದೇ ಹೊಸ ಅಪ್‌ಡೇಟ್ ಇಲ್ಲ. ಹೊಸ ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಲು ಕ್ಲಿಕ್ ಮಾಡಿ!' : 'No new updates right now. Click to share an update!')}
                       </span>
-                      {currentLiveNews && (
+                      {liveItem && (
                         <span style={{ fontSize: '0.73rem', color: '#94A3B8', marginTop: '2px' }}>
-                          {currentLiveNews.author_name} • {new Date(currentLiveNews.created_at).toLocaleDateString()}
+                          {liveItem.author_name} • {new Date(liveItem.created_at).toLocaleDateString()}
                         </span>
                       )}
                     </div>
@@ -668,6 +673,7 @@ export const App: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     {latestNews.length > 1 && (
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setLiveNewsIndex((prev) => (prev + 1) % latestNews.length);
@@ -692,10 +698,13 @@ export const App: React.FC = () => {
                       </button>
                     )}
 
-                    <div
+                    {/* View Details Button */}
+                    <button
+                      type="button"
+                      onClick={handleOpenLiveUpdate}
                       style={{
-                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.25) 100%)',
-                        border: '1px solid #10B981',
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.3) 100%)',
+                        border: '1.5px solid #10B981',
                         borderRadius: '20px',
                         padding: '6px 14px',
                         color: '#34D399',
@@ -703,13 +712,17 @@ export const App: React.FC = () => {
                         fontWeight: 800,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)'
+                        gap: '5px',
+                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
                       }}
+                      title={isKannada ? 'ಲೈವ್ ಅಪ್‌ಡೇಟ್ ಸಂಪೂರ್ಣ ವಿವರ ನೋಡಿ' : 'View live update full details'}
                     >
-                      <span>{isKannada ? 'ಹೊಸ ಅಪ್‌ಡೇಟ್ ನೋಡಿ' : 'View Update'}</span>
+                      <span>{isKannada ? 'ವಿವರ ನೋಡಿ (View Details)' : 'View Details'}</span>
                       <ChevronRight size={15} />
-                    </div>
+                    </button>
                   </div>
                 </div>
               );
