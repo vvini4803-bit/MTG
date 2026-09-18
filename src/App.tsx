@@ -98,6 +98,7 @@ export const App: React.FC = () => {
   const [upcomingEvents, setUpcomingEvents] = useState<EventItem[]>([]);
   const [activeTournaments, setActiveTournaments] = useState<Tournament[]>([]);
   const [villageStats, setVillageStats] = useState(dbService['villageStats']);
+  const [liveNewsIndex, setLiveNewsIndex] = useState(0);
 
   // Modals state
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -130,7 +131,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     const unsubEmergency = dbService.subscribeEmergencyAlert(setEmergencyAlert);
-    const unsubNews = dbService.subscribeNews((items) => setLatestNews(items.slice(0, 3)));
+    const unsubNews = dbService.subscribeNews((items) => setLatestNews(items.slice(0, 5)));
     const unsubEvents = dbService.subscribeEvents((items) => setUpcomingEvents(items.slice(0, 2)));
     const unsubTournaments = dbService.subscribeTournaments((items) => setActiveTournaments(items));
     return () => {
@@ -140,6 +141,14 @@ export const App: React.FC = () => {
       unsubTournaments();
     };
   }, []);
+
+  useEffect(() => {
+    if (latestNews.length <= 1) return;
+    const interval = setInterval(() => {
+      setLiveNewsIndex((prev) => (prev + 1) % latestNews.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [latestNews.length]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -527,67 +536,184 @@ export const App: React.FC = () => {
             {/* The Animated Village Hero Landscape */}
             <VillageHero />
 
-            {/* 🔴 LIVE VILLAGE UPDATE (One or two real updates) */}
-            <div
-              style={{
-                background: 'rgba(15, 23, 42, 0.7)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '16px',
-                padding: '14px 18px',
-                marginBottom: '22px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '12px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.2)',
-                    color: '#EF4444',
-                    padding: '4px 10px',
-                    borderRadius: '20px',
-                    fontSize: '0.74rem',
-                    fontWeight: 900,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EF4444', display: 'inline-block' }}></span>
-                  <span>{isKannada ? 'ಲೈವ್ ಪ್ರಕಟಣೆ' : 'LIVE UPDATE'}</span>
-                </div>
-                <span style={{ fontSize: '0.88rem', color: '#E2E8F0', fontWeight: 600 }}>
-                  {latestNews.length > 0
-                    ? (isKannada ? latestNews[0].title_kn : latestNews[0].title_en)
-                    : (isKannada ? 'ಪ್ರಸ್ತುತ ಯಾವುದೇ ಹೊಸ ಅಪ್‌ಡೇಟ್ ಇಲ್ಲ.' : 'No new updates right now.')}
-                </span>
-              </div>
+            {/* 🔴 LIVE VILLAGE UPDATE (Interactive Live Banner - Click shows new update) */}
+            {(() => {
+              const currentLiveNews = latestNews.length > 0
+                ? latestNews[liveNewsIndex % latestNews.length]
+                : null;
 
-              {latestNews.length > 0 && (
-                <button
+              return (
+                <div
                   onClick={() => {
-                    setSelectedNews(latestNews[0]);
+                    if (currentLiveNews) {
+                      setSelectedNews(currentLiveNews);
+                    } else {
+                      navigateTo('news');
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      if (currentLiveNews) setSelectedNews(currentLiveNews);
+                      else navigateTo('news');
+                    }
                   }}
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#34D399',
-                    fontSize: '0.82rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
+                    background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(6, 78, 59, 0.25) 100%)',
+                    border: '1.5px solid rgba(16, 185, 129, 0.4)',
+                    borderRadius: '16px',
+                    padding: '12px 18px',
+                    marginBottom: '22px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    cursor: 'pointer',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3), 0 0 16px rgba(16, 185, 129, 0.15)',
+                    transition: 'all 0.25s ease'
                   }}
+                  className="card-3d"
+                  title={isKannada ? 'ಹೊಸ ಅಪ್‌ಡೇಟ್ ಪೂರ್ಣ ವಿವರ ನೋಡಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to view this new update in detail'}
                 >
-                  <span>{isKannada ? 'ವಿವರ ನೋಡಿ' : 'View Detail'}</span>
-                  <ChevronRight size={16} />
-                </button>
-              )}
-            </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '240px' }}>
+                    {/* 🔴 Live Indicator Badge */}
+                    <div
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.2)',
+                        color: '#EF4444',
+                        border: '1px solid rgba(239, 68, 68, 0.5)',
+                        padding: '5px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.74rem',
+                        fontWeight: 900,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        flexShrink: 0,
+                        letterSpacing: '0.04em'
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: '#EF4444',
+                          display: 'inline-block',
+                          boxShadow: '0 0 8px #EF4444'
+                        }}
+                      />
+                      <span>{isKannada ? '🔴 ಲೈವ್ ಅಪ್‌ಡೇಟ್' : '🔴 LIVE UPDATE'}</span>
+                      {latestNews.length > 1 && (
+                        <span
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.2)',
+                            color: '#FFFFFF',
+                            borderRadius: '8px',
+                            padding: '1px 5px',
+                            fontSize: '0.65rem',
+                            fontWeight: 800,
+                            marginLeft: '2px'
+                          }}
+                        >
+                          {(liveNewsIndex % latestNews.length) + 1}/{latestNews.length}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Thumbnail preview if update has image */}
+                    {currentLiveNews?.media_url && (
+                      <img
+                        src={currentLiveNews.media_url}
+                        alt="preview"
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '8px',
+                          objectFit: 'cover',
+                          border: '1px solid rgba(16, 185, 129, 0.35)',
+                          flexShrink: 0
+                        }}
+                      />
+                    )}
+
+                    {/* Title & metadata */}
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                      <span
+                        style={{
+                          fontSize: '0.92rem',
+                          color: '#F8FAFC',
+                          fontWeight: 700,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          lineHeight: 1.3
+                        }}
+                      >
+                        {currentLiveNews
+                          ? (isKannada ? currentLiveNews.title_kn : currentLiveNews.title_en)
+                          : (isKannada ? 'ಪ್ರಸ್ತುತ ಯಾವುದೇ ಹೊಸ ಅಪ್‌ಡೇಟ್ ಇಲ್ಲ. ಹೊಸ ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಲು ಕ್ಲಿಕ್ ಮಾಡಿ!' : 'No new updates right now. Click to share an update!')}
+                      </span>
+                      {currentLiveNews && (
+                        <span style={{ fontSize: '0.73rem', color: '#94A3B8', marginTop: '2px' }}>
+                          {currentLiveNews.author_name} • {new Date(currentLiveNews.created_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions right side */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    {latestNews.length > 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLiveNewsIndex((prev) => (prev + 1) % latestNews.length);
+                        }}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          borderRadius: '16px',
+                          padding: '4px 10px',
+                          fontSize: '0.72rem',
+                          color: '#CBD5E1',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                        title={isKannada ? 'ಮುಂದಿನ ಅಪ್‌ಡೇಟ್' : 'Next update'}
+                      >
+                        <span>{isKannada ? 'ಮುಂದಿನದು' : 'Next'}</span>
+                        <span>→</span>
+                      </button>
+                    )}
+
+                    <div
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.25) 100%)',
+                        border: '1px solid #10B981',
+                        borderRadius: '20px',
+                        padding: '6px 14px',
+                        color: '#34D399',
+                        fontSize: '0.8rem',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)'
+                      }}
+                    >
+                      <span>{isKannada ? 'ಹೊಸ ಅಪ್‌ಡೇಟ್ ನೋಡಿ' : 'View Update'}</span>
+                      <ChevronRight size={15} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ⭐ THE 8 MAIN CARDS GRID (Large, Easy to Tap) */}
             <div style={{ marginBottom: '32px' }}>
