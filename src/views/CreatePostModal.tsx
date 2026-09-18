@@ -38,7 +38,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const result = await compressImage(file, 1200, 900, 0.8);
+      const result = await compressImage(file, 800, 600, 0.7);
       setPhotoDataUrl(result.dataUrl);
     } catch (err: any) {
       setErrorMsg(err.message || 'Image processing failed');

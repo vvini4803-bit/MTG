@@ -123,7 +123,8 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const optimized = await compressImage(file, 1200, 900, 0.8);
+      // Compress to lightweight web-friendly dimensions that fit easily within Firestore
+      const optimized = await compressImage(file, 800, 600, 0.7);
       setImagePreview(optimized.dataUrl);
     } catch (err) {
       console.error(err);
@@ -161,11 +162,11 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
       is_demo: false
     });
 
+    onPostSubmitted?.();
     setIsSubmitted(true);
     setTimeout(() => {
-      onPostSubmitted?.();
       onClose();
-    }, 1800);
+    }, 1200);
   };
 
   return (

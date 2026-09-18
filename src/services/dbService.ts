@@ -62,6 +62,24 @@ import {
 
 export const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Recursively removes undefined fields from an object so that Firestore setDoc/updateDoc
+ * never throws "Unsupported field value: undefined".
+ */
+export function cleanFirestoreData<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        cleaned[key] = cleanFirestoreData(value);
+      } else {
+        cleaned[key] = value;
+      }
+    }
+  }
+  return cleaned;
+}
+
 export function isWithinOneWeek(dateStr?: string): boolean {
   if (!dateStr) return true;
   const timestamp = new Date(dateStr).getTime();
@@ -348,6 +366,7 @@ class DatabaseService {
           if (!this.news.some((n) => n.id === item.id)) {
             this.news = [item, ...this.news];
             this.saveCollection('news', this.news);
+            this.emit('news', this.news);
           }
           break;
         }
@@ -363,6 +382,7 @@ class DatabaseService {
             if (correctionKn !== undefined) target.official_correction_kn = correctionKn;
             if (urgent !== undefined) target.urgent = urgent;
             this.saveCollection('news', [...this.news]);
+            this.emit('news', this.news);
           }
           break;
         }
@@ -379,6 +399,7 @@ class DatabaseService {
               target.likes_count = Math.max(0, target.likes_count - 1);
             }
             this.saveCollection('news', [...this.news]);
+            this.emit('news', this.news);
           }
           break;
         }
@@ -562,7 +583,10 @@ class DatabaseService {
                 nChanged = true;
               }
             });
-            if (nChanged) this.saveCollection('news', [...this.news]);
+            if (nChanged) {
+              this.saveCollection('news', [...this.news]);
+              this.emit('news', this.news);
+            }
           }
           if (Array.isArray(data.events)) {
             let eChanged = false;
@@ -695,25 +719,54 @@ class DatabaseService {
 
   // --- NEWS & COMMUNITY POSTS ---
   public subscribeNews(callback: (news: NewsItem[]) => void): () => void {
+    // 1. Immediately provide cached news
+    callback(this.news);
+
+    // 2. Subscribe to local EventEmitter for instant optimistic UI updates
+    const unsubLocal = this.subscribe('news', this.news, (items) => {
+      callback(items);
+    });
+
+    // 3. Subscribe to Firestore real-time onSnapshot for cross-user/cloud live updates
+    let unsubFirestore: (() => void) | null = null;
     if (isFirebaseConfigured && db) {
       try {
         const q = query(collection(db, 'news'), orderBy('created_at', 'desc'));
-        return onSnapshot(
+        unsubFirestore = onSnapshot(
           q,
           (snapshot) => {
-            const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as NewsItem));
-            callback(items.length > 0 ? items : this.news);
+            const remoteItems = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as NewsItem));
+            if (remoteItems.length > 0) {
+              // Merge remote items with local items, preserving any local items not yet synced
+              const remoteIds = new Set(remoteItems.map((r) => r.id));
+              const merged = [...remoteItems];
+              for (const local of this.news) {
+                if (!remoteIds.has(local.id)) {
+                  merged.push(local);
+                }
+              }
+              merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+              this.news = merged;
+              this.saveCollection('news', this.news);
+              this.emit('news', this.news);
+              callback(this.news);
+            }
           },
           (err) => {
             console.warn('Firestore news listener fallback:', err);
-            callback(this.news);
           }
         );
       } catch (err) {
         console.warn('Firestore news listener fallback:', err);
       }
     }
-    return this.subscribe('news', this.news, callback);
+
+    return () => {
+      unsubLocal();
+      if (unsubFirestore) {
+        unsubFirestore();
+      }
+    };
   }
 
   public async addNews(newsItem: Omit<NewsItem, 'id' | 'created_at' | 'updated_at' | 'likes_count' | 'liked_by' | 'comments_count' | 'reports_count'>): Promise<NewsItem> {
@@ -739,16 +792,20 @@ class DatabaseService {
       is_demo: false
     };
 
+    // Clean undefined fields so setDoc never fails with Unsupported field value: undefined
+    const cleanedItem = cleanFirestoreData(newItem);
+
     if (isFirebaseConfigured && db) {
       try {
-        await setDoc(doc(db, 'news', newItem.id), newItem);
+        await setDoc(doc(db, 'news', newItem.id), cleanedItem);
       } catch (e) {
         console.warn('Firestore setDoc failed, saving locally:', e);
       }
     }
 
-    this.news = [newItem, ...this.news];
+    this.news = [newItem, ...this.news.filter((n) => n.id !== newItem.id)];
     this.saveCollection('news', this.news);
+    this.emit('news', this.news);
     realtimeSync.broadcast('NEWS_CREATED', newItem);
     this.logAudit('CREATE_NEWS', newItem.author_id, newItem.author_name, newItem.id, 'NEWS', `Created and auto-verified: ${newItem.title_en}`);
     return newItem;
@@ -777,7 +834,7 @@ class DatabaseService {
 
     if (isFirebaseConfigured && db) {
       try {
-        await updateDoc(doc(db, 'news', newsId), {
+        await updateDoc(doc(db, 'news', newsId), cleanFirestoreData({
           verification_status: status,
           verified_by: verifiedByUid,
           verified_by_name: verifiedByName,
@@ -785,13 +842,14 @@ class DatabaseService {
           official_correction: target.official_correction,
           official_correction_kn: target.official_correction_kn,
           urgent: target.urgent
-        });
+        }));
       } catch (e) {
         console.warn('Firestore verifyDoc error:', e);
       }
     }
 
     this.saveCollection('news', [...this.news]);
+    this.emit('news', this.news);
     realtimeSync.broadcast('NEWS_VERIFIED', {
       newsId,
       status,
@@ -855,6 +913,7 @@ class DatabaseService {
 
     this.news = this.news.filter((n) => n.id !== newsId);
     this.saveCollection('news', this.news);
+    this.emit('news', this.news);
 
     if (isFirebaseConfigured && db) {
       try {
@@ -910,7 +969,7 @@ class DatabaseService {
 
     if (isFirebaseConfigured && db) {
       try {
-        await setDoc(doc(db, 'comments', newComment.id), newComment);
+        await setDoc(doc(db, 'comments', newComment.id), cleanFirestoreData(newComment));
       } catch (e) {
         console.warn('Firestore setDoc failed for comment:', e);
       }
@@ -1021,7 +1080,7 @@ class DatabaseService {
 
     if (isFirebaseConfigured && db) {
       try {
-        await setDoc(doc(db, 'events', newEvent.id), newEvent);
+        await setDoc(doc(db, 'events', newEvent.id), cleanFirestoreData(newEvent));
       } catch (e) {
         console.warn('Firestore setDoc failed for event:', e);
       }
@@ -1246,7 +1305,7 @@ class DatabaseService {
 
     if (isFirebaseConfigured && db) {
       try {
-        await setDoc(doc(db, 'gallery', newItem.id), newItem);
+        await setDoc(doc(db, 'gallery', newItem.id), cleanFirestoreData(newItem));
       } catch (e) {
         console.warn('Firestore gallery setDoc fallback:', e);
       }
@@ -1388,7 +1447,7 @@ class DatabaseService {
 
     if (isFirebaseConfigured && db) {
       try {
-        await setDoc(doc(db, 'reports', newRep.id), newRep);
+        await setDoc(doc(db, 'reports', newRep.id), cleanFirestoreData(newRep));
       } catch (e) {
         console.warn('Firestore setDoc failed for report:', e);
       }

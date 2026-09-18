@@ -42,7 +42,7 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [timeFilter, setTimeFilter] = useState<'WEEK' | 'ALL'>('WEEK');
+  const [timeFilter, setTimeFilter] = useState<'WEEK' | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
 
