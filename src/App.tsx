@@ -256,61 +256,92 @@ export const App: React.FC = () => {
     <div style={{ minHeight: '100vh', background: '#070F1E', color: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
       {/* 1. TOP STICKY HEADER */}
       <header
+        className="site-header"
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 40,
-          background: 'rgba(7, 15, 30, 0.92)',
+          background: 'rgba(7, 15, 30, 0.94)',
           backdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           padding: '12px 18px'
         }}
       >
-        <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {/* Village Brand */}
+        <div
+          className="site-header-inner"
+          style={{
+            maxWidth: '1080px',
+            margin: '0 auto',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '12px'
+          }}
+        >
+          {/* Village Brand (Uploaded icon removed, text moved flush left for flexible mobile comfort) */}
           <div
+            className="site-header-brand"
             onClick={() => navigateTo('home')}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              cursor: 'pointer',
+              flexShrink: 0,
+              userSelect: 'none'
+            }}
           >
-            <img
-              src="/logo.png"
-              alt="Muttagundi MTG Logo"
+            <h1
               style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '1.5px solid rgba(245, 158, 11, 0.5)',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
-                flexShrink: 0
+                fontSize: '1.25rem',
+                fontWeight: 900,
+                margin: 0,
+                color: '#FFFFFF',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.15
               }}
-            />
-            <div>
-              <h1 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
-                {isKannada ? 'ನಮ್ಮ ಮುತ್ತಗುಂಡಿ' : 'Muttagundi'}
-              </h1>
-              <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 600 }}>
-                {isKannada ? 'ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್' : 'Digital Village Portal'}
-              </span>
-            </div>
+            >
+              {isKannada ? 'ನಮ್ಮ ಮುಟ್ಟಗುಂಡಿ' : 'Muttagundi'}
+            </h1>
+            <span
+              style={{
+                fontSize: '0.68rem',
+                color: '#94A3B8',
+                fontWeight: 600,
+                lineHeight: 1.2
+              }}
+            >
+              {isKannada ? 'ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್' : 'Digital Village Portal'}
+            </span>
           </div>
 
-          {/* Quick Header Controls: Search + Messages + Voice + Language */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Quick Header Controls: Search + Messages + Voice + Language + Admin + User */}
+          <div
+            className="site-header-controls"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '7px',
+              flexShrink: 1,
+              justifyContent: 'flex-end',
+              flexWrap: 'nowrap'
+            }}
+          >
             {/* Search Button */}
             <button
               onClick={() => navigateTo('search')}
+              className="site-header-icon-btn"
               style={{
-                background: 'rgba(255, 255, 255, 0.06)',
-                color: '#CBD5E1',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: currentSection === 'search' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                color: currentSection === 'search' ? '#10B981' : '#CBD5E1',
+                border: currentSection === 'search' ? '1px solid #10B981' : '1px solid rgba(255, 255, 255, 0.12)',
                 borderRadius: '50%',
                 width: '38px',
                 height: '38px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                flexShrink: 0
               }}
               title="Search / ಹುಡುಕಿ"
             >
@@ -320,6 +351,7 @@ export const App: React.FC = () => {
             {/* 💬 Discrete Messages Button with Live Unread Badge */}
             <button
               onClick={() => navigateTo('messages')}
+              className="site-header-icon-btn"
               style={{
                 position: 'relative',
                 background: currentSection === 'messages' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
@@ -331,7 +363,8 @@ export const App: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                flexShrink: 0
               }}
               title={isKannada ? 'ಸಂದೇಶಗಳು (Messages)' : 'Private Messages'}
             >
@@ -364,19 +397,21 @@ export const App: React.FC = () => {
             {/* Quick Ask Village Voice Button */}
             <button
               onClick={() => setIsVoiceModalOpen(true)}
+              className="site-header-pill-btn"
               style={{
                 background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: '24px',
-                padding: '8px 16px',
+                padding: '7px 14px',
                 fontSize: '0.82rem',
                 fontWeight: 800,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+                gap: '5px',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                flexShrink: 0
               }}
             >
               <span>🎙️</span>
@@ -386,15 +421,17 @@ export const App: React.FC = () => {
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
+              className="site-header-pill-btn"
               style={{
                 background: 'rgba(255, 255, 255, 0.08)',
                 color: '#FFFFFF',
                 border: '1px solid rgba(255, 255, 255, 0.18)',
                 borderRadius: '20px',
-                padding: '8px 14px',
+                padding: '7px 12px',
                 fontSize: '0.82rem',
                 fontWeight: 900,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                flexShrink: 0
               }}
               title="Switch Language / ಭಾಷೆ ಬದಲಾಯಿಸಿ"
             >
@@ -405,19 +442,21 @@ export const App: React.FC = () => {
             {(isAdmin || isModerator || currentUser?.email?.toLowerCase().includes('vvini4803')) && (
               <button
                 onClick={() => navigateTo('admin')}
+                className="site-header-pill-btn"
                 style={{
                   background: currentSection === 'admin' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(245, 158, 11, 0.18)',
                   border: '1px solid #F59E0B',
                   color: '#FBBF24',
                   borderRadius: '20px',
-                  padding: '7px 12px',
+                  padding: '6px 11px',
                   fontSize: '0.78rem',
                   fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '5px',
-                  boxShadow: '0 0 12px rgba(245, 158, 11, 0.25)'
+                  gap: '4px',
+                  boxShadow: '0 0 12px rgba(245, 158, 11, 0.25)',
+                  flexShrink: 0
                 }}
                 title={isKannada ? 'ಗ್ರಾಮ ಆಡಳಿತ ಕೇಂದ್ರ' : 'Admin Hub & Controls'}
               >
@@ -430,16 +469,18 @@ export const App: React.FC = () => {
             {currentUser ? (
               <button
                 onClick={() => navigateTo('profile')}
+                className="site-header-user-btn"
                 style={{
                   background: 'rgba(16, 185, 129, 0.15)',
                   border: '1px solid rgba(16, 185, 129, 0.4)',
                   borderRadius: '24px',
-                  padding: '4px 12px 4px 6px',
+                  padding: '3px 10px 3px 5px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   color: '#FFFFFF',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  flexShrink: 0
                 }}
                 title={isKannada ? 'ನನ್ನ ಪ್ರೊಫೈಲ್' : 'My Profile'}
               >
@@ -448,30 +489,32 @@ export const App: React.FC = () => {
                   alt={currentUser.name}
                   style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
                 />
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {currentUser.name}
                 </span>
               </button>
             ) : (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
+                className="site-header-pill-btn"
                 style={{
                   background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '24px',
-                  padding: '7px 14px',
-                  fontSize: '0.8rem',
+                  padding: '7px 12px',
+                  fontSize: '0.78rem',
                   fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: '0 2px 10px rgba(16, 185, 129, 0.35)'
+                  gap: '5px',
+                  boxShadow: '0 2px 10px rgba(16, 185, 129, 0.35)',
+                  flexShrink: 0
                 }}
               >
-                <User size={15} />
-                <span>{isKannada ? 'ನೋಂದಣಿ / ಲಾಗಿನ್' : 'Join / Sign In'}</span>
+                <User size={14} />
+                <span>{isKannada ? 'ಲಾಗಿನ್' : 'Sign In'}</span>
               </button>
             )}
           </div>
