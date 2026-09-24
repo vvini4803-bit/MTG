@@ -182,46 +182,105 @@ Sports & Youth: Muttagundi Premier League (MPL) Cricket Tournament, annual Kabad
       });
     }
 
+    try {
+      const fund = dbService.getVillageFund();
+      ctx += `\nREAL-TIME MTG FINANCIAL STATUS (ಖಜಾನೆ ಮತ್ತು ದೇಣಿಗೆ ವಿವರ):
+- Total MTG Village Fund Balance: ₹${fund.total_balance.toLocaleString('en-IN')}
+- Current Active Month: ${fund.current_month}
+- Collected this month: ₹${fund.monthly_collected.toLocaleString('en-IN')} (Target: ₹${fund.monthly_target.toLocaleString('en-IN')})
+- Contributors who PAID this month: ${fund.recent_payments.filter((p) => p.status === 'PAID').map((p) => `${p.user_name} (₹${p.amount})`).join(', ') || 'None'}
+- Contributors with PENDING payment this month: ${fund.recent_payments.filter((p) => p.status === 'PENDING').map((p) => p.user_name).join(', ') || 'None'}
+`;
+    } catch {}
+
+    try {
+      const admins = dbService.getAdmins();
+      ctx += `\nREAL-TIME VILLAGE LEADERSHIP & ADMINS (ಆಡಳಿತ ಮಂಡಳಿ):
+- Super Admin: Vinay Kumar (vvini4803@gmail.com, UID: admin_vvini4803)
+- Active Admins: ${admins.map((a) => `${a.name} (${a.role})`).join(', ') || 'Vinay Kumar'}
+`;
+    } catch {}
+
+    try {
+      const meetings = dbService.getMeetingsSchedule();
+      ctx += `\nREAL-TIME VILLAGE MEETING SCHEDULE (ಸಭೆಗಳ ವಿವರ):
+- Today's Meeting: ${meetings.hasMeetingToday && meetings.todayMeetings[0] ? `Yes, ${meetings.todayMeetings[0].title_en} (${meetings.todayMeetings[0].title_kn}) at ${meetings.todayMeetings[0].start_time} at ${meetings.todayMeetings[0].venue_en}` : 'No MTG meeting is scheduled for today'}
+- Next Upcoming Meeting: ${meetings.nextMeeting ? `${meetings.nextMeeting.title_en} (${meetings.nextMeeting.title_kn}) on ${meetings.nextMeeting.date} at ${meetings.nextMeeting.start_time}` : 'No upcoming meeting scheduled currently'}
+`;
+    } catch {}
+
+    try {
+      const sports = dbService.getLiveSportsStatus();
+      if (sports.liveMatches.length > 0) {
+        const lm = sports.liveMatches[0];
+        ctx += `\nLIVE MATCH IN PROGRESS: ${lm.team_a} vs ${lm.team_b} at ${lm.venue}. Score: ${lm.team_a_score} vs ${lm.team_b_score}.\n`;
+      }
+    } catch {}
+
     return ctx;
   }
 
   /**
    * Real-time conversational Village Voice & Text Assistant
+   * - Ingests fresh real-time MTG database or live web grounding data
+   * - Gemini acts as the reasoning & natural language layer (Source of truth is DB/web)
+   * - Generates ONE concise, natural final answer in both English & Kannada
    */
   public async askVillageAssistant(
     userQuery: string,
-    preferredLang: Language
+    preferredLang: Language,
+    realTimeGroundingContext?: string
   ): Promise<GeminiResponse> {
+    const isDynamicQuery = Boolean(realTimeGroundingContext);
     const cacheKey = `${preferredLang}:${userQuery.toLowerCase().trim()}`;
-    if (FAST_QUERY_CACHE.has(cacheKey)) {
+
+    // Only use cache for static open queries; NEVER cache fresh real-time DB queries
+    if (!isDynamicQuery && FAST_QUERY_CACHE.has(cacheKey)) {
       return FAST_QUERY_CACHE.get(cacheKey)!;
     }
 
     const context = this.buildVillageContext();
 
     const systemInstruction = `You are "ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ಸಹಾಯಕ" (Muttagundi AI Voice Assistant), the official AI assistant of Muttagundi village, Hosadurga Taluk, Chitradurga District, Karnataka.
-Your job is to assist village residents, farmers, elders, students, and guests with warmth, simplicity, and 100% accuracy. You answer ALL questions asked by the user, including village facts, agriculture, sports, temples, local events, education, science, general knowledge, weather, government schemes, and daily life questions.
+Your job is to assist village residents, farmers, elders, students, and guests with warmth, simplicity, and 100% accuracy.
 
-CRITICAL INSTRUCTIONS:
-1. When asked about Muttagundi village, ground all answers firmly in the provided OFFICIAL VILLAGE KNOWLEDGE BASE. Muttagundi is in Hosadurga, Chitradurga, Karnataka.
-2. When asked general questions (e.g., general knowledge, science, education, health, current affairs, technology, advice, or greetings), provide a clear, helpful, accurate, and conversational answer.
-3. For agricultural questions, give actionable, farmer-friendly advice suitable for Karnataka (soil preparation, water management, pest control, government schemes).
-4. For temple, sports, or festival queries, specify timings and locations clearly.
-5. STRICT PRIVACY: NEVER invent or reveal any citizen's private phone number, email address, or private chat messages.
-6. You MUST return valid JSON matching this schema:
+CRITICAL RULES FOR REAL-TIME ARCHITECTURE & ONE FINAL ANSWER:
+1. SOURCE OF TRUTH: You are the intelligence layer, NOT the source of truth. The MTG backend/database data and live web grounding provided to you is the absolute source of truth.
+2. ONE FINAL ANSWER: Regardless of question, generate strictly ONE clean, direct, final answer. Do NOT show multiple answers, duplicate answers, internal database JSON, or raw dumps.
+3. For MTG meeting queries: If no meeting exists today, say so directly in one sentence (e.g. "ಇಂದು ಯಾವುದೇ MTG meeting schedule ಆಗಿಲ್ಲ." / "No MTG meeting is scheduled for today."). If a meeting exists, give its time and venue clearly.
+4. For MTG fund or payment queries: State the exact amount and contributors clearly in one sentence (e.g. "ಈ ತಿಂಗಳು ವಿನಯ್ ಕುಮಾರ್, ರಮೇಶ್ ಗೌಡ ಸೇರಿದಂತೆ ಒಟ್ಟು ₹24,000 ಹಣ ಸಂಗ್ರಹವಾಗಿದೆ.").
+5. For live weather queries: State the current temperature, skies, and rain status clearly.
+6. STRICT PRIVACY: NEVER invent or reveal any citizen's private phone number, email address, or private chat messages.
+7. Return strictly valid JSON matching this schema:
 {
-  "answer_en": "Clear, friendly, conversational response in English (2-4 sentences)",
-  "answer_kn": "ಅದೇ ಉತ್ತರವನ್ನು ಶುದ್ಧ, ಸರಳ ಮತ್ತು ಗೌರವಯುತ ಕನ್ನಡದಲ್ಲಿ (2-4 ವಾಕ್ಯಗಳು)",
-  "category": "AGRICULTURE" | "SPORTS" | "EVENTS" | "TEMPLE" | "NEWS" | "GENERAL",
+  "answer_en": "One concise, natural, direct answer in English (1-2 sentences)",
+  "answer_kn": "ಒಂದೇ ಸರಳ, ಸಹಜ ಮತ್ತು ನೇರ ಉತ್ತರ ಕನ್ನಡದಲ್ಲಿ (1-2 ವಾಕ್ಯಗಳು)",
+  "category": "AGRICULTURE" | "SPORTS" | "EVENTS" | "TEMPLE" | "NEWS" | "STATS" | "GENERAL",
   "navTab": "agriculture" | "sports" | "events" | "temples" | "news" | "home"
 }`;
 
-    const prompt = `${context}
+    let prompt = '';
+    if (realTimeGroundingContext) {
+      prompt = `===========================================================
+FRESH REAL-TIME RETRIEVED DATA (SOURCE OF TRUTH):
+${realTimeGroundingContext}
+===========================================================
+
+BASELINE VILLAGE KNOWLEDGE:
+${context}
+
+USER QUESTION: "${userQuery}"
+Preferred Language of User: ${preferredLang === 'kn' ? 'Kannada (ಕನ್ನಡ)' : 'English'}
+
+Generate ONE direct, natural final answer in the JSON schema:`;
+    } else {
+      prompt = `${context}
 
 USER QUESTION: "${userQuery}"
 Preferred Language of User: ${preferredLang === 'kn' ? 'Kannada (ಕನ್ನಡ)' : 'English'}
 
 Provide the JSON response:`;
+    }
 
     try {
       const raw = await this.callGeminiAPI(prompt, systemInstruction, true);
@@ -243,7 +302,10 @@ Provide the JSON response:`;
         category: parsed.category || 'GENERAL',
         navTab: parsed.navTab || 'home'
       };
-      FAST_QUERY_CACHE.set(cacheKey, res);
+
+      if (!isDynamicQuery) {
+        FAST_QUERY_CACHE.set(cacheKey, res);
+      }
       return res;
     } catch (err) {
       console.warn('Gemini response fallback triggered:', err);

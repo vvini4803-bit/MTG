@@ -1,5 +1,6 @@
 import { dbService } from './dbService';
 import { geminiService } from './geminiService';
+import { liveGroundingService } from './liveGroundingService';
 import { Language } from '../types';
 
 export interface VoiceQueryResponse {
@@ -215,29 +216,75 @@ export class VoiceAssistantService {
   }
 
   /**
-   * High-speed Hybrid Query Processor:
-   * 1. Check verified in-memory Cache (0ms)
-   * 2. Instant Local Village Knowledge Match (< 10ms)
-   * 3. Google Gemini 3.5 Flash for ANY open-ended / general / complex question
-   * 4. Dynamic, question-specific Smart Fallback (NEVER returns a single repeated answer)
+   * REAL-TIME AI ARCHITECTURE:
+   * Voice/Text Question
+   * → Speech-to-Text
+   * → Identify question type
+   * → Fetch latest MTG database data OR current web information when required
+   * → Send the retrieved/current information to Gemini
+   * → Gemini generates ONE final answer
+   * → Display answer
+   * → Text-to-Speech
+   *
+   * Critical Rule: Gemini is the intelligence layer, NOT the source of truth for MTG data.
+   * The MTG database is the source of truth for MTG information.
+   * For current internet information, live web grounding is used.
    */
   public async query(prompt: string, currentLang: Language): Promise<VoiceQueryResponse> {
     const q = prompt.toLowerCase().trim();
-    const cacheKey = `${currentLang}:${q}`;
 
-    // 1. Check Cache for verified instant recall (0ms)
+    // 1. Identify question type
+    const questionType = this.identifyQuestionType(q);
+
+    // 2. Fetch latest MTG database data OR current web information
+    const realTimeResult = await this.fetchRealTimeData(questionType, prompt, q);
+
+    // 3. Send the retrieved/current information to Gemini for reasoning & single natural phrasing
+    if (realTimeResult.groundingContext) {
+      try {
+        const geminiRes = await geminiService.askVillageAssistant(
+          prompt,
+          currentLang,
+          realTimeResult.groundingContext
+        );
+
+        if (geminiRes && (geminiRes.answer_en || geminiRes.answer_kn)) {
+          return {
+            answer_en: geminiRes.answer_en,
+            answer_kn: geminiRes.answer_kn,
+            category: geminiRes.category || realTimeResult.category || 'GENERAL',
+            isVerified: realTimeResult.isVerified !== undefined ? realTimeResult.isVerified : true,
+            navTab: geminiRes.navTab || realTimeResult.navTab || 'home'
+          };
+        }
+      } catch (err) {
+        console.warn('[VoiceAssistant] Gemini processing failed, falling back to direct source-of-truth answer:', err);
+      }
+
+      // If Gemini times out / fails, immediately use the single final answer generated directly from the fresh retrieved data
+      if (realTimeResult.directAnswer) {
+        return realTimeResult.directAnswer;
+      }
+    }
+
+    // If realTimeResult returned a direct non-grounded answer (e.g., live date/time)
+    if (realTimeResult.directAnswer) {
+      return realTimeResult.directAnswer;
+    }
+
+    // 4. For static knowledge queries (greetings, village geography, staple crops):
+    const cacheKey = `${currentLang}:${q}`;
     if (VOICE_CACHE.has(cacheKey)) {
       return VOICE_CACHE.get(cacheKey)!;
     }
 
-    // 2. High-speed local intent matcher (< 10ms response time)
     const instantLocal = this.getInstantLocalAnswer(q);
     if (instantLocal) {
       VOICE_CACHE.set(cacheKey, instantLocal);
       return instantLocal;
     }
 
-    // 3. Open-ended / General / AI query: Call Google Gemini 3.5 Flash
+    // 5. Open-ended / General / AI query to Gemini
     try {
       const geminiRes = await geminiService.askVillageAssistant(prompt, currentLang);
       if (geminiRes && (geminiRes.answer_en || geminiRes.answer_kn)) {
@@ -252,15 +299,440 @@ export class VoiceAssistantService {
         return response;
       }
     } catch (err) {
-      console.warn('Live Gemini query failed, routing to dynamic local generator:', err);
+      console.warn('[VoiceAssistant] Gemini open-ended query fallback:', err);
     }
 
-    // 4. Dynamic, question-specific smart fallback (Does NOT cache, so future retries work)
+    // 6. Dynamic, question-specific fallback
     return this.getSmartDynamicFallback(prompt, q, currentLang);
   }
 
   /**
-   * Instant Local Knowledge Matcher - Covers extensive village, government, agriculture, and general intents in < 10ms
+   * Identifies question category to determine whether fresh MTG database data
+   * or live web meteorological grounding must be retrieved.
+   */
+  private identifyQuestionType(q: string):
+    | 'MTG_PAYMENT'
+    | 'MTG_FUND'
+    | 'MTG_MEETING'
+    | 'MTG_ADMIN'
+    | 'MTG_SPORTS'
+    | 'MTG_EMERGENCY'
+    | 'MTG_NEWS'
+    | 'LIVE_WEATHER'
+    | 'LIVE_DATETIME'
+    | 'GENERAL' {
+    // 1. Payment / Contributions (ಹಣ ಕಟ್ಟಿದವರು / ಪಾವತಿ ವಿವರ)
+    if (
+      q.includes('who paid') ||
+      q.includes('who has paid') ||
+      q.includes('paid this month') ||
+      q.includes('who has not paid') ||
+      q.includes('paid amount') ||
+      q.includes('pending payment') ||
+      q.includes('payment') ||
+      q.includes('contribution') ||
+      q.includes('ಹಣ ಕಟ್ಟಿದ್ದಾರೆ') ||
+      q.includes('ಹಣ ಕಟ್ಟಿದವರು') ||
+      q.includes('ದುಡ್ಡು ಕೊಟ್ಟಿದ್ದಾರೆ') ||
+      q.includes('ಹಣ ಕೊಟ್ಟವರು') ||
+      q.includes('ಹಣ ಪಾವತಿ') ||
+      q.includes('ಯಾರದ್ದು ಬಾಕಿ') ||
+      q.includes('ಹಣ ಕಟ್ಟಿಲ್ಲ') ||
+      q.includes('ದೇಣಿಗೆ ನೀಡಿದವರು') ||
+      q.includes('ಚಂದಾ ಕಟ್ಟಿದವರು')
+    ) {
+      return 'MTG_PAYMENT';
+    }
+
+    // 2. Fund & Balance (ಖಜಾನೆ ಮತ್ತು ಫಂಡ್ ವಿವರ)
+    if (
+      q.includes('mtg fund') ||
+      q.includes('village fund') ||
+      q.includes('fund balance') ||
+      q.includes('current fund') ||
+      q.includes('total fund') ||
+      q.includes('treasury') ||
+      q.includes('current mtg') ||
+      q.includes('ಫಂಡ್') ||
+      q.includes('ಖಜಾನೆ') ||
+      q.includes('ಗ್ರಾಮದ ಹಣ') ||
+      q.includes('ಖಾತೆಯಲ್ಲಿ ಎಷ್ಟು') ||
+      q.includes('ಬ್ಯಾಲೆನ್ಸ್')
+    ) {
+      return 'MTG_FUND';
+    }
+
+    // 3. Meetings & Grama Sabha (ಸಭೆ & ಮೀಟಿಂಗ್ ವೇಳಾಪಟ್ಟಿ)
+    if (
+      q.includes('meeting') ||
+      q.includes('ಮೀಟಿಂಗ್') ||
+      q.includes('ಸಭೆ') ||
+      q.includes('ಗ್ರಾಮ ಸಭೆ') ||
+      q.includes('ಪಂಚಾಯತ್ ಸಭೆ') ||
+      q.includes('ಇಂದು ಸಭೆ') ||
+      q.includes('ಇವತ್ತು ನಮ್ಮ meeting') ||
+      q.includes('meeting ಇದೆಯಾ')
+    ) {
+      return 'MTG_MEETING';
+    }
+
+    // 4. Admin & Leadership (ಅಡ್ಮಿನ್ & ಸೂಪರ್ ಅಡ್ಮಿನ್)
+    if (
+      q.includes('who is the admin') ||
+      q.includes('who is admin') ||
+      q.includes('who is super admin') ||
+      q.includes('super admin') ||
+      q.includes('portal admin') ||
+      q.includes('ಅಡ್ಮಿನ್ ಯಾರು') ||
+      q.includes('ಸೂಪರ್ ಅಡ್ಮಿನ್') ||
+      q.includes('ಅಡ್ಮಿನ್') ||
+      q.includes('ನಿರ್ವಾಹಕರು') ||
+      q.includes('ಮುಖಂಡರು ಯಾರು')
+    ) {
+      return 'MTG_ADMIN';
+    }
+
+    // 5. Weather, Rain & Temperature (ಹವಾಮಾನ & ಮಳೆ - ಲೈವ್ ಮೆಟಿಯೊರೊಲಾಜಿಕಲ್ ಡೇಟಾ)
+    if (
+      q.includes('weather') ||
+      q.includes('rain') ||
+      q.includes('temperature') ||
+      q.includes('climate') ||
+      q.includes('forecast') ||
+      q.includes('ಹವಾಮಾನ') ||
+      q.includes('ಮಳೆ') ||
+      q.includes('ತಾಪಮಾನ') ||
+      q.includes('ಬಿಸಿಲು') ||
+      q.includes('ಮಳೆ ಬರುತ್ತಾ') ||
+      q.includes('ಮೋಡ')
+    ) {
+      return 'LIVE_WEATHER';
+    }
+
+    // 6. Cricket, MPL & Sports (ಕ್ರಿಕೆಟ್ ಸ್ಕೋರ್ & ಪಂದ್ಯಾವಳಿ)
+    if (
+      q.includes('cricket') ||
+      q.includes('ಕ್ರಿಕೆಟ್') ||
+      q.includes('score') ||
+      q.includes('ಸ್ಕೋರ್') ||
+      q.includes('mpl') ||
+      q.includes('tournament') ||
+      q.includes('ಟೂರ್ನಮೆಂಟ್') ||
+      q.includes('sports') ||
+      q.includes('ಕ್ರೀಡೆ') ||
+      q.includes('kabaddi') ||
+      q.includes('ಕಬಡ್ಡಿ') ||
+      q.includes('match') ||
+      q.includes('ಪಂದ್ಯ')
+    ) {
+      return 'MTG_SPORTS';
+    }
+
+    // 7. Time & Date (ಸಮಯ & ದಿನಾಂಕ)
+    if (
+      q.includes('what time') ||
+      q.includes('current time') ||
+      q.includes('today date') ||
+      q.includes('what day is today') ||
+      q.includes('ಸಮಯ ಎಷ್ಟು') ||
+      q.includes('ಗಂಟೆ ಎಷ್ಟು') ||
+      q.includes('ಇವತ್ತು ಯಾವ ದಿನ')
+    ) {
+      return 'LIVE_DATETIME';
+    }
+
+    // 8. Emergency Alert (ತುರ್ತು ಎಚ್ಚರಿಕೆ)
+    if (
+      q.includes('emergency') ||
+      q.includes('alert') ||
+      q.includes('warning') ||
+      q.includes('ತುರ್ತು') ||
+      q.includes('ಎಚ್ಚರಿಕೆ')
+    ) {
+      return 'MTG_EMERGENCY';
+    }
+
+    // 9. Village News (ಸುದ್ದಿ & ಪ್ರಕಟಣೆ)
+    if (
+      q.includes('news') ||
+      q.includes('notice') ||
+      q.includes('announcement') ||
+      q.includes('ಸುದ್ದಿ') ||
+      q.includes('ಪ್ರಕಟಣೆ')
+    ) {
+      return 'MTG_NEWS';
+    }
+
+    return 'GENERAL';
+  }
+
+  /**
+   * Fetches fresh real-time data from MTG Database or Live Web Grounding.
+   * This is the absolute SOURCE OF TRUTH passed to Gemini.
+   */
+  private async fetchRealTimeData(
+    type: ReturnType<typeof this.identifyQuestionType>,
+    prompt: string,
+    q: string
+  ): Promise<{
+    groundingContext?: string;
+    directAnswer?: VoiceQueryResponse;
+    category?: string;
+    isVerified?: boolean;
+    navTab?: string;
+  }> {
+    switch (type) {
+      // 1. Who paid this month's amount?
+      case 'MTG_PAYMENT': {
+        const fund = dbService.getVillageFund();
+        const payments = dbService.getPaymentRecords();
+        const paid = payments.filter((p) => p.status === 'PAID');
+        const pending = payments.filter((p) => p.status === 'PENDING');
+        const paidNames = paid.map((p) => p.user_name).join(', ') || 'None';
+        const paidNamesKn = paid.map((p) => p.user_name_kn || p.user_name).join(', ') || 'ಯಾರೂ ಇಲ್ಲ';
+        const pendingNames = pending.map((p) => p.user_name).join(', ') || 'None';
+
+        const groundingContext = `REAL-TIME MTG DATABASE DATA (SOURCE OF TRUTH) - MONTHLY PAYMENTS:
+- Current Active Month: ${fund.current_month}
+- Total Collected this month: ₹${fund.monthly_collected.toLocaleString('en-IN')} (Target: ₹${fund.monthly_target.toLocaleString('en-IN')})
+- Members who PAID this month: ${paid.map((p) => `${p.user_name} (₹${p.amount} on ${p.date})`).join('; ') || 'None'}
+- Members with PENDING payment this month: ${pendingNames}`;
+
+        return {
+          groundingContext,
+          category: 'GENERAL',
+          isVerified: true,
+          navTab: 'home',
+          directAnswer: {
+            answer_en: `For ${fund.current_month}, ${paid.map((p) => p.user_name).slice(0, 4).join(', ')} and others have paid their contribution, totaling ₹${fund.monthly_collected.toLocaleString('en-IN')}.`,
+            answer_kn: `ಈ ತಿಂಗಳು (${fund.current_month}) ${paidNamesKn} ಹಣ ಪಾವತಿಸಿದ್ದು, ಒಟ್ಟು ₹${fund.monthly_collected.toLocaleString('en-IN')} ಸಂಗ್ರಹವಾಗಿದೆ.`,
+            category: 'GENERAL',
+            isVerified: true,
+            navTab: 'home'
+          }
+        };
+      }
+
+      // 2. What is the current MTG fund?
+      case 'MTG_FUND': {
+        const fund = dbService.getVillageFund();
+        const groundingContext = `REAL-TIME MTG DATABASE DATA (SOURCE OF TRUTH) - FUND BALANCE:
+- Current MTG Village Fund Balance: ₹${fund.total_balance.toLocaleString('en-IN')}
+- Active Month (${fund.current_month}) Collected: ₹${fund.monthly_collected.toLocaleString('en-IN')}
+- Monthly Target: ₹${fund.monthly_target.toLocaleString('en-IN')}
+- Active Contributors Count: ${fund.active_contributors_count}
+- Last Updated: ${fund.last_updated}`;
+
+        return {
+          groundingContext,
+          category: 'GENERAL',
+          isVerified: true,
+          navTab: 'home',
+          directAnswer: {
+            answer_en: `The current MTG village fund balance is ₹${fund.total_balance.toLocaleString('en-IN')}, with ₹${fund.monthly_collected.toLocaleString('en-IN')} collected for ${fund.current_month}.`,
+            answer_kn: `ಪ್ರಸ್ತುತ MTG ಗ್ರಾಮದ ಒಟ್ಟು ಖಜಾನೆ ನಿಧಿ ₹${fund.total_balance.toLocaleString('en-IN')} ಆಗಿದ್ದು, ${fund.current_month} ತಿಂಗಳಲ್ಲಿ ₹${fund.monthly_collected.toLocaleString('en-IN')} ಸಂಗ್ರಹವಾಗಿದೆ.`,
+            category: 'GENERAL',
+            isVerified: true,
+            navTab: 'home'
+          }
+        };
+      }
+
+      // 3. When is our next meeting? / ಇವತ್ತು ನಮ್ಮ meeting ಇದೆಯಾ?
+      case 'MTG_MEETING': {
+        const meetings = dbService.getMeetingsSchedule();
+        const groundingContext = `REAL-TIME MTG DATABASE DATA (SOURCE OF TRUTH) - VILLAGE MEETINGS:
+- Is there a meeting today?: ${meetings.hasMeetingToday && meetings.todayMeetings[0] ? `YES. Meeting: "${meetings.todayMeetings[0].title_en}" (${meetings.todayMeetings[0].title_kn}) scheduled today at ${meetings.todayMeetings[0].start_time} at ${meetings.todayMeetings[0].venue_en}.` : 'NO. No meeting is scheduled for today.'}
+- Next upcoming meeting: ${meetings.nextMeeting ? `"${meetings.nextMeeting.title_en}" (${meetings.nextMeeting.title_kn}) on ${meetings.nextMeeting.date} at ${meetings.nextMeeting.start_time} at ${meetings.nextMeeting.venue_en}.` : 'None scheduled at present.'}`;
+
+        return {
+          groundingContext,
+          category: 'EVENTS',
+          isVerified: true,
+          navTab: 'events',
+          directAnswer: {
+            answer_en: meetings.hasMeetingToday && meetings.todayMeetings[0]
+              ? `Yes, there is an MTG meeting scheduled today at ${meetings.todayMeetings[0].start_time} at ${meetings.todayMeetings[0].venue_en}.`
+              : `No MTG meeting is scheduled for today.${meetings.nextMeeting ? ` The next meeting is on ${meetings.nextMeeting.date} at ${meetings.nextMeeting.start_time}.` : ''}`,
+            answer_kn: meetings.hasMeetingToday && meetings.todayMeetings[0]
+              ? `ಹೌದು, ಇಂದು ${meetings.todayMeetings[0].start_time} ಗಂಟೆಗೆ MTG meeting ${meetings.todayMeetings[0].venue_kn || meetings.todayMeetings[0].venue_en}ದಲ್ಲಿ ಇದೆ.`
+              : `ಇಂದು ಯಾವುದೇ MTG meeting schedule ಆಗಿಲ್ಲ.${meetings.nextMeeting ? ` ಮುಂದಿನ ಸಭೆಯು ${meetings.nextMeeting.date} ರಂದು ನಿಗದಿಯಾಗಿದೆ.` : ''}`,
+            category: 'EVENTS',
+            isVerified: true,
+            navTab: 'events'
+          }
+        };
+      }
+
+      // 4. Who is the admin?
+      case 'MTG_ADMIN': {
+        const admins = dbService.getAdmins();
+        const groundingContext = `REAL-TIME MTG DATABASE DATA (SOURCE OF TRUTH) - PORTAL ADMINS & LEADERSHIP:
+- Super Admin: Vinay Kumar (email: vvini4803@gmail.com, UID: admin_vvini4803)
+- Active Admins: ${admins.map((a) => `${a.name} (${a.role})`).join(', ') || 'Vinay Kumar'}`;
+
+        return {
+          groundingContext,
+          category: 'GENERAL',
+          isVerified: true,
+          navTab: 'home',
+          directAnswer: {
+            answer_en: `The Super Admin of Muttagundi Digital Village is Vinay Kumar (vvini4803@gmail.com).`,
+            answer_kn: `ಮುತ್ತಾಗೊಂದಿ ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್‌ನ ಸೂಪರ್ ಅಡ್ಮಿನ್ ವಿನಯ್ ಕುಮಾರ್ (Vinay Kumar).`,
+            category: 'GENERAL',
+            isVerified: true,
+            navTab: 'home'
+          }
+        };
+      }
+
+      // 5. Current Live Weather from Open-Meteo API
+      case 'LIVE_WEATHER': {
+        const weather = await liveGroundingService.getLiveWeather();
+        if (weather && weather.isLive) {
+          const groundingContext = `LIVE REAL-TIME WEATHER (MUTTAGUNDI, HOSADURGA, CHITRADURGA):
+- Current Temperature: ${weather.tempC}°C
+- Sky Condition: ${weather.conditionEn} (${weather.conditionKn})
+- Relative Humidity: ${weather.humidity}%
+- Rain / Precipitation: ${weather.rainMm} mm
+- Rain Probability: ${weather.rainProbability || 0}%
+- Wind Speed: ${weather.windKmh} km/h
+- Timestamp: ${weather.timestamp}`;
+
+          return {
+            groundingContext,
+            category: 'AGRICULTURE',
+            isVerified: true,
+            navTab: 'agriculture',
+            directAnswer: {
+              answer_en: `Current weather in Muttagundi is ${weather.tempC}°C with ${weather.conditionEn}. Humidity is ${weather.humidity}% with ${weather.rainProbability || 0}% chance of rain.`,
+              answer_kn: `ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದಲ್ಲಿ ಪ್ರಸ್ತುತ ತಾಪಮಾನ ${weather.tempC}°C ಇದ್ದು, ${weather.conditionKn}. ಮಳೆ ಬರುವ ಸಾಧ್ಯತೆ ಶೇ. ${weather.rainProbability || 0} ರಷ್ಟಿದೆ.`,
+              category: 'AGRICULTURE',
+              isVerified: true,
+              navTab: 'agriculture'
+            }
+          };
+        } else {
+          // Do not pretend that information is real-time if live data was not successfully retrieved
+          return {
+            category: 'AGRICULTURE',
+            isVerified: false,
+            navTab: 'agriculture',
+            directAnswer: {
+              answer_en: 'Could not retrieve live meteorological data at this moment. Please check back shortly.',
+              answer_kn: 'ಪ್ರಸ್ತುತ ಲೈವ್ ಹವಾಮಾನ ಮಾಹಿತಿ ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಪ್ರಯತ್ನಿಸಿ.',
+              category: 'AGRICULTURE',
+              isVerified: false,
+              navTab: 'agriculture'
+            }
+          };
+        }
+      }
+
+      // 6. Live Time & Date in IST
+      case 'LIVE_DATETIME': {
+        const dt = liveGroundingService.getLiveDateTimeContext();
+        return {
+          category: 'GENERAL',
+          isVerified: true,
+          navTab: 'home',
+          directAnswer: {
+            answer_en: `Today is ${dt.dayEn}, ${dt.dateStr}, and the current time is ${dt.timeStr} (IST).`,
+            answer_kn: `ಇಂದು ${dt.dayKn}, ದಿನಾಂಕ ${dt.dateStr}, ಪ್ರಸ್ತುತ ಸಮಯ ${dt.timeStr}.`,
+            category: 'GENERAL',
+            isVerified: true,
+            navTab: 'home'
+          }
+        };
+      }
+
+      // 7. Live Sports & Matches
+      case 'MTG_SPORTS': {
+        const sports = dbService.getLiveSportsStatus();
+        const live = sports.liveMatches[0];
+        const upcoming = sports.upcomingTournaments[0];
+
+        const groundingContext = `REAL-TIME MTG DATABASE DATA - SPORTS:
+- Live Match: ${live ? `In progress: ${live.team_a} vs ${live.team_b} at ${live.venue}. Score: ${live.team_a_score} vs ${live.team_b_score}. Status: ${live.current_status_en}` : 'No live match currently playing.'}
+- Tournaments: ${upcoming ? `${upcoming.name_en} (${upcoming.sport}) - Status: ${upcoming.status}` : 'Muttagundi Premier League (MPL) Cricket Tournament'}`;
+
+        return {
+          groundingContext,
+          category: 'SPORTS',
+          isVerified: true,
+          navTab: 'sports',
+          directAnswer: {
+            answer_en: live
+              ? `Live match in progress: ${live.team_a} vs ${live.team_b} at ${live.venue}. Score: ${live.team_a_score} vs ${live.team_b_score}.`
+              : 'Muttagundi Premier League (MPL) cricket and Kabaddi are our village sports highlights. Check the Sports section for tournament schedules.',
+            answer_kn: live
+              ? `ಪ್ರಸ್ತುತ ನೇರ ಪಂದ್ಯ ನಡೆಯುತ್ತಿದೆ: ${live.team_a} ವಿರುದ್ಧ ${live.team_b}. ಸ್ಕೋರ್: ${live.team_a_score} vs ${live.team_b_score}.`
+              : 'ಮುತ್ತಾಗೊಂದಿ ಪ್ರೀಮಿಯರ್ ಲೀಗ್ (MPL) ಕ್ರಿಕೆಟ್ ಮತ್ತು ಕಬಡ್ಡಿ ನಮ್ಮ ಪ್ರಮುಖ ಕ್ರೀಡೆಗಳಾಗಿವೆ. ಕ್ರೀಡಾ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ವೇಳಾಪಟ್ಟಿಗಳನ್ನು ವೀಕ್ಷಿಸಿ.',
+            category: 'SPORTS',
+            isVerified: true,
+            navTab: 'sports'
+          }
+        };
+      }
+
+      // 8. Emergency Alert
+      case 'MTG_EMERGENCY': {
+        const alert = dbService.getEmergencyAlertStatus();
+        const groundingContext = `REAL-TIME MTG DATABASE DATA - EMERGENCY ADVISORY:
+- Alert Active: ${alert ? `YES. [${alert.level}] ${alert.title_en} (${alert.title_kn}): ${alert.message_en}. Contact: ${alert.contact_info}` : 'NO. There are no active emergency advisories in Muttagundi.'}`;
+
+        return {
+          groundingContext,
+          category: 'GENERAL',
+          isVerified: true,
+          navTab: 'home',
+          directAnswer: {
+            answer_en: alert
+              ? `Active Village Alert [${alert.level}]: ${alert.title_en} - ${alert.message_en}. Contact: ${alert.contact_info}.`
+              : 'There are currently no active emergency alerts in Muttagundi. For medical help call 108, for police assistance call 112.',
+            answer_kn: alert
+              ? `ತುರ್ತು ಎಚ್ಚರಿಕೆ [${alert.level}]: ${alert.title_kn} - ${alert.message_kn}. ಸಂಪರ್ಕ: ${alert.contact_info}.`
+              : 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದಲ್ಲಿ ಪ್ರಸ್ತುತ ಯಾವುದೇ ತುರ್ತು ಎಚ್ಚರಿಕೆಗಳಿಲ್ಲ. ವೈದ್ಯಕೀಯ ನೆರವಿಗೆ 108, ಪೊಲೀಸ್ ಸಹಾಯಕ್ಕೆ 112 ಕರೆ ಮಾಡಿ.',
+            category: 'GENERAL',
+            isVerified: true,
+            navTab: 'home'
+          }
+        };
+      }
+
+      // 9. Latest Village News
+      case 'MTG_NEWS': {
+        const news = dbService.getNews();
+        const latest = news[0];
+        const groundingContext = `REAL-TIME MTG DATABASE DATA - NEWS & ANNOUNCEMENTS:
+- Latest Announcement: ${latest ? `"${latest.title_en}" (${latest.title_kn}): ${latest.content_en} (${latest.created_at})` : 'No recent announcements.'}`;
+
+        return {
+          groundingContext,
+          category: 'NEWS',
+          isVerified: true,
+          navTab: 'news',
+          directAnswer: {
+            answer_en: latest
+              ? `Latest village notice: ${latest.title_en}. Visit the News tab for complete details.`
+              : 'No new village notices at present. Check the News section for past updates.',
+            answer_kn: latest
+              ? `ಇತ್ತೀಚಿನ ಗ್ರಾಮ ಪ್ರಕಟಣೆ: ${latest.title_kn}. ಸಂಪೂರ್ಣ ವಿವರಗಳಿಗಾಗಿ ಸುದ್ದಿ ವಿಭಾಗವನ್ನು ನೋಡಿ.`
+              : 'ಪ್ರಸ್ತುತ ಯಾವುದೇ ಹೊಸ ಗ್ರಾಮ ಪ್ರಕಟಣೆಗಳಿಲ್ಲ. ಸುದ್ದಿ ವಿಭಾಗದಲ್ಲಿ ಹಿಂದಿನ ವಿವರಗಳನ್ನು ವೀಕ್ಷಿಸಿ.',
+            category: 'NEWS',
+            isVerified: true,
+            navTab: 'news'
+          }
+        };
+      }
+
+      default:
+        return {};
+    }
+  }
+
+  /**
+   * Instant Static Local Knowledge Matcher - For non-real-time static village information
    */
   private getInstantLocalAnswer(q: string): VoiceQueryResponse | null {
     // 1. Greetings, Identity & How are you
@@ -284,28 +756,6 @@ export class VoiceAssistantService {
         category: 'GENERAL',
         isVerified: true,
         navTab: 'home'
-      };
-    }
-
-    // 2. Weather & Rain (ಹವಾಮಾನ & ಮಳೆ)
-    if (
-      q.includes('weather') ||
-      q.includes('rain') ||
-      q.includes('climate') ||
-      q.includes('temperature') ||
-      q.includes('ಹವಾಮಾನ') ||
-      q.includes('ಮಳೆ') ||
-      q.includes('ಬಿಸಿಲು') ||
-      q.includes('ತಾಪಮಾನ') ||
-      q.includes('ಮೋಡ') ||
-      q.includes('ಮಳೆ ಬರುತ್ತಾ')
-    ) {
-      return {
-        answer_en: 'Current weather in Muttagundi is 29°C with partly cloudy skies and gentle breezes. Suitable conditions for regular farming and village activities.',
-        answer_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದಲ್ಲಿ ಪ್ರಸ್ತುತ ತಾಪಮಾನ 29°C ಇದ್ದು, ಆಕಾಶ ಭಾಗಶಃ ಮೋಡ ಕವಿದಿದೆ. ಕೃಷಿ ಹಾಗೂ ಗ್ರಾಮದ ದೈನಂದಿನ ಕೆಲಸಗಳಿಗೆ ಉತ್ತಮ ಹವಾಮಾನವಿದೆ.',
-        category: 'AGRICULTURE',
-        isVerified: true,
-        navTab: 'agriculture'
       };
     }
 
