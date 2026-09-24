@@ -216,94 +216,69 @@ export class VoiceAssistantService {
   }
 
   /**
-   * REAL-TIME AI ARCHITECTURE:
+   * GOOGLE GEMINI LIVE STREAMING AI ARCHITECTURE:
    * Voice/Text Question
    * → Speech-to-Text
-   * → Identify question type
-   * → Fetch latest MTG database data OR current web information when required
-   * → Send the retrieved/current information to Gemini
-   * → Gemini generates ONE final answer
-   * → Display answer
+   * → Identify question type & fetch latest MTG database or live meteorological data for grounding
+   * → Stream tokens directly from Google Gemini Live Stream (SSE)
+   * → Real-time onChunk callbacks to UI for instant live stream display
+   * → Return parsed final VoiceQueryResponse
    * → Text-to-Speech
    *
-   * Critical Rule: Gemini is the intelligence layer, NOT the source of truth for MTG data.
-   * The MTG database is the source of truth for MTG information.
-   * For current internet information, live web grounding is used.
+   * "From Google Gemini only it will work":
+   * Every question is streamed directly from Google Gemini.
    */
-  public async query(prompt: string, currentLang: Language): Promise<VoiceQueryResponse> {
+  public async queryStream(
+    prompt: string,
+    currentLang: Language,
+    onChunk?: (chunk: string, fullText: string) => void
+  ): Promise<VoiceQueryResponse> {
     const q = prompt.toLowerCase().trim();
 
-    // 1. Identify question type
+    // 1. Identify question type for live grounding context
     const questionType = this.identifyQuestionType(q);
 
-    // 2. Fetch latest MTG database data OR current web information
+    // 2. Fetch latest MTG database data or live meteorological data
     const realTimeResult = await this.fetchRealTimeData(questionType, prompt, q);
 
-    // 3. Send the retrieved/current information to Gemini for reasoning & single natural phrasing
-    if (realTimeResult.groundingContext) {
-      try {
-        const geminiRes = await geminiService.askVillageAssistant(
-          prompt,
-          currentLang,
-          realTimeResult.groundingContext
-        );
-
-        if (geminiRes && (geminiRes.answer_en || geminiRes.answer_kn)) {
-          return {
-            answer_en: geminiRes.answer_en,
-            answer_kn: geminiRes.answer_kn,
-            category: geminiRes.category || realTimeResult.category || 'GENERAL',
-            isVerified: realTimeResult.isVerified !== undefined ? realTimeResult.isVerified : true,
-            navTab: geminiRes.navTab || realTimeResult.navTab || 'home'
-          };
-        }
-      } catch (err) {
-        console.warn('[VoiceAssistant] Gemini processing failed, falling back to direct source-of-truth answer:', err);
-      }
-
-      // If Gemini times out / fails, immediately use the single final answer generated directly from the fresh retrieved data
-      if (realTimeResult.directAnswer) {
-        return realTimeResult.directAnswer;
-      }
-    }
-
-    // If realTimeResult returned a direct non-grounded answer (e.g., live date/time)
-    if (realTimeResult.directAnswer) {
-      return realTimeResult.directAnswer;
-    }
-
-    // 4. For static knowledge queries (greetings, village geography, staple crops):
-    const cacheKey = `${currentLang}:${q}`;
-    if (VOICE_CACHE.has(cacheKey)) {
-      return VOICE_CACHE.get(cacheKey)!;
-    }
-
-    const instantLocal = this.getInstantLocalAnswer(q);
-    if (instantLocal) {
-      VOICE_CACHE.set(cacheKey, instantLocal);
-      return instantLocal;
-    }
-
-    // 5. Open-ended / General / AI query to Gemini
+    // 3. Connect to Google Gemini Live Stream
     try {
-      const geminiRes = await geminiService.askVillageAssistant(prompt, currentLang);
+      const geminiRes = await geminiService.streamVillageAssistant(
+        prompt,
+        currentLang,
+        realTimeResult.groundingContext,
+        onChunk
+      );
+
       if (geminiRes && (geminiRes.answer_en || geminiRes.answer_kn)) {
-        const response: VoiceQueryResponse = {
+        return {
           answer_en: geminiRes.answer_en,
           answer_kn: geminiRes.answer_kn,
-          category: geminiRes.category || 'GENERAL',
-          isVerified: true,
-          navTab: geminiRes.navTab || 'home'
+          category: geminiRes.category || realTimeResult.category || 'GENERAL',
+          isVerified: realTimeResult.isVerified !== undefined ? realTimeResult.isVerified : true,
+          navTab: geminiRes.navTab || realTimeResult.navTab || 'home'
         };
-        VOICE_CACHE.set(cacheKey, response);
-        return response;
       }
     } catch (err) {
-      console.warn('[VoiceAssistant] Gemini open-ended query fallback:', err);
+      console.warn('[VoiceAssistant] Gemini live stream failed:', err);
     }
 
-    // 6. Dynamic, question-specific fallback
-    return this.getSmartDynamicFallback(prompt, q, currentLang);
+    // 4. Safe fallback if Google Gemini API fails (e.g. quota/offline)
+    if (realTimeResult.directAnswer) {
+      const direct = realTimeResult.directAnswer;
+      const textToStream = currentLang === 'kn' ? direct.answer_kn : direct.answer_en;
+      onChunk?.(textToStream, textToStream);
+      return direct;
+    }
+
+    const fallback = this.getSmartDynamicFallback(prompt, q, currentLang);
+    const fallbackText = currentLang === 'kn' ? fallback.answer_kn : fallback.answer_en;
+    onChunk?.(fallbackText, fallbackText);
+    return fallback;
+  }
+
+  public async query(prompt: string, currentLang: Language): Promise<VoiceQueryResponse> {
+    return this.queryStream(prompt, currentLang);
   }
 
   /**
@@ -632,7 +607,12 @@ export class VoiceAssistantService {
       // 6. Live Time & Date in IST
       case 'LIVE_DATETIME': {
         const dt = liveGroundingService.getLiveDateTimeContext();
+        const groundingContext = `REAL-TIME CURRENT TIME & DATE (INDIAN STANDARD TIME):
+- Current Time: ${dt.timeStr} (IST)
+- Current Date: ${dt.dateStr}
+- Current Day: ${dt.dayEn} (${dt.dayKn})`;
         return {
+          groundingContext,
           category: 'GENERAL',
           isVerified: true,
           navTab: 'home',
