@@ -70,6 +70,9 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             ? 'ಧ್ವನಿ ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಳಗಿನ ಪೆಟ್ಟಿಗೆಯಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ.'
             : 'Could not capture speech. Please use the text input below.'
         );
+      },
+      (interim) => {
+        setQueryText(interim);
       }
     );
   };

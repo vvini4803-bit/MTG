@@ -22,7 +22,7 @@ function rotateApiKey() {
 }
 
 // Default active Gemini models verified with current API key
-const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-flash-latest'];
+const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.7-flash'];
 
 export interface GeminiResponse {
   answer_en: string;
@@ -30,6 +30,9 @@ export interface GeminiResponse {
   category?: string;
   navTab?: string;
 }
+
+// In-memory query cache for instant (0ms) response on repeated/similar queries
+const FAST_QUERY_CACHE = new Map<string, GeminiResponse>();
 
 class GeminiService {
   private manualApiKey: string = '';
@@ -50,6 +53,11 @@ class GeminiService {
     for (const model of GEMINI_MODELS) {
       const activeKey = this.getApiKey();
       if (!activeKey) continue;
+
+      // 2.8 second strict timeout: Voice queries must never block or hang the user
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2800);
+
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
 
@@ -61,8 +69,8 @@ class GeminiService {
             }
           ],
           generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1000
+            temperature: 0.2,
+            maxOutputTokens: 180
           }
         };
 
@@ -79,7 +87,8 @@ class GeminiService {
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
+          body: JSON.stringify(body),
+          signal: controller.signal
         });
 
         if (!res.ok) {
@@ -101,6 +110,8 @@ class GeminiService {
         lastError = err;
         rotateApiKey();
         continue;
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
@@ -183,6 +194,11 @@ Sports & Youth: Muttagundi Premier League (MPL) Cricket Tournament, annual Kabad
     userQuery: string,
     preferredLang: Language
   ): Promise<GeminiResponse> {
+    const cacheKey = `${preferredLang}:${userQuery.toLowerCase().trim()}`;
+    if (FAST_QUERY_CACHE.has(cacheKey)) {
+      return FAST_QUERY_CACHE.get(cacheKey)!;
+    }
+
     const context = this.buildVillageContext();
 
     const systemInstruction = `You are "ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ಸಹಾಯಕ" (Muttagundi AI Voice Assistant), the official AI assistant of Muttagundi village, Hosadurga Taluk, Chitradurga District, Karnataka.
@@ -223,15 +239,19 @@ Provide the JSON response:`;
       }
       const parsed = JSON.parse(jsonStr);
 
-      return {
+      const res: GeminiResponse = {
         answer_en: parsed.answer_en || raw,
         answer_kn: parsed.answer_kn || parsed.answer_en || raw,
         category: parsed.category || 'GENERAL',
         navTab: parsed.navTab || 'home'
       };
+      FAST_QUERY_CACHE.set(cacheKey, res);
+      return res;
     } catch (err) {
       console.warn('Gemini response fallback triggered:', err);
-      return this.getLocalSmartFallback(userQuery, preferredLang);
+      const fallback = this.getLocalSmartFallback(userQuery, preferredLang);
+      FAST_QUERY_CACHE.set(cacheKey, fallback);
+      return fallback;
     }
   }
 
