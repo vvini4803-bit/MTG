@@ -21,8 +21,8 @@ function rotateApiKey() {
   }
 }
 
-// Default active Gemini models verified with current API key
-const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.7-flash'];
+// Default active Gemini models verified with current API key pool
+const GEMINI_MODELS = ['gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-3.6-flash'];
 
 export interface GeminiResponse {
   answer_en: string;
@@ -31,7 +31,7 @@ export interface GeminiResponse {
   navTab?: string;
 }
 
-// In-memory query cache for instant (0ms) response on repeated/similar queries
+// In-memory query cache for instant response on successful queries
 const FAST_QUERY_CACHE = new Map<string, GeminiResponse>();
 
 class GeminiService {
@@ -50,68 +50,66 @@ class GeminiService {
   private async callGeminiAPI(prompt: string, systemInstruction?: string, isJson: boolean = false): Promise<string> {
     let lastError: any = null;
 
-    for (const model of GEMINI_MODELS) {
-      const activeKey = this.getApiKey();
-      if (!activeKey) continue;
+    // Multi-key and multi-model failover loop
+    for (let attempt = 0; attempt < 3; attempt++) {
+      for (const model of GEMINI_MODELS) {
+        const activeKey = this.getApiKey();
+        if (!activeKey) continue;
 
-      // 2.8 second strict timeout: Voice queries must never block or hang the user
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2800);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 7000);
 
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
 
-        const body: any = {
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }]
+          const body: any = {
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: prompt }]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 600
             }
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 180
-          }
-        };
-
-        if (isJson) {
-          body.generationConfig.responseMimeType = 'application/json';
-        }
-
-        if (systemInstruction) {
-          body.systemInstruction = {
-            parts: [{ text: systemInstruction }]
           };
-        }
 
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-          signal: controller.signal
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => null);
-          const errorMsg = errData?.error?.message || `HTTP ${res.status}`;
-          if (res.status === 429 || res.status === 403) {
-            rotateApiKey();
+          if (isJson) {
+            body.generationConfig.responseMimeType = 'application/json';
           }
-          throw new Error(errorMsg);
-        }
 
-        const data = await res.json();
-        const parts = data.candidates?.[0]?.content?.parts || [];
-        const textPart = parts.find((p: any) => p.text && !p.thought) || parts[parts.length - 1];
-        if (textPart && textPart.text) {
-          return textPart.text.trim();
+          if (systemInstruction) {
+            body.systemInstruction = {
+              parts: [{ text: systemInstruction }]
+            };
+          }
+
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: controller.signal
+          });
+
+          if (!res.ok) {
+            rotateApiKey();
+            continue;
+          }
+
+          const data = await res.json();
+          const parts = data.candidates?.[0]?.content?.parts || [];
+          const textPart = parts.find((p: any) => p.text && !p.thought) || parts[parts.length - 1];
+          if (textPart && textPart.text) {
+            return textPart.text.trim();
+          }
+        } catch (err) {
+          lastError = err;
+          rotateApiKey();
+          continue;
+        } finally {
+          clearTimeout(timeoutId);
         }
-      } catch (err) {
-        lastError = err;
-        rotateApiKey();
-        continue;
-      } finally {
-        clearTimeout(timeoutId);
       }
     }
 
@@ -249,9 +247,7 @@ Provide the JSON response:`;
       return res;
     } catch (err) {
       console.warn('Gemini response fallback triggered:', err);
-      const fallback = this.getLocalSmartFallback(userQuery, preferredLang);
-      FAST_QUERY_CACHE.set(cacheKey, fallback);
-      return fallback;
+      return this.getLocalSmartFallback(userQuery, preferredLang);
     }
   }
 
