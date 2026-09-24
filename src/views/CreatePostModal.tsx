@@ -58,7 +58,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     const authorId = currentUser ? currentUser.uid : ('resident_' + Date.now());
     const authorName = currentUser
       ? (isKannada && currentUser.name_kn ? currentUser.name_kn : currentUser.name)
-      : (guestName.trim() || (isKannada ? 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮಸ್ಥರು' : 'Muttagundi Resident'));
+      : (guestName.trim() || (isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮಸ್ಥರು' : 'Muttagundi Resident'));
     const authorRole = currentUser ? currentUser.role : 'USER';
 
     try {

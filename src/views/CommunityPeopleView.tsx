@@ -259,7 +259,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
           >
             <div>
               <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: '0 0 2px', color: '#FFFFFF' }}>
-                {isKannada ? '👋 ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮಸ್ಥರ ಡೈರೆಕ್ಟರಿ' : '👋 Join Muttagundi Village Directory'}
+                {isKannada ? '👋 ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮಸ್ಥರ ಡೈರೆಕ್ಟರಿ' : '👋 Join Muttagundi Village Directory'}
               </h4>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
                 {isKannada

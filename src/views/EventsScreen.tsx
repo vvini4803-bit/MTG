@@ -51,14 +51,14 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
       title_en: eventTitleEn.trim(),
       title_kn: eventTitleKn.trim() || eventTitleEn.trim(),
       description_en: eventDesc.trim() || 'Community program in Muttagundi village.',
-      description_kn: eventDesc.trim() || 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಸಮುದಾಯ ಕಾರ್ಯಕ್ರಮ.',
+      description_kn: eventDesc.trim() || 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಸಮುದಾಯ ಕಾರ್ಯಕ್ರಮ.',
       date: eventDate,
       start_time: eventTime.trim() || '10:00 AM',
       end_time: '01:00 PM',
       venue_en: eventVenue.trim() || 'Muttagundi Village Center',
-      venue_kn: eventVenue.trim() || 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮ ಕೇಂದ್ರ',
+      venue_kn: eventVenue.trim() || 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ಕೇಂದ್ರ',
       organizer_en: currentUser ? currentUser.name : 'Muttagundi Resident',
-      organizer_kn: currentUser ? (currentUser.name_kn || currentUser.name) : 'ಮುತ್ತಗುಂಡಿ ನಿವಾಸಿ',
+      organizer_kn: currentUser ? (currentUser.name_kn || currentUser.name) : 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿ',
       organizer_phone: eventPhone.trim() || '+91 7483254968',
       cover_image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
       status: 'UPCOMING'
@@ -141,7 +141,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
           </h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 20px' }}>
             {isKannada
-              ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಮುಂಬರುವ ಹಬ್ಬ, ಸಭೆ ಅಥವಾ ಜಾತ್ರೆ ಕಾರ್ಯಕ್ರಮವನ್ನು ಹೊಸದಾಗಿ ಸೇರಿಸಿ.'
+              ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಮುಂಬರುವ ಹಬ್ಬ, ಸಭೆ ಅಥವಾ ಜಾತ್ರೆ ಕಾರ್ಯಕ್ರಮವನ್ನು ಹೊಸದಾಗಿ ಸೇರಿಸಿ.'
               : 'Add upcoming temple festivals, village meetings, or sports tournaments for Muttagundi.'}
           </p>
           <button onClick={() => setShowCreateModal(true)} className="btn-primary" style={{ display: 'inline-flex' }}>

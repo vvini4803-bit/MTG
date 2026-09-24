@@ -6,11 +6,11 @@ export const VillageHero: React.FC = () => {
   const { isKannada } = useLanguage();
 
   const villageName = isKannada
-    ? (import.meta.env.VITE_VILLAGE_NAME_KN || 'ಮುಟ್ಟಗುಂಡಿ')
+    ? (import.meta.env.VITE_VILLAGE_NAME_KN || 'ಮುತ್ತಾಗೊಂದಿ')
     : (import.meta.env.VITE_VILLAGE_NAME_EN || 'Muttagundi');
 
   const districtName = isKannada
-    ? (import.meta.env.VITE_DISTRICT_KN || 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮ, ಹೊಸದುರ್ಗ ತಾಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ')
+    ? (import.meta.env.VITE_DISTRICT_KN || 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ, ಹೊಸದುರ್ಗ ತಾಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ')
     : (import.meta.env.VITE_DISTRICT_EN || 'Muttagundi, Hosadurga Taluk, Chitradurga District');
 
   return (

@@ -69,7 +69,7 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
     e.stopPropagation();
     triggerHapticFeedback();
     const title = isKannada ? item.title_kn : item.title_en;
-    const text = `📸 *${title}* - ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಸುಂದರ ಛಾಯಾಚಿತ್ರ:\n${window.location.href}`;
+    const text = `📸 *${title}* - ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಸುಂದರ ಛಾಯಾಚಿತ್ರ:\n${window.location.href}`;
     if (navigator.share) {
       navigator.share({ title, text, url: window.location.href }).catch(() => {});
     } else {
@@ -204,7 +204,7 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
           </h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 20px' }}>
             {isKannada
-              ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಪ್ರಕೃತಿ, ಕೃಷಿ, ದೇವಾಲಯ ಅಥವಾ ಹಬ್ಬಗಳ ಸುಂದರ ಚಿತ್ರಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ. ನಿಮ್ಮ ಚಿತ್ರಗಳು ಶಾಶ್ವತವಾಗಿ ಉಳಿಯುತ್ತವೆ.'
+              ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಪ್ರಕೃತಿ, ಕೃಷಿ, ದೇವಾಲಯ ಅಥವಾ ಹಬ್ಬಗಳ ಸುಂದರ ಚಿತ್ರಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ. ನಿಮ್ಮ ಚಿತ್ರಗಳು ಶಾಶ್ವತವಾಗಿ ಉಳಿಯುತ್ತವೆ.'
               : 'Upload real photos of Muttagundi village — temples, festivals, nature, and community life. Photos are permanently stored.'}
           </p>
           <button onClick={() => setShowUploadModal(true)} className="btn-primary" style={{ display: 'inline-flex' }}>
@@ -558,7 +558,7 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
                       className="form-input"
                       value={guestName}
                       onChange={(e) => setGuestName(e.target.value)}
-                      placeholder={isKannada ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮಸ್ಥರು' : 'Muttagundi Resident'}
+                      placeholder={isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮಸ್ಥರು' : 'Muttagundi Resident'}
                       style={{ paddingLeft: '32px' }}
                     />
                   </div>

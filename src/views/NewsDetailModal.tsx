@@ -59,6 +59,13 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
     }
   }, [news, effectiveUid]);
 
+  React.useEffect(() => {
+    if (!isOpen) {
+      voiceAssistant.stopSpeaking();
+      setIsSpeaking(false);
+    }
+  }, [isOpen]);
+
   const handleToggleLike = async () => {
     if (!news) return;
     triggerHapticFeedback();
@@ -73,13 +80,6 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
   const title = language === 'kn' ? news.title_kn : news.title_en;
   const content = language === 'kn' ? news.content_kn : news.content_en;
   const weekStatus = getOneWeekStatus(news.created_at);
-
-  React.useEffect(() => {
-    if (!isOpen) {
-      voiceAssistant.stopSpeaking();
-      setIsSpeaking(false);
-    }
-  }, [isOpen]);
 
   const handleSpeech = () => {
     if (isSpeaking) {

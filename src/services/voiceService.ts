@@ -210,7 +210,7 @@ export class VoiceAssistantService {
       }
       return {
         answer_en: 'No sports tournaments or matches are currently scheduled for Muttagundi. You can create the first tournament in the Sports tab!',
-        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕ್ರೀಡಾ ಪಂದ್ಯಾವಳಿಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ. ನೀವು ಕ್ರೀಡಾ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಪಂದ್ಯಾವಳಿ ಸೇರಿಸಬಹುದು!',
+        answer_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕ್ರೀಡಾ ಪಂದ್ಯಾವಳಿಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ. ನೀವು ಕ್ರೀಡಾ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಪಂದ್ಯಾವಳಿ ಸೇರಿಸಬಹುದು!',
         category: 'SPORTS',
         isVerified: true,
         navTab: 'sports'
@@ -241,7 +241,7 @@ export class VoiceAssistantService {
       }
       return {
         answer_en: 'No village events or festivals are currently scheduled for Muttagundi. You can add the first event in the Events tab!',
-        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕಾರ್ಯಕ್ರಮಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ. ನೀವು ಕಾರ್ಯಕ್ರಮಗಳ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಕಾರ್ಯಕ್ರಮ ಸೇರಿಸಬಹುದು!',
+        answer_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕಾರ್ಯಕ್ರಮಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ. ನೀವು ಕಾರ್ಯಕ್ರಮಗಳ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಕಾರ್ಯಕ್ರಮ ಸೇರಿಸಬಹುದು!',
         category: 'EVENTS',
         isVerified: true,
         navTab: 'events'
@@ -272,7 +272,7 @@ export class VoiceAssistantService {
       }
       return {
         answer_en: 'No agricultural guides have been added yet for Muttagundi. Farmers and residents can contribute crop practices and MSP info in the Agriculture section.',
-        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಕೃಷಿ ವಿಭಾಗದಲ್ಲಿ ಇನ್ನೂ ಬೆಳೆಗಳ ಮಾಹಿತಿ ದಾಖಲಾಗಿಲ್ಲ. ರೈತರು ಕೃಷಿ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಬೆಳೆ ಮಾಹಿತಿಯನ್ನು ಸೇರಿಸಬಹುದು.',
+        answer_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕೃಷಿ ವಿಭಾಗದಲ್ಲಿ ಇನ್ನೂ ಬೆಳೆಗಳ ಮಾಹಿತಿ ದಾಖಲಾಗಿಲ್ಲ. ರೈತರು ಕೃಷಿ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಬೆಳೆ ಮಾಹಿತಿಯನ್ನು ಸೇರಿಸಬಹುದು.',
         category: 'AGRICULTURE',
         isVerified: true,
         navTab: 'agriculture'
@@ -293,7 +293,7 @@ export class VoiceAssistantService {
         const t = temples[0];
         return {
           answer_en: `Muttagundi temple: ${t.name_en}. Timings: ${t.timings_en}.`,
-          answer_kn: `ಮುತ್ತಗುಂಡಿ ದೇವಾಲಯ: ${t.name_kn}. ಪೂಜಾ ಸಮಯ: ${t.timings_kn}.`,
+          answer_kn: `ಮುತ್ತಾಗೊಂದಿ ದೇವಾಲಯ: ${t.name_kn}. ಪೂಜಾ ಸಮಯ: ${t.timings_kn}.`,
           category: 'TEMPLES',
           isVerified: true,
           navTab: 'temples'
@@ -301,7 +301,7 @@ export class VoiceAssistantService {
       }
       return {
         answer_en: 'No temple details have been added yet for Muttagundi. You can add temple details, festivals, and pooja timings in the Temples tab.',
-        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ದೇವಾಲಯಗಳ ವಿವರ ಇನ್ನೂ ದಾಖಲಾಗಿಲ್ಲ. ದೇಗುಲಗಳ ವಿಭಾಗದಲ್ಲಿ ಪೂಜಾ ಸಮಯ ಮತ್ತು ಇತಿಹಾಸವನ್ನು ಸೇರಿಸಬಹುದು.',
+        answer_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ದೇವಾಲಯಗಳ ವಿವರ ಇನ್ನೂ ದಾಖಲಾಗಿಲ್ಲ. ದೇಗುಲಗಳ ವಿಭಾಗದಲ್ಲಿ ಪೂಜಾ ಸಮಯ ಮತ್ತು ಇತಿಹಾಸವನ್ನು ಸೇರಿಸಬಹುದು.',
         category: 'TEMPLES',
         isVerified: true,
         navTab: 'temples'
@@ -321,7 +321,7 @@ export class VoiceAssistantService {
       const stats = dbService['villageStats'];
       return {
         answer_en: `Muttagundi village, Hosadurga Taluk, Chitradurga District has an estimated population of ${stats?.population || 3450} across ${stats?.households || 820} households.`,
-        answer_kn: `ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ, ಹೊಸದುರ್ಗ ತಾಲೂಕಿನ ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಜನಸಂಖ್ಯೆ ಸುಮಾರು ${stats?.population || 3450} ಹಾಗೂ ${stats?.households || 820} ಕುಟುಂಬಗಳಿವೆ.`,
+        answer_kn: `ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ, ಹೊಸದುರ್ಗ ತಾಲೂಕಿನ ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಜನಸಂಖ್ಯೆ ಸುಮಾರು ${stats?.population || 3450} ಹಾಗೂ ${stats?.households || 820} ಕುಟುಂಬಗಳಿವೆ.`,
         category: 'STATS',
         isVerified: true,
         navTab: 'stats'
@@ -350,7 +350,7 @@ export class VoiceAssistantService {
       }
       return {
         answer_en: 'No news notices have been published yet for Muttagundi. Residents can share updates in the News section.',
-        answer_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಹೊಸ ಪ್ರಕಟಣೆಗಳಿಲ್ಲ. ಗ್ರಾಮಸ್ಥರು ಸುದ್ದಿ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಮಾಹಿತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಬಹುದು.',
+        answer_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಹೊಸ ಪ್ರಕಟಣೆಗಳಿಲ್ಲ. ಗ್ರಾಮಸ್ಥರು ಸುದ್ದಿ ವಿಭಾಗದಲ್ಲಿ ಹೊಸ ಮಾಹಿತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಬಹುದು.',
         category: 'NEWS',
         isVerified: true,
         navTab: 'news'

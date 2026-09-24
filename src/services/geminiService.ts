@@ -119,7 +119,7 @@ class GeminiService {
     const alert = dbService['emergencyAlert'];
 
     let ctx = `OFFICIAL VILLAGE KNOWLEDGE BASE (ಗ್ರಾಮ ಮಾಹಿತಿ):
-Village: Muttagundi (ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮ)
+Village: Muttagundi (ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ)
 Taluk: Hosadurga Taluk (ಹೊಸದುರ್ಗ ತಾಲೂಕು)
 District: Chitradurga District, Karnataka (ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ, ಕರ್ನಾಟಕ)
 Pincode: 577527
@@ -185,7 +185,7 @@ Sports & Youth: Muttagundi Premier League (MPL) Cricket Tournament, annual Kabad
   ): Promise<GeminiResponse> {
     const context = this.buildVillageContext();
 
-    const systemInstruction = `You are "ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮ ಸಹಾಯಕ" (Muttagundi AI Voice Assistant), the official AI assistant of Muttagundi village, Hosadurga Taluk, Chitradurga District, Karnataka.
+    const systemInstruction = `You are "ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ಸಹಾಯಕ" (Muttagundi AI Voice Assistant), the official AI assistant of Muttagundi village, Hosadurga Taluk, Chitradurga District, Karnataka.
 Your job is to assist village residents, farmers, elders, students, and guests with warmth, simplicity, and 100% accuracy. You answer ALL questions asked by the user, including village facts, agriculture, sports, temples, local events, education, science, general knowledge, weather, government schemes, and daily life questions.
 
 CRITICAL INSTRUCTIONS:
@@ -244,7 +244,7 @@ Provide the JSON response:`;
     if (q.includes('ಕೃಷಿ') || q.includes('ಬೆಳೆ') || q.includes('ರಾಗಿ') || q.includes('crop') || q.includes('farm') || q.includes('agriculture')) {
       return {
         answer_en: 'Muttagundi is rich in agricultural land. Major crops are Ragi, Groundnut, Coconut, Arecanut, Maize, and Pomegranate. Check our Agriculture tab for detailed farming guides.',
-        answer_kn: 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ರಾಗಿ, ಕಡಲೆಕಾಯಿ, ತೆಂಗು, ಅಡಿಕೆ, ಮೆಕ್ಕೆಜೋಳ ಮತ್ತು ದಾಳಿಂಬೆ ಪ್ರಮುಖ ಬೆಳೆಗಳಾಗಿವೆ. ಹೆಚ್ಚಿನ ಮಾಹಿತಿಗಾಗಿ ನಮ್ಮ ಕೃಷಿ ವಿಭಾಗವನ್ನು ಪರಿಶೀಲಿಸಿ.',
+        answer_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದಲ್ಲಿ ರಾಗಿ, ಕಡಲೆಕಾಯಿ, ತೆಂಗು, ಅಡಿಕೆ, ಮೆಕ್ಕೆಜೋಳ ಮತ್ತು ದಾಳಿಂಬೆ ಪ್ರಮುಖ ಬೆಳೆಗಳಾಗಿವೆ. ಹೆಚ್ಚಿನ ಮಾಹಿತಿಗಾಗಿ ನಮ್ಮ ಕೃಷಿ ವಿಭಾಗವನ್ನು ಪರಿಶೀಲಿಸಿ.',
         category: 'AGRICULTURE',
         navTab: 'agriculture'
       };
@@ -253,7 +253,7 @@ Provide the JSON response:`;
     if (q.includes('ದೇವಸ್ಥಾನ') || q.includes('ದೇವಾಲಯ') || q.includes('ಪೂಜೆ') || q.includes('temple') || q.includes('pooja') || q.includes('god')) {
       return {
         answer_en: 'In Muttagundi, the prominent temples are Sri Ranganatha Swamy Temple, Sri Veerabhadreshwara Swamy Temple, and Grama Devathe Sri Maramma Temple.',
-        answer_kn: 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಶ್ರೀ ರಂಗನಾಥ ಸ್ವಾಮಿ ದೇವಾಲಯ, ಶ್ರೀ ವೀರಭದ್ರೇಶ್ವರ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ ಮತ್ತು ಗ್ರಾಮ ದೇವತೆ ಶ್ರೀ ಮಾರಮ್ಮ ದೇವಾಲಯಗಳು ಪ್ರಸಿದ್ಧವಾಗಿವೆ.',
+        answer_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದಲ್ಲಿ ಶ್ರೀ ರಂಗನಾಥ ಸ್ವಾಮಿ ದೇವಾಲಯ, ಶ್ರೀ ವೀರಭದ್ರೇಶ್ವರ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ ಮತ್ತು ಗ್ರಾಮ ದೇವತೆ ಶ್ರೀ ಮಾರಮ್ಮ ದೇವಾಲಯಗಳು ಪ್ರಸಿದ್ಧವಾಗಿವೆ.',
         category: 'TEMPLE',
         navTab: 'temples'
       };
@@ -262,7 +262,7 @@ Provide the JSON response:`;
     if (q.includes('ಕ್ರಿಕೆಟ್') || q.includes('ಕ್ರೀಡೆ') || q.includes('ಟೂರ್ನಮೆಂಟ್') || q.includes('cricket') || q.includes('sport') || q.includes('match')) {
       return {
         answer_en: 'Muttagundi hosts the annual Muttagundi Premier League (MPL) Cricket Tournament and village Kabaddi Championships at the Panchayat Ground.',
-        answer_kn: 'ಮುಟ್ಟಗುಂಡಿಯಲ್ಲಿ ವಾರ್ಷಿಕ ಎಂಪಿಎಲ್ (MPL) ಕ್ರಿಕೆಟ್ ಟೂರ್ನಮೆಂಟ್ ಮತ್ತು ಕಬಡ್ಡಿ ಪಂದ್ಯಾವಳಿಗಳು ಗ್ರಾಮ ಪಂಚಾಯತಿ ಮೈದಾನದಲ್ಲಿ ನಡೆಯುತ್ತವೆ.',
+        answer_kn: 'ಮುತ್ತಾಗೊಂದಿಯಲ್ಲಿ ವಾರ್ಷಿಕ ಎಂಪಿಎಲ್ (MPL) ಕ್ರಿಕೆಟ್ ಟೂರ್ನಮೆಂಟ್ ಮತ್ತು ಕಬಡ್ಡಿ ಪಂದ್ಯಾವಳಿಗಳು ಗ್ರಾಮ ಪಂಚಾಯತಿ ಮೈದಾನದಲ್ಲಿ ನಡೆಯುತ್ತವೆ.',
         category: 'SPORTS',
         navTab: 'sports'
       };
@@ -272,7 +272,7 @@ Provide the JSON response:`;
       const stats = dbService['villageStats'];
       return {
         answer_en: `Muttagundi village in Hosadurga taluk has a population of approximately ${stats?.population || 3450} residents across ${stats?.households || 820} households, with an 82.4% literacy rate.`,
-        answer_kn: `ಹೊಸದುರ್ಗ ತಾಲೂಕಿನ ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮವು ಸುಮಾರು ${stats?.population || 3450} ಜನಸಂಖ್ಯೆ ಮತ್ತು ${stats?.households || 820} ಮನೆಗಳನ್ನು ಹೊಂದಿದ್ದು, ಶೇ. 82.4 ಸಾಕ್ಷರತೆ ಹೊಂದಿದೆ.`,
+        answer_kn: `ಹೊಸದುರ್ಗ ತಾಲೂಕಿನ ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮವು ಸುಮಾರು ${stats?.population || 3450} ಜನಸಂಖ್ಯೆ ಮತ್ತು ${stats?.households || 820} ಮನೆಗಳನ್ನು ಹೊಂದಿದ್ದು, ಶೇ. 82.4 ಸಾಕ್ಷರತೆ ಹೊಂದಿದೆ.`,
         category: 'GENERAL',
         navTab: 'home'
       };
@@ -280,7 +280,7 @@ Provide the JSON response:`;
 
     return {
       answer_en: `Regarding "${userQuery}": Welcome to Muttagundi village portal! You can explore verified news, events, agriculture, and temples from the main menu.`,
-      answer_kn: `"${userQuery}" ಕುರಿತು: ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮ ಪೋರ್ಟಲ್‌ಗೆ ಸ್ವಾಗತ! ನೀವು ಮುಖ್ಯ ಮೆನುವಿನಿಂದ ದೃಢೀಕೃತ ಸುದ್ದಿ, ಕಾರ್ಯಕ್ರಮಗಳು, ಕೃಷಿ ಮತ್ತು ದೇವಸ್ಥಾನಗಳ ಮಾಹಿತಿ ಪಡೆಯಬಹುದು.`,
+      answer_kn: `"${userQuery}" ಕುರಿತು: ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ಪೋರ್ಟಲ್‌ಗೆ ಸ್ವಾಗತ! ನೀವು ಮುಖ್ಯ ಮೆನುವಿನಿಂದ ದೃಢೀಕೃತ ಸುದ್ದಿ, ಕಾರ್ಯಕ್ರಮಗಳು, ಕೃಷಿ ಮತ್ತು ದೇವಸ್ಥಾನಗಳ ಮಾಹಿತಿ ಪಡೆಯಬಹುದು.`,
       category: 'GENERAL',
       navTab: 'home'
     };

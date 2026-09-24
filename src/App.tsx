@@ -278,13 +278,13 @@ export const App: React.FC = () => {
             gap: '12px'
           }}
         >
-          {/* Village Brand (Uploaded icon removed, text moved flush left for flexible mobile comfort) */}
+          {/* Village Brand (Uploaded icon removed, tagline removed, text flush left for flexible mobile comfort) */}
           <div
             className="site-header-brand"
             onClick={() => navigateTo('home')}
             style={{
               display: 'flex',
-              flexDirection: 'column',
+              alignItems: 'center',
               cursor: 'pointer',
               flexShrink: 0,
               userSelect: 'none'
@@ -292,26 +292,16 @@ export const App: React.FC = () => {
           >
             <h1
               style={{
-                fontSize: '1.25rem',
+                fontSize: '1.28rem',
                 fontWeight: 900,
                 margin: 0,
                 color: '#FFFFFF',
                 letterSpacing: '-0.02em',
-                lineHeight: 1.15
-              }}
-            >
-              {isKannada ? 'ನಮ್ಮ ಮುಟ್ಟಗುಂಡಿ' : 'Muttagundi'}
-            </h1>
-            <span
-              style={{
-                fontSize: '0.68rem',
-                color: '#94A3B8',
-                fontWeight: 600,
                 lineHeight: 1.2
               }}
             >
-              {isKannada ? 'ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್' : 'Digital Village Portal'}
-            </span>
+              {isKannada ? 'ನಮ್ಮ ಮುತ್ತಾಗೊಂದಿ' : 'Muttagundi'}
+            </h1>
           </div>
 
           {/* Quick Header Controls: Search + Messages + Voice + Language + Admin + User */}
@@ -977,7 +967,7 @@ export const App: React.FC = () => {
                   </strong>
                   <p style={{ margin: '0 0 10px 0' }}>
                     {isKannada
-                      ? 'ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ, ಹೊಸದುರ್ಗ ತಾಲೂಕಿನ ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮವು ಕೃಷಿ, ಧಾರ್ಮಿಕ ಪರಂಪರೆ ಮತ್ತು ಬಾಂಧವ್ಯದ ಹೆಮ್ಮೆಯ ಇತಿಹಾಸವನ್ನು ಹೊಂದಿದೆ.'
+                      ? 'ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ, ಹೊಸದುರ್ಗ ತಾಲೂಕಿನ ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮವು ಕೃಷಿ, ಧಾರ್ಮಿಕ ಪರಂಪರೆ ಮತ್ತು ಬಾಂಧವ್ಯದ ಹೆಮ್ಮೆಯ ಇತಿಹಾಸವನ್ನು ಹೊಂದಿದೆ.'
                       : 'Muttagundi village in Hosadurga Taluk, Chitradurga District is recognized for its agrarian traditions, sacred heritage, and strong community unity.'}
                   </p>
                   <span style={{ fontSize: '0.72rem', color: '#10B981', background: 'rgba(16,185,129,0.15)', padding: '2px 8px', borderRadius: '4px' }}>
@@ -996,7 +986,7 @@ export const App: React.FC = () => {
                     </strong>
                     <span>
                       {isKannada
-                        ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಕೃಷಿ, ಕ್ರೀಡೆ ಅಥವಾ ಶಿಕ್ಷಣ ಕ್ಷೇತ್ರದಲ್ಲಿ ಸಾಧನೆ ಮಾಡಿದವರ ವಿವರಗಳನ್ನು ಶೀಘ್ರದಲ್ಲೇ ಇಲ್ಲಿ ಪ್ರಕಟಿಸಲಾಗುತ್ತದೆ.'
+                        ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕೃಷಿ, ಕ್ರೀಡೆ ಅಥವಾ ಶಿಕ್ಷಣ ಕ್ಷೇತ್ರದಲ್ಲಿ ಸಾಧನೆ ಮಾಡಿದವರ ವಿವರಗಳನ್ನು ಶೀಘ್ರದಲ್ಲೇ ಇಲ್ಲಿ ಪ್ರಕಟಿಸಲಾಗುತ್ತದೆ.'
                         : 'Nominations and profiles of achievers from Muttagundi in agriculture, sports, and education will be listed here.'}
                     </span>
                   </div>

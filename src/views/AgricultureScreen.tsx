@@ -56,7 +56,7 @@ export const AgricultureScreen: React.FC<AgricultureScreenProps> = ({
       water_req_en: 'Medium irrigation / Rainfed',
       water_req_kn: 'ಮಧ್ಯಮ ನೀರಾವರಿ / ಮಳೆಯಾಶ್ರಿತ',
       cultivation_en: cultivationEn.trim() || 'Cultivation guidance for Muttagundi village farmers.',
-      cultivation_kn: cultivationEn.trim() || 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ರೈತರಿಗಾಗಿ ಕೃಷಿ ಸಲಹೆ.',
+      cultivation_kn: cultivationEn.trim() || 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ರೈತರಿಗಾಗಿ ಕೃಷಿ ಸಲಹೆ.',
       uses_en: mspRate.trim() ? `MSP / Market Rate: ₹${mspRate.replace(/[^0-9]/g, '')}/quintal` : 'Food crop & village trade',
       uses_kn: mspRate.trim() ? `ಬೆಂಬಲ ಬೆಲೆ: ₹${mspRate.replace(/[^0-9]/g, '')}/ಕ್ವಿಂಟಾಲ್` : 'ಆಹಾರ ಬೆಳೆ ಮತ್ತು ಸ್ಥಳೀಯ ವ್ಯಾಪಾರ',
       advantages_en: 'High yield potential with local soil conditions in Hosadurga.',
@@ -164,7 +164,7 @@ export const AgricultureScreen: React.FC<AgricultureScreenProps> = ({
           </h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 16px' }}>
             {isKannada
-              ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಕೃಷಿಕರಿಗಾಗಿ ರಾಗಿ, ಕಡಲೆಕಾಯಿ ಅಥವಾ ಅಡಿಕೆ ಬೆಳೆ ಮಾರ್ಗದರ್ಶನ ಸೇರಿಸಿ.'
+              ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕೃಷಿಕರಿಗಾಗಿ ರಾಗಿ, ಕಡಲೆಕಾಯಿ ಅಥವಾ ಅಡಿಕೆ ಬೆಳೆ ಮಾರ್ಗದರ್ಶನ ಸೇರಿಸಿ.'
               : 'Add verified agronomic guides for crops cultivated in Muttagundi village.'}
           </p>
           <button onClick={() => setShowAddModal(true)} className="btn-primary" style={{ display: 'inline-flex' }}>

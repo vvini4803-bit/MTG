@@ -91,7 +91,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   }, []);
 
   const villageName = isKannada
-    ? (import.meta.env.VITE_VILLAGE_NAME_KN || 'ಮುಟ್ಟಗುಂಡಿ')
+    ? (import.meta.env.VITE_VILLAGE_NAME_KN || 'ಮುತ್ತಾಗೊಂದಿ')
     : (import.meta.env.VITE_VILLAGE_NAME_EN || 'Muttagundi');
 
   // Find any active live match
@@ -575,7 +575,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {eventsList.length === 0 ? (
             <div className="glass-card" style={{ padding: '36px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
               <p style={{ fontSize: '0.92rem', color: '#CBD5E1', marginBottom: '14px' }}>
-                {isKannada ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕಾರ್ಯಕ್ರಮಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ.' : 'No events scheduled yet for Muttagundi.'}
+                {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದಲ್ಲಿ ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕಾರ್ಯಕ್ರಮಗಳು ನಿಗದಿಯಾಗಿಲ್ಲ.' : 'No events scheduled yet for Muttagundi.'}
               </p>
               <button onClick={() => onNavigateTab('events')} className="btn-primary" style={{ display: 'inline-flex' }}>
                 <span>{isKannada ? 'ಕಾರ್ಯಕ್ರಮ ಸೇರಿಸಿ' : 'Schedule Event'}</span>
@@ -886,7 +886,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             {achievements.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)' }}>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
-                  {isKannada ? 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಸಾಧಕರ ವಿವರಗಳನ್ನು ಶೀಘ್ರದಲ್ಲೇ ದಾಖಲಿಸಲಾಗುತ್ತದೆ.' : 'Muttagundi achiever nominations in sports, education and farming can be registered here.'}
+                  {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಸಾಧಕರ ವಿವರಗಳನ್ನು ಶೀಘ್ರದಲ್ಲೇ ದಾಖಲಿಸಲಾಗುತ್ತದೆ.' : 'Muttagundi achiever nominations in sports, education and farming can be registered here.'}
                 </p>
                 <button 
                   onClick={() => onNavigateTab('achievements')}

@@ -1164,7 +1164,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
         <span style={{ fontSize: '1.3rem' }}>🌐</span>
         <div>
           <strong style={{ fontSize: '0.86rem', color: '#FFFFFF', display: 'block' }}>
-            {isKannada ? 'ಮುತ್ತಗುಂಡಿ 3D ಗ್ರಾಮ ಮಾದರಿ' : 'Muttagundi 3D Village Model'}
+            {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ 3D ಗ್ರಾಮ ಮಾದರಿ' : 'Muttagundi 3D Village Model'}
           </strong>
           <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
             {isKannada ? 'ತಿರುಗಿಸಲು ಎಳೆಯಿರಿ • ಕಟ್ಟಡವನ್ನು ಮುಟ್ಟಿ' : 'Drag to rotate • Tap building to inspect'}

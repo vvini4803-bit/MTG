@@ -48,7 +48,7 @@ export const GalleryDetailModal: React.FC<GalleryDetailModalProps> = ({
 
   const handleShare = () => {
     triggerHapticFeedback();
-    const text = `📸 *${title}* - ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಸುಂದರ ಛಾಯಾಚಿತ್ರ:\n${window.location.href}`;
+    const text = `📸 *${title}* - ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಸುಂದರ ಛಾಯಾಚಿತ್ರ:\n${window.location.href}`;
     if (navigator.share) {
       navigator.share({ title, text, url: window.location.href }).catch(() => {});
     } else {

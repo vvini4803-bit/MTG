@@ -143,7 +143,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {verificationEmail
                   ? (isKannada ? 'ಇಮೇಲ್ ಪರಿಶೀಲನೆ' : 'Email Verification')
                   : activeTab === 'REGISTER'
-                  ? (isKannada ? 'ಮುತ್ತಗುಂಡಿ ಸದಸ್ಯತ್ವ' : 'Join Community')
+                  ? (isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಸದಸ್ಯತ್ವ' : 'Join Community')
                   : (isKannada ? 'ಲಾಗಿನ್ / ಸೈನ್ ಇನ್' : 'Resident Sign In')}
               </h2>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
