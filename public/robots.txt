@@ -1,0 +1,9 @@
+# robots.txt for Muttagundi Digital Village Portal
+User-agent: *
+Allow: /
+
+# Host
+Host: https://mtg-swart.vercel.app
+
+# Sitemap location for Googlebot & search crawlers
+Sitemap: https://mtg-swart.vercel.app/sitemap.xml
