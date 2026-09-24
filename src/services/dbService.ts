@@ -20,9 +20,7 @@ import {
   VerificationStatus,
   Conversation,
   ChatMessage,
-  UserBlock,
-  VillagePaymentRecord,
-  VillageFundOverview
+  UserBlock
 } from '../types';
 import {
   SEED_NEWS,
@@ -150,17 +148,6 @@ class DatabaseService {
   private comments: CommentItem[] = [];
   private reports: ReportItem[] = [];
   private notifications: NotificationItem[] = [];
-  private villageFund: VillageFundOverview = {
-    total_balance: 148500,
-    monthly_target: 30000,
-    monthly_collected: 24000,
-    current_month: 'September 2026',
-    active_contributors_count: 48,
-    pending_members_count: 6,
-    last_updated: new Date().toISOString(),
-    recent_payments: []
-  };
-  private paymentRecords: VillagePaymentRecord[] = [];
   private users: UserProfile[] = [];
   private conversations: Conversation[] = [];
   private messages: ChatMessage[] = [];
@@ -240,98 +227,6 @@ class DatabaseService {
     this.messages = this.loadCollection('messages', SEED_MESSAGES);
     this.userBlocks = this.loadCollection('user_blocks', []);
     this.notifications = this.loadCollection('notifications', []);
-
-    const DEFAULT_PAYMENTS: VillagePaymentRecord[] = [
-      {
-        id: 'pay_1',
-        user_name: 'Vinay Kumar (Admin)',
-        user_name_kn: 'ವಿನಯ್ ಕುಮಾರ್ (ಅಡ್ಮಿನ್)',
-        amount: 500,
-        month: 'September 2026',
-        date: '2026-09-05',
-        status: 'PAID',
-        purpose_en: 'Village Development & Cleanliness Fund',
-        purpose_kn: 'ಗ್ರಾಮ ಅಭಿವೃದ್ಧಿ ಮತ್ತು ಸ್ವಚ್ಛತಾ ನಿಧಿ'
-      },
-      {
-        id: 'pay_2',
-        user_name: 'Ramesh Gowda',
-        user_name_kn: 'ರಮೇಶ್ ಗೌಡ',
-        amount: 500,
-        month: 'September 2026',
-        date: '2026-09-07',
-        status: 'PAID',
-        purpose_en: 'Village Development & Cleanliness Fund',
-        purpose_kn: 'ಗ್ರಾಮ ಅಭಿವೃದ್ಧಿ ಮತ್ತು ಸ್ವಚ್ಛತಾ ನಿಧಿ'
-      },
-      {
-        id: 'pay_3',
-        user_name: 'Manjunath K',
-        user_name_kn: 'ಮಂಜುನಾಥ ಕೆ',
-        amount: 500,
-        month: 'September 2026',
-        date: '2026-09-10',
-        status: 'PAID',
-        purpose_en: 'Village Development & Cleanliness Fund',
-        purpose_kn: 'ಗ್ರಾಮ ಅಭಿವೃದ್ಧಿ ಮತ್ತು ಸ್ವಚ್ಛತಾ ನಿಧಿ'
-      },
-      {
-        id: 'pay_4',
-        user_name: 'Siddesh P',
-        user_name_kn: 'ಸಿದ್ದೇಶ್ ಪಿ',
-        amount: 500,
-        month: 'September 2026',
-        date: '2026-09-12',
-        status: 'PAID',
-        purpose_en: 'Village Development & Cleanliness Fund',
-        purpose_kn: 'ಗ್ರಾಮ ಅಭಿವೃದ್ಧಿ ಮತ್ತು ಸ್ವಚ್ಛತಾ ನಿಧಿ'
-      },
-      {
-        id: 'pay_5',
-        user_name: 'Suresh B',
-        user_name_kn: 'ಸುರೇಶ್ ಬಿ',
-        amount: 500,
-        month: 'September 2026',
-        date: '2026-09-15',
-        status: 'PAID',
-        purpose_en: 'Village Development & Cleanliness Fund',
-        purpose_kn: 'ಗ್ರಾಮ ಅಭಿವೃದ್ಧಿ ಮತ್ತು ಸ್ವಚ್ಛತಾ ನಿಧಿ'
-      },
-      {
-        id: 'pay_6',
-        user_name: 'Chandrashekhar',
-        user_name_kn: 'ಚಂದ್ರಶೇಖರ್',
-        amount: 500,
-        month: 'September 2026',
-        date: '2026-09-20',
-        status: 'PENDING',
-        purpose_en: 'Village Development & Cleanliness Fund',
-        purpose_kn: 'ಗ್ರಾಮ ಅಭಿವೃದ್ಧಿ ಮತ್ತು ಸ್ವಚ್ಛತಾ ನಿಧಿ'
-      },
-      {
-        id: 'pay_7',
-        user_name: 'Nagarajappa',
-        user_name_kn: 'ನಾಗರಾಜಪ್ಪ',
-        amount: 500,
-        month: 'September 2026',
-        date: '2026-09-20',
-        status: 'PENDING',
-        purpose_en: 'Village Development & Cleanliness Fund',
-        purpose_kn: 'ಗ್ರಾಮ ಅಭಿವೃದ್ಧಿ ಮತ್ತು ಸ್ವಚ್ಛತಾ ನಿಧಿ'
-      }
-    ];
-
-    this.paymentRecords = this.loadCollection('payments', DEFAULT_PAYMENTS);
-    this.villageFund = this.loadCollection('village_fund', {
-      total_balance: 148500,
-      monthly_target: 30000,
-      monthly_collected: 24000,
-      current_month: 'September 2026',
-      active_contributors_count: 48,
-      pending_members_count: 6,
-      last_updated: new Date().toISOString(),
-      recent_payments: this.paymentRecords
-    });
 
     // Ensure all stored user updates are auto-verified and have 1-week active status
     this.ensureAutoVerificationAndRetention();
@@ -1350,108 +1245,6 @@ class DatabaseService {
       verified_by: verifiedBy
     };
     this.saveCollection('village_stats', this.villageStats);
-  }
-
-  // --- REAL-TIME VILLAGE FINANCIALS & PAYMENTS (SOURCE OF TRUTH) ---
-  public getVillageFund(): VillageFundOverview {
-    const paidRecords = this.paymentRecords.filter((p) => p.status === 'PAID');
-    const pendingRecords = this.paymentRecords.filter((p) => p.status === 'PENDING');
-    const totalCollected = paidRecords.reduce((sum, p) => sum + p.amount, 0);
-
-    return {
-      ...this.villageFund,
-      monthly_collected: totalCollected > 0 ? totalCollected : this.villageFund.monthly_collected,
-      active_contributors_count: paidRecords.length > 0 ? paidRecords.length : this.villageFund.active_contributors_count,
-      pending_members_count: pendingRecords.length,
-      recent_payments: [...this.paymentRecords]
-    };
-  }
-
-  public getPaymentRecords(month?: string): VillagePaymentRecord[] {
-    if (month) {
-      const lower = month.toLowerCase();
-      return this.paymentRecords.filter((p) => p.month.toLowerCase().includes(lower));
-    }
-    return [...this.paymentRecords];
-  }
-
-  public async recordPayment(
-    payment: Omit<VillagePaymentRecord, 'id' | 'date'>
-  ): Promise<VillagePaymentRecord> {
-    const newRecord: VillagePaymentRecord = {
-      ...payment,
-      id: 'pay_' + Date.now(),
-      date: new Date().toISOString().split('T')[0]
-    };
-    this.paymentRecords.unshift(newRecord);
-    this.saveCollection('payments', this.paymentRecords);
-
-    if (newRecord.status === 'PAID') {
-      this.villageFund.total_balance += newRecord.amount;
-      this.villageFund.monthly_collected += newRecord.amount;
-      this.villageFund.last_updated = new Date().toISOString();
-      this.saveCollection('village_fund', this.villageFund);
-    }
-
-    return newRecord;
-  }
-
-  // --- REAL-TIME VILLAGE LEADERSHIP & ADMINS (SOURCE OF TRUTH) ---
-  public getAdmins(): UserProfile[] {
-    return this.users.filter((u) => u.role === 'SUPER_ADMIN' || u.role === 'ADMIN');
-  }
-
-  // --- REAL-TIME VILLAGE MEETINGS SCHEDULE (SOURCE OF TRUTH) ---
-  public getMeetingsSchedule(targetDate?: string): {
-    hasMeetingToday: boolean;
-    todayMeetings: EventItem[];
-    nextMeeting?: EventItem;
-    allUpcomingMeetings: EventItem[];
-  } {
-    const today = targetDate || new Date().toISOString().split('T')[0];
-    const meetingKeywords = ['meeting', 'ಸಭೆ', 'ಮೀಟಿಂಗ್', 'sabha', 'ಪಂಚಾಯಿತಿ', 'panchayat'];
-
-    const meetingEvents = this.events.filter((e) => {
-      const text = `${e.title_en} ${e.title_kn} ${e.description_en} ${e.description_kn}`.toLowerCase();
-      return meetingKeywords.some((kw) => text.includes(kw));
-    });
-
-    const todayMeetings = meetingEvents.filter((e) => e.date === today && e.status !== 'CANCELLED');
-    const upcomingMeetings = meetingEvents
-      .filter((e) => e.date >= today && e.status !== 'CANCELLED' && e.status !== 'COMPLETED')
-      .sort((a, b) => a.date.localeCompare(b.date));
-
-    return {
-      hasMeetingToday: todayMeetings.length > 0,
-      todayMeetings,
-      nextMeeting: upcomingMeetings[0] || undefined,
-      allUpcomingMeetings: upcomingMeetings
-    };
-  }
-
-  // --- REAL-TIME SPORTS & MATCHES (SOURCE OF TRUTH) ---
-  public getLiveSportsStatus(): {
-    liveMatches: MatchItem[];
-    upcomingTournaments: Tournament[];
-  } {
-    const allMatches = this.tournaments.flatMap((t) => t.matches || []);
-    const liveMatches = allMatches.filter((m) => m.is_live);
-    const upcomingTournaments = this.tournaments.filter(
-      (t) => t.status === 'UPCOMING' || t.status === 'LIVE'
-    );
-
-    return {
-      liveMatches,
-      upcomingTournaments
-    };
-  }
-
-  // --- REAL-TIME EMERGENCY ALERT (SOURCE OF TRUTH) ---
-  public getEmergencyAlertStatus(): EmergencyAlert | null {
-    if (this.emergencyAlert && this.emergencyAlert.active) {
-      return this.emergencyAlert;
-    }
-    return null;
   }
 
   // --- ACHIEVEMENTS ---

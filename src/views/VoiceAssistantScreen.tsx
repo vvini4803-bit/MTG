@@ -14,9 +14,7 @@ import {
   ArrowRight,
   Globe,
   Sparkles,
-  Loader2,
-  Zap,
-  Radio
+  Loader2
 } from 'lucide-react';
 
 interface VoiceAssistantScreenProps {
@@ -28,7 +26,6 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [streamingText, setStreamingText] = useState('');
   const [queryText, setQueryText] = useState('');
   const [lastQuery, setLastQuery] = useState('');
   const [response, setResponse] = useState<VoiceQueryResponse | null>(null);
@@ -36,30 +33,12 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showOtherLang, setShowOtherLang] = useState(false);
 
-  const getCleanStreamingPreview = (raw: string, lang: 'kn' | 'en'): string => {
-    if (!raw) return '';
-    let cleaned = raw.replace(/^```json\s*/, '').replace(/^```\s*/, '');
-    if (lang === 'kn') {
-      if (cleaned.includes('[EN]')) {
-        const kn = cleaned.split(/\[EN\]/i)[0].replace(/\[KN\]/i, '').trim();
-        return kn || cleaned;
-      }
-    } else {
-      if (cleaned.includes('[KN]')) {
-        const en = cleaned.split(/\[KN\]/i)[0].replace(/\[EN\]/i, '').trim();
-        return en || cleaned;
-      }
-    }
-    return cleaned;
-  };
-
   React.useEffect(() => {
     return () => {
       voiceAssistant.stopSpeaking();
       setIsSpeaking(false);
       setIsListening(false);
       setIsProcessing(false);
-      setStreamingText('');
     };
   }, []);
 
@@ -83,9 +62,6 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
             ? 'ಧ್ವನಿ ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಳಗಿನ ಪೆಟ್ಟಿಗೆಯಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ.'
             : 'Could not capture speech. Please use the text input below.'
         );
-      },
-      (interim) => {
-        setQueryText(interim);
       }
     );
   };
@@ -94,18 +70,13 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
     if (!text.trim() || isProcessing) return;
     setLastQuery(text);
     setErrorMessage(null);
-    setStreamingText('');
-    setResponse(null);
     setIsProcessing(true);
     voiceAssistant.stopSpeaking();
     setIsSpeaking(false);
 
     try {
-      const res = await voiceAssistant.queryStream(text, language, (_chunk, fullText) => {
-        setStreamingText(fullText);
-      });
+      const res = await voiceAssistant.query(text, language);
       setResponse(res);
-      setStreamingText('');
       setQueryText('');
 
       if (!isSpeechMuted) {
@@ -177,35 +148,11 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
         {isKannada ? 'ದ್ವಿಭಾಷಾ ಧ್ವನಿ ಸಹಾಯಕ' : 'Bilingual Village Voice Assistant'}
       </h1>
 
-      <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+      <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>
         {isKannada
           ? 'ನಮ್ಮ ಗ್ರಾಮದ ದೃಢೀಕೃತ ಮಾಹಿತಿ, ಕೃಷಿ, ದೇಗುಲಗಳು, ಶಿಕ್ಷಣ, ಅಥವಾ ಯಾವುದೇ ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಿ'
           : 'Ask any question about village news, farming, temples, education, or general topics'}
       </p>
-
-      {/* Live Google Gemini Stream Status Badge */}
-      <div style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '8px',
-        background: 'rgba(16, 185, 129, 0.1)',
-        border: '1px solid rgba(16, 185, 129, 0.35)',
-        borderRadius: '9999px',
-        padding: '5px 14px',
-        marginBottom: '20px'
-      }}>
-        <span style={{
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
-          backgroundColor: '#10B981',
-          boxShadow: '0 0 10px #10B981',
-          display: 'inline-block'
-        }} />
-        <span style={{ fontSize: '0.74rem', color: '#34D399', fontWeight: 700, letterSpacing: '0.03em' }}>
-          {isKannada ? '⚡ ಗೂಗಲ್ ಜೆಮಿನಿ ಲೈವ್ ಸ್ಟ್ರೀಮ್ ಸಂಪರ್ಕಗೊಂಡಿದೆ' : '⚡ Google Gemini Live Stream Connected'}
-        </span>
-      </div>
 
       {/* Language switcher & Mute toggle */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '24px' }}>
@@ -311,69 +258,6 @@ export const VoiceAssistantScreen: React.FC<VoiceAssistantScreenProps> = ({ onNa
           marginBottom: '20px'
         }}>
           {errorMessage}
-        </div>
-      )}
-
-      {/* Google Gemini Real-Time Live Streaming Card */}
-      {isProcessing && (
-        <div
-          className="glass-card"
-          style={{
-            padding: '20px',
-            marginBottom: '28px',
-            textAlign: 'left',
-            background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.9) 100%)',
-            border: '1px solid rgba(16, 185, 129, 0.55)',
-            borderRadius: '16px',
-            boxShadow: '0 0 25px rgba(16, 185, 129, 0.2)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{
-                display: 'inline-flex',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#10B981',
-                boxShadow: '0 0 10px #10B981'
-              }} />
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#34D399', letterSpacing: '0.05em' }}>
-                GOOGLE GEMINI LIVE STREAM
-              </span>
-            </div>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-              gemini-3-flash-preview
-            </span>
-          </div>
-
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
-            Q: "{lastQuery}"
-          </div>
-
-          <p style={{
-            fontSize: '1.02rem',
-            color: '#FFFFFF',
-            lineHeight: 1.65,
-            minHeight: '44px',
-            fontWeight: 500,
-            whiteSpace: 'pre-wrap'
-          }}>
-            {getCleanStreamingPreview(streamingText, language) || (
-              <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                {isKannada ? 'ಗೂಗಲ್ ಜೆಮಿನಿಯಿಂದ ಲೈವ್ ಸ್ಟ್ರೀಮಿಂಗ್ ಆರಂಭವಾಗುತ್ತಿದೆ...' : 'Google Gemini is streaming live response...'}
-              </span>
-            )}
-            <span style={{
-              display: 'inline-block',
-              width: '6px',
-              height: '14px',
-              backgroundColor: '#10B981',
-              marginLeft: '4px',
-              verticalAlign: 'middle',
-              opacity: 0.8
-            }} />
-          </p>
         </div>
       )}
 

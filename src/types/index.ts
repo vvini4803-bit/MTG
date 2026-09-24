@@ -284,29 +284,6 @@ export interface VillageStats {
   is_demo?: boolean;
 }
 
-export interface VillagePaymentRecord {
-  id: string;
-  user_name: string;
-  user_name_kn?: string;
-  amount: number;
-  month: string; // e.g., 'September 2026'
-  date: string;
-  status: 'PAID' | 'PENDING';
-  purpose_en: string;
-  purpose_kn: string;
-}
-
-export interface VillageFundOverview {
-  total_balance: number;
-  monthly_target: number;
-  monthly_collected: number;
-  current_month: string;
-  active_contributors_count: number;
-  pending_members_count: number;
-  last_updated: string;
-  recent_payments: VillagePaymentRecord[];
-}
-
 export interface AchievementItem {
   id: string;
   person_name_en: string;

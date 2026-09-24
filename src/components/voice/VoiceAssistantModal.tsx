@@ -32,7 +32,6 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [streamingText, setStreamingText] = useState('');
   const [queryText, setQueryText] = useState('');
   const [lastQuery, setLastQuery] = useState('');
   const [response, setResponse] = useState<VoiceQueryResponse | null>(null);
@@ -40,30 +39,12 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showOtherLang, setShowOtherLang] = useState(false);
 
-  const getCleanStreamingPreview = (raw: string, lang: 'kn' | 'en'): string => {
-    if (!raw) return '';
-    let cleaned = raw.replace(/^```json\s*/, '').replace(/^```\s*/, '');
-    if (lang === 'kn') {
-      if (cleaned.includes('[EN]')) {
-        const kn = cleaned.split(/\[EN\]/i)[0].replace(/\[KN\]/i, '').trim();
-        return kn || cleaned;
-      }
-    } else {
-      if (cleaned.includes('[KN]')) {
-        const en = cleaned.split(/\[KN\]/i)[0].replace(/\[EN\]/i, '').trim();
-        return en || cleaned;
-      }
-    }
-    return cleaned;
-  };
-
   useEffect(() => {
     if (!isOpen) {
       voiceAssistant.stopSpeaking();
       setIsListening(false);
       setIsSpeaking(false);
       setIsProcessing(false);
-      setStreamingText('');
     }
   }, [isOpen]);
 
@@ -89,9 +70,6 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             ? 'ಧ್ವನಿ ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಳಗಿನ ಪೆಟ್ಟಿಗೆಯಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ.'
             : 'Could not capture speech. Please use the text input below.'
         );
-      },
-      (interim) => {
-        setQueryText(interim);
       }
     );
   };
@@ -100,18 +78,13 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     if (!text.trim() || isProcessing) return;
     setLastQuery(text);
     setErrorMessage(null);
-    setStreamingText('');
-    setResponse(null);
     setIsProcessing(true);
     voiceAssistant.stopSpeaking();
     setIsSpeaking(false);
 
     try {
-      const res = await voiceAssistant.queryStream(text, language, (_chunk, fullText) => {
-        setStreamingText(fullText);
-      });
+      const res = await voiceAssistant.query(text, language);
       setResponse(res);
-      setStreamingText('');
       setQueryText('');
 
       if (!isSpeechMuted) {
@@ -185,21 +158,16 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{
               background: 'rgba(16, 185, 129, 0.15)',
-              border: '1px solid rgba(16, 185, 129, 0.35)',
               color: '#34D399',
               padding: '3px 8px',
               borderRadius: '6px',
               fontSize: '0.72rem',
-              fontWeight: 700,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px'
+              fontWeight: 700
             }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
-              GEMINI LIVE STREAM
+              AI VOICE ASSISTANT
             </span>
             <button
               onClick={() => setLanguage(language === 'en' ? 'kn' : 'en')}
@@ -310,69 +278,6 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             marginBottom: '14px'
           }}>
             {errorMessage}
-          </div>
-        )}
-
-        {/* Google Gemini Real-Time Live Streaming Card */}
-        {isProcessing && (
-          <div
-            className="glass-card"
-            style={{
-              padding: '16px',
-              marginBottom: '20px',
-              textAlign: 'left',
-              background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.9) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.55)',
-              borderRadius: '16px',
-              boxShadow: '0 0 20px rgba(16, 185, 129, 0.18)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{
-                  display: 'inline-flex',
-                  width: '7px',
-                  height: '7px',
-                  borderRadius: '50%',
-                  backgroundColor: '#10B981',
-                  boxShadow: '0 0 8px #10B981'
-                }} />
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#34D399', letterSpacing: '0.04em' }}>
-                  GOOGLE GEMINI LIVE STREAM
-                </span>
-              </div>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                gemini-3-flash-preview
-              </span>
-            </div>
-
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-              Q: "{lastQuery}"
-            </div>
-
-            <p style={{
-              fontSize: '0.94rem',
-              color: '#FFFFFF',
-              lineHeight: 1.6,
-              minHeight: '40px',
-              fontWeight: 500,
-              whiteSpace: 'pre-wrap'
-            }}>
-              {getCleanStreamingPreview(streamingText, language) || (
-                <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                  {isKannada ? 'ಗೂಗಲ್ ಜೆಮಿನಿಯಿಂದ ಲೈವ್ ಸ್ಟ್ರೀಮಿಂಗ್ ಆರಂಭವಾಗುತ್ತಿದೆ...' : 'Google Gemini is streaming live response...'}
-                </span>
-              )}
-              <span style={{
-                display: 'inline-block',
-                width: '5px',
-                height: '13px',
-                backgroundColor: '#10B981',
-                marginLeft: '4px',
-                verticalAlign: 'middle',
-                opacity: 0.8
-              }} />
-            </p>
           </div>
         )}
 
