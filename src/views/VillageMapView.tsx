@@ -50,6 +50,9 @@ export interface MapLocationItem {
   coords: { lat: number; lng: number };
   verified: boolean;
   map_url?: string;
+  anime_image?: string;
+  anime_title_en?: string;
+  anime_title_kn?: string;
 }
 
 // Authentic Verified Landmarks for Muttagundi, Hosadurga Taluk, Chitradurga District
@@ -74,53 +77,81 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
   },
   {
     id: 'mtg_temple_anjaneya',
-    name_en: 'Sri Anjaneya Swamy Temple',
-    name_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ',
+    name_en: 'Sri Anjaneya Swamy Temple (Gopuram)',
+    name_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ (ಗೋಪುರ)',
     category: 'TEMPLE',
     icon: '🛕',
     color: '#F59E0B',
-    desc_en: 'Sacred shrine of Lord Anjaneya Swamy with regular pooja and festival celebrations.',
-    desc_kn: 'ಗ್ರಾಮದ ಪವಿತ್ರ ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ಸನ್ನಿಧಿ ಹಾಗೂ ವಿಶೇಷ ಪೂಜಾ ಕೈಂಕರ್ಯಗಳು.',
+    desc_en: 'Sacred shrine of Lord Anjaneya Swamy with ornate colorful Dravidian tiered Gopuram and regular pooja celebrations.',
+    desc_kn: 'ಗ್ರಾಮದ ಪವಿತ್ರ ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ಸನ್ನಿಧಿ, ವರ್ಣರಂಜಿತ ದ್ರಾವಿಡ ಶೈಲಿಯ ಶಿಖರ ಗೋಪುರ ಹಾಗೂ ವಿಶೇಷ ಪೂಜಾ ಕೈಂಕರ್ಯಗಳು.',
     distance_en: 'East Ward',
     distance_kn: 'ಪೂರ್ವ ಬಡಾವಣೆ',
     timings_en: '6:00 AM - 12:30 PM & 5:30 PM - 8:30 PM',
     timings_kn: 'ಬೆಳಗ್ಗೆ ೬:೦೦ - ೧೨:೩೦ & ಸಂಜೆ ೫:೩೦ - ೮:೩೦',
     coords: { lat: 13.7565, lng: 76.3340 },
     map_url: 'https://maps.app.goo.gl/njPyjtKZy3bfkx4s8?g_st=ac',
-    verified: true
+    verified: true,
+    anime_image: '/anime/temple_gopuram.jpg',
+    anime_title_en: 'Sri Anjaneya Swamy Gopuram (Anime 3D)',
+    anime_title_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ ಗೋಪುರ (ಅನಿಮೆ 3D)'
   },
   {
     id: 'mtg_temple_kalle_devar',
-    name_en: 'Kalle Devar Gudi (Sri Kalleshwara Swamy)',
+    name_en: 'Sri Kalleshwara Swamy Temple (Kalle Devaru)',
     name_kn: 'ಕಲ್ಲೇ ದೇವರ ಗುಡಿ (ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ)',
     category: 'TEMPLE',
     icon: '🛕',
     color: '#8B5CF6',
-    desc_en: 'Traditional sacred village deity shrine of Sri Kalleshwara Swamy (Kalle Devaru).',
-    desc_kn: 'ಗ್ರಾಮದ ಶ್ರದ್ಧಾ ಕೇಂದ್ರವಾದ ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ (ಕಲ್ಲೇ ದೇವರ ಗುಡಿ) ಮತ್ತು ವಾರ್ಷಿಕ ಪೂಜಾ ಆಚರಣೆ.',
+    desc_en: 'Traditional sacred village deity stone shrine of Sri Kalleshwara Swamy, beside the electric tower and water pond.',
+    desc_kn: 'ಗ್ರಾಮದ ಶ್ರದ್ಧಾ ಕೇಂದ್ರವಾದ ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ (ಕಲ್ಲೇ ದೇವರ ಗುಡಿ), ವಿದ್ಯುತ್ ಗೋಪುರ ಮತ್ತು ಕೆರೆಯ ಸನ್ನಿಧಿ.',
     distance_en: 'South Side',
     distance_kn: 'ದಕ್ಷಿಣ ಭಾಗ',
     timings_en: 'Open all day for darshan',
     timings_kn: 'ದಿನವಿಡೀ ದರ್ಶನ ಲಭ್ಯ',
     coords: { lat: 13.756878, lng: 76.333628 },
     map_url: 'https://maps.app.goo.gl/6P79MeqguXf8jnMm6?g_st=ac',
-    verified: true
+    verified: true,
+    anime_image: '/anime/kalleshwara.jpg',
+    anime_title_en: 'Sri Kalleshwara Swamy Temple (Anime 3D)',
+    anime_title_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ಗುಡಿ & ಗೋಪುರ (ಅನಿಮೆ 3D)'
+  },
+  {
+    id: 'mtg_stone_shrine',
+    name_en: 'Ancient Stone Cave Shrine (Huchharaya Gudi)',
+    name_kn: 'ಪುರಾತನ ಶಿಲಾ ಗುಡಿ (ಹುಚ್ಚರಾಯ ಸ್ವಾಮಿ)',
+    category: 'TEMPLE',
+    icon: '🪨',
+    color: '#059669',
+    desc_en: 'Prehistoric megalithic stone dolmen rock shrine enveloped in lush green vines, housing a sacred ancestral deity.',
+    desc_kn: 'ನೈಸರ್ಗಿಕ ಶಿಲಾ ಹಲಗೆಗಳಿಂದ ನಿರ್ಮಿತ ಪ್ರಾಚೀನ ಪವಿತ್ರ ಗುಡಿ ಹಾಗೂ ಗ್ರಾಮ ದೇವತೆಯ ಸನ್ನಿಧಿ.',
+    distance_en: 'North-East Hillock',
+    distance_kn: 'ಈಶಾನ್ಯ ಗುಡ್ಡದ ಸಾಲು',
+    timings_en: 'Open all day for darshan',
+    timings_kn: 'ದಿನವಿಡೀ ದರ್ಶನ ಲಭ್ಯ',
+    coords: { lat: 13.7572, lng: 76.3342 },
+    verified: true,
+    anime_image: '/anime/stone_shrine.jpg',
+    anime_title_en: 'Ancient Megalithic Stone Shrine (Anime 3D)',
+    anime_title_kn: 'ಪುರಾತನ ಶಿಲಾ ಗುಡಿ (ಅನಿಮೆ 3D ನೋಟ)'
   },
   {
     id: 'mtg_school',
-    name_en: 'Govt Primary School Muttagondi',
-    name_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ಮುತ್ತಾಗೊಂದಿ',
+    name_en: 'Govt Higher Primary School Muttagondi',
+    name_kn: 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ಮುತ್ತಾಗೊಂದಿ',
     category: 'SCHOOL',
     icon: '🏫',
     color: '#3B82F6',
-    desc_en: 'Primary education center, mid-day meal scheme, and children classrooms.',
-    desc_kn: 'ಪ್ರಾಥಮಿಕ ಶಿಕ್ಷಣ, ಮಕ್ಕಳಿಗೆ ಬಿಸಿಯೂಟ ಮತ್ತು ಆಟದ ಮೈದಾನ.',
+    desc_en: 'Village primary school with Karnataka flag insignia, children classrooms, shaded veranda, and mid-day meal.',
+    desc_kn: 'ಕನ್ನಡ ಧ್ವಜ ಲಾಂಛನವಿರುವ ಗ್ರಾಮದ ಪ್ರಾಥಮಿಕ ಶಿಕ್ಷಣ ಕೇಂದ್ರ, ಮಕ್ಕಳಿಗೆ ಬಿಸಿಯೂಟ ಮತ್ತು ಆವರಣ.',
     distance_en: 'School Road',
     distance_kn: 'ಶಾಲೆ ರಸ್ತೆ',
     timings_en: '9:30 AM - 4:30 PM',
     timings_kn: 'ಬೆಳಗ್ಗೆ ೯:೩೦ - ಸಂಜೆ ೪:೩೦',
     coords: { lat: 13.7554, lng: 76.3330 },
-    verified: true
+    verified: true,
+    anime_image: '/anime/school.jpg',
+    anime_title_en: 'Govt Primary School Muttagondi (Anime 3D)',
+    anime_title_kn: 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಅನಿಮೆ 3D)'
   },
   {
     id: 'mtg_anganwadi',
@@ -128,9 +159,9 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     name_kn: 'ಅಂಗನವಾಡಿ ಕೇಂದ್ರ ಮುತ್ತಾಗೊಂದಿ',
     category: 'HEALTH',
     icon: '👶',
-    color: '#FFB3D9',
-    desc_en: 'Early childhood nutrition, preschool education, and mother & child welfare care.',
-    desc_kn: 'ಮಕ್ಕಳ ಪೌಷ್ಟಿಕ ಆಹಾರ, ಶಾಲಾಪೂರ್ವ ಶಿಕ್ಷಣ ಹಾಗೂ ತಾಯಿ-ಮಕ್ಕಳ ಆರೈಕೆ ಕೇಂದ್ರ.',
+    color: '#EC4899',
+    desc_en: 'Early childhood nutrition, preschool education, cheerful painted educational facade, and mother-child care.',
+    desc_kn: 'ಚಿಣ್ಣರ ವರ್ಣರಂಜಿತ ಶಾಲಾಪೂರ್ವ ಶಿಕ್ಷಣ, ಪೌಷ್ಟಿಕ ಆಹಾರ ಹಾಗೂ ತಾಯಿ-ಮಕ್ಕಳ ಆರೈಕೆ ಕೇಂದ್ರ.',
     distance_en: 'Hospital Road',
     distance_kn: 'ಆಸ್ಪತ್ರೆ ರಸ್ತೆ',
     timings_en: '9:00 AM - 4:00 PM',
@@ -138,7 +169,10 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     phone: '108',
     coords: { lat: 13.755753, lng: 76.333753 },
     map_url: 'https://maps.app.goo.gl/macDiSpwTv3XUxNfA?g_st=ac',
-    verified: true
+    verified: true,
+    anime_image: '/anime/anganwadi.jpg',
+    anime_title_en: 'Anganwadi Children Center (Anime 3D)',
+    anime_title_kn: 'ಅಂಗನವಾಡಿ ಕೇಂದ್ರ ಮುತ್ತಾಗೊಂದಿ (ಅನಿಮೆ 3D)'
   },
   {
     id: 'mtg_water_plant',
@@ -277,12 +311,16 @@ export const VillageMapView: React.FC = () => {
   // Map view mode: '3d', 'roadmap', or 'satellite'
   const [viewMode, setViewMode] = useState<'3d' | 'roadmap' | 'satellite'>('3d');
   const [isFocusedOnUser, setIsFocusedOnUser] = useState(false);
+  const [isAnimeMode, setIsAnimeMode] = useState(true);
+  const [activeAnimeModal, setActiveAnimeModal] = useState<MapLocationItem | null>(null);
 
   // Sync selection from 3D Village model to locations list
   const handle3DLandmarkSelect = (landmarkId: LandmarkId) => {
     let match: MapLocationItem | undefined;
-    if (landmarkId === 'temple') {
-      match = locations.find((l) => l.id.includes('anjaneya') || (l.category === 'TEMPLE' && !l.id.includes('kalle')));
+    if (landmarkId === 'shrine') {
+      match = locations.find((l) => l.id.includes('stone') || l.id.includes('shrine') || l.name_en.toLowerCase().includes('stone'));
+    } else if (landmarkId === 'temple') {
+      match = locations.find((l) => l.id.includes('anjaneya') || (l.category === 'TEMPLE' && !l.id.includes('kalle') && !l.id.includes('stone')));
     } else if (landmarkId === 'temple1') {
       match = locations.find((l) => l.id.includes('kalle') || l.category === 'TEMPLE');
     } else if (landmarkId === 'panchayat') {
@@ -875,6 +913,21 @@ export const VillageMapView: React.FC = () => {
               selectedId={selectedLocation?.id}
               onSelect={handle3DLandmarkSelect}
               isKannada={isKannada}
+              isAnimeMode={isAnimeMode}
+              onToggleAnimeMode={setIsAnimeMode}
+              onOpenAnimeShowcase={(id) => {
+                const match = locations.find((l) => l.anime_image && (
+                  (id === 'temple' && l.id.includes('anjaneya')) ||
+                  (id === 'temple1' && l.id.includes('kalle')) ||
+                  (id === 'school' && l.id.includes('school')) ||
+                  (id === 'kindergarden' && l.id.includes('anganwadi')) ||
+                  (id === 'shrine' && l.id.includes('stone'))
+                ));
+                if (match) {
+                  setSelectedLocation(match);
+                  setActiveAnimeModal(match);
+                }
+              }}
             />
           </div>
         ) : (
@@ -890,6 +943,102 @@ export const VillageMapView: React.FC = () => {
             />
           </div>
         )}
+      </div>
+
+      {/* ✨ Anime 3D Village Visuals Showcase Strip */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)',
+          border: '1px solid rgba(251, 191, 36, 0.35)',
+          borderRadius: '20px',
+          padding: '16px',
+          marginBottom: '20px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.4), 0 0 20px rgba(245, 158, 11, 0.12)'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.3rem' }}>✨</span>
+            <div>
+              <h3 style={{ fontSize: '1.02rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
+                {isKannada ? 'ಮುತ್ತಗುಂಡಿ 3D ಅನಿಮೆ ಕಲಾವೈಭವಗಳು (5 ಪವಿತ್ರ ಸ್ಥಳಗಳು)' : 'Muttagundi 3D Anime Visuals (5 Heritage Landmarks)'}
+              </h3>
+              <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+                {isKannada
+                  ? 'ಮಕೋತೋ ಶಿಂಕೈ & ಘಿಬ್ಲಿ ಪ್ರೇರಿತ ಆಧುನಿಕ ಕಲಾತ್ಮಕ ನೋಟಗಳು'
+                  : 'Makoto Shinkai & Ghibli inspired modern 3D anime scenes'}
+              </span>
+            </div>
+          </div>
+          <span
+            style={{
+              background: 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)',
+              color: '#FFFFFF',
+              fontWeight: 900,
+              fontSize: '0.68rem',
+              padding: '3px 10px',
+              borderRadius: '12px'
+            }}
+          >
+            {isKannada ? 'ಕ್ಲಿಕ್ ಮಾಡಿ ವೀಕ್ಷಿಸಿ' : 'TAP TO VIEW 3D ART'}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px' }}>
+          {locations.filter((l) => !!l.anime_image).map((item) => (
+            <div
+              key={item.id}
+              onClick={() => {
+                setSelectedLocation(item);
+                setActiveAnimeModal(item);
+              }}
+              style={{
+                minWidth: '170px',
+                maxWidth: '170px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '14px',
+                overflow: 'hidden',
+                border: selectedLocation?.id === item.id ? '2px solid #F59E0B' : '1px solid rgba(255, 255, 255, 0.12)',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.22s ease',
+                boxShadow: selectedLocation?.id === item.id ? '0 0 16px rgba(245, 158, 11, 0.4)' : 'none'
+              }}
+            >
+              <div style={{ width: '100%', height: '96px', position: 'relative' }}>
+                <img
+                  src={item.anime_image}
+                  alt={item.name_en}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <span
+                  style={{
+                    position: 'absolute',
+                    bottom: '5px',
+                    right: '5px',
+                    background: 'rgba(7, 15, 30, 0.85)',
+                    color: '#FDE047',
+                    fontSize: '0.62rem',
+                    fontWeight: 900,
+                    padding: '2px 6px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(253, 224, 71, 0.3)'
+                  }}
+                >
+                  ✨ 3D ANIME
+                </span>
+              </div>
+              <div style={{ padding: '8px 10px' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {isKannada ? item.name_kn : item.name_en}
+                </div>
+                <div style={{ fontSize: '0.66rem', color: '#94A3B8', marginTop: '2px' }}>
+                  {item.distance_en}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Search Input */}
@@ -1118,6 +1267,91 @@ export const VillageMapView: React.FC = () => {
             </div>
           </div>
 
+          {/* ✨ Interactive Anime 3D Visual Hero Banner */}
+          {selectedLocation.anime_image && (
+            <div
+              onClick={() => setActiveAnimeModal(selectedLocation)}
+              style={{
+                position: 'relative',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                marginBottom: '16px',
+                cursor: 'pointer',
+                border: '1px solid rgba(251, 191, 36, 0.45)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(245, 158, 11, 0.2)',
+                aspectRatio: '16/9',
+                maxHeight: '280px'
+              }}
+            >
+              <img
+                src={selectedLocation.anime_image}
+                alt={selectedLocation.name_en}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  background: 'linear-gradient(to top, rgba(7, 15, 30, 0.95) 0%, rgba(7, 15, 30, 0.5) 60%, transparent 100%)',
+                  padding: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-end',
+                  flexWrap: 'wrap',
+                  gap: '10px'
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      background: 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)',
+                      color: '#FFFFFF',
+                      fontSize: '0.68rem',
+                      fontWeight: 900,
+                      padding: '3px 8px',
+                      borderRadius: '10px',
+                      marginBottom: '4px'
+                    }}
+                  >
+                    <span>✨</span>
+                    <span>{isKannada ? 'ಅನಿಮೆ 3D ಕಲಾ ನೋಟ' : 'Anime 3D Mode Visual'}</span>
+                  </div>
+                  <div style={{ color: '#FFFFFF', fontSize: '1rem', fontWeight: 800 }}>
+                    {isKannada ? selectedLocation.anime_title_kn : selectedLocation.anime_title_en}
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveAnimeModal(selectedLocation);
+                  }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.35)',
+                    color: '#FFFFFF',
+                    borderRadius: '20px',
+                    padding: '6px 14px',
+                    fontSize: '0.76rem',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Maximize2 size={13} />
+                  <span>{isKannada ? 'ಪೂರ್ಣ ನೋಟ (Full HD)' : 'Full HD View'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <p style={{ fontSize: '0.88rem', color: '#CBD5E1', lineHeight: 1.5, margin: '0 0 12px 0' }}>
             {isKannada ? selectedLocation.desc_kn : selectedLocation.desc_en}
           </p>
@@ -1171,7 +1405,42 @@ export const VillageMapView: React.FC = () => {
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '1.8rem' }}>{loc.icon}</span>
+                    {loc.anime_image ? (
+                      <div
+                        style={{
+                          width: '64px',
+                          height: '48px',
+                          borderRadius: '10px',
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                          border: '1px solid rgba(251, 191, 36, 0.4)',
+                          position: 'relative'
+                        }}
+                      >
+                        <img
+                          src={loc.anime_image}
+                          alt={loc.name_en}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                        <span
+                          style={{
+                            position: 'absolute',
+                            top: '2px',
+                            right: '2px',
+                            fontSize: '0.52rem',
+                            background: 'rgba(0,0,0,0.75)',
+                            color: '#FDE047',
+                            padding: '1px 3px',
+                            borderRadius: '3px',
+                            fontWeight: 900
+                          }}
+                        >
+                          3D
+                        </span>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: '1.8rem' }}>{loc.icon}</span>
+                    )}
                     <div>
                       <h4 style={{ fontSize: '0.98rem', fontWeight: 800, margin: '0 0 2px 0', color: '#FFFFFF' }}>
                         {isKannada ? loc.name_kn : loc.name_en}
@@ -1360,6 +1629,175 @@ export const VillageMapView: React.FC = () => {
                 </button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ✨ Fullscreen Anime 3D Landmark Showcase Modal */}
+      {activeAnimeModal && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(3, 7, 18, 0.88)',
+            backdropFilter: 'blur(16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '16px'
+          }}
+          onClick={() => setActiveAnimeModal(null)}
+        >
+          <div
+            style={{
+              background: '#0B132B',
+              border: '2px solid rgba(251, 191, 36, 0.55)',
+              borderRadius: '24px',
+              maxWidth: '840px',
+              width: '100%',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.85), 0 0 45px rgba(245, 158, 11, 0.3)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '16px 20px',
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(10, 18, 36, 0.8)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.5rem' }}>{activeAnimeModal.icon}</span>
+                <div>
+                  <h3 style={{ fontSize: '1.18rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
+                    {isKannada ? activeAnimeModal.name_kn : activeAnimeModal.name_en}
+                  </h3>
+                  <span style={{ fontSize: '0.74rem', color: '#FCD34D', fontWeight: 700 }}>
+                    {isKannada ? 'ಮಕೋತೋ ಶಿಂಕೈ & ಘಿಬ್ಲಿ ಶೈಲಿಯ 3D ಅನಿಮೆ ಕಲಾ ನೋಟ' : 'Makoto Shinkai & Ghibli Inspired 3D Anime Visual'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveAnimeModal(null)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.2s'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* High-Res Hero Image */}
+            <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden' }}>
+              <img
+                src={activeAnimeModal.anime_image}
+                alt={activeAnimeModal.name_en}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  left: '12px',
+                  background: 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)',
+                  color: '#FFFFFF',
+                  fontSize: '0.72rem',
+                  fontWeight: 900,
+                  padding: '4px 12px',
+                  borderRadius: '14px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                ✨ 3D ANIME MASTERPIECE
+              </div>
+            </div>
+
+            {/* Content & Navigation Actions */}
+            <div style={{ padding: '20px' }}>
+              <p style={{ fontSize: '0.94rem', color: '#E2E8F0', lineHeight: 1.6, margin: '0 0 16px 0' }}>
+                {isKannada ? activeAnimeModal.desc_kn : activeAnimeModal.desc_en}
+              </p>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
+                  📍 {activeAnimeModal.coords.lat.toFixed(5)}° N, {activeAnimeModal.coords.lng.toFixed(5)}° E • {isKannada ? 'ಮುತ್ತಗುಂಡಿ, ಹೊಸದುರ್ಗ' : 'Muttagundi, Hosadurga Taluk'}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => {
+                      const target = activeAnimeModal;
+                      setActiveAnimeModal(null);
+                      setSelectedLocation(target);
+                      setViewMode('3d');
+                      setIsAnimeMode(true);
+                    }}
+                    style={{
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      color: '#FFFFFF',
+                      borderRadius: '20px',
+                      border: 'none',
+                      padding: '8px 18px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+                    }}
+                  >
+                    <span>🌐</span>
+                    <span>{isKannada ? '3D ಗ್ರಾಮದಲ್ಲಿ ನೋಡಿ' : 'Inspect in 3D Village'}</span>
+                  </button>
+
+                  <a
+                    href={activeAnimeModal.map_url || getGoogleMapsDirectionsUrl(activeAnimeModal, 'driving')}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+                      color: '#FFFFFF',
+                      borderRadius: '20px',
+                      padding: '8px 18px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)'
+                    }}
+                  >
+                    <Navigation size={14} />
+                    <span>{isKannada ? 'ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್ ದಾರಿ' : 'Google Maps Directions'}</span>
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
