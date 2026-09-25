@@ -151,12 +151,12 @@ export const VoiceOrb: React.FC<VoiceOrbProps> = ({ isListening, isSpeaking, siz
   }, [isListening, isSpeaking, size]);
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', userSelect: 'none' }}>
       <canvas
         ref={canvasRef}
         width={size}
         height={size}
-        style={{ width: `${size}px`, height: `${size}px`, borderRadius: '50%' }}
+        style={{ width: `${size}px`, height: `${size}px`, borderRadius: '50%', pointerEvents: 'none' }}
         aria-label="Village Voice Assistant Animated Orb"
       />
     </div>

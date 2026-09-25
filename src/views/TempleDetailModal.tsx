@@ -35,15 +35,29 @@ export const TempleDetailModal: React.FC<TempleDetailModalProps> = ({
   const festivals = language === 'kn' ? temple.festivals_kn : temple.festivals_en;
   const specialPooja = language === 'kn' ? temple.special_pooja_kn : temple.special_pooja_en;
 
+  const cleanImageUrl =
+    !temple.image_url ||
+    temple.image_url.includes('photo-1609766857041-ed402ea8069a') ||
+    temple.image_url.toLowerCase().includes('bedroom')
+      ? '/anime/temple_gopuram.jpg'
+      : temple.image_url;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="modal-content"
-        style={{ maxWidth: '640px', padding: 0, overflow: 'hidden' }}
+        style={{ maxWidth: '640px', padding: 0, maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ position: 'relative', height: '240px' }}>
-          <img src={temple.image_url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div style={{ position: 'relative', height: '240px', background: '#0D1629' }}>
+          <img
+            src={cleanImageUrl}
+            alt={name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/anime/temple_gopuram.jpg';
+            }}
+          />
           <button
             onClick={onClose}
             style={{

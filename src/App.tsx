@@ -70,6 +70,7 @@ import {
   Share2
 } from 'lucide-react';
 import { getEffectiveUserId, triggerHapticFeedback } from './services/deviceIdentity';
+import { backNavigation } from './services/backNavigation';
 
 export type MainSection =
   | 'home'
@@ -131,6 +132,126 @@ export const App: React.FC = () => {
   const [activeChatConvId, setActiveChatConvId] = useState<string>('');
   const [activeChatPartner, setActiveChatPartner] = useState<any>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [showExitToast, setShowExitToast] = useState(false);
+
+  // Initialize step-by-step back navigation manager
+  useEffect(() => {
+    backNavigation.init(
+      currentSection,
+      (newSection) => {
+        setCurrentSection(newSection);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+      (showPrompt) => {
+        setShowExitToast(showPrompt);
+      }
+    );
+    return () => backNavigation.destroy();
+  }, []);
+
+  // Modal Back Navigation Listeners
+  useEffect(() => {
+    if (isVoiceModalOpen) {
+      const dismiss = backNavigation.pushModal('voiceModal', () => setIsVoiceModalOpen(false));
+      return () => dismiss();
+    }
+  }, [isVoiceModalOpen]);
+
+  useEffect(() => {
+    if (isShareModalOpen) {
+      const dismiss = backNavigation.pushModal('shareModal', () => setIsShareModalOpen(false));
+      return () => dismiss();
+    }
+  }, [isShareModalOpen]);
+
+  useEffect(() => {
+    if (selectedNews) {
+      const dismiss = backNavigation.pushModal('newsDetailModal', () => setSelectedNews(null));
+      return () => dismiss();
+    }
+  }, [selectedNews]);
+
+  useEffect(() => {
+    if (commentsNews) {
+      const dismiss = backNavigation.pushModal('commentsModal', () => setCommentsNews(null));
+      return () => dismiss();
+    }
+  }, [commentsNews]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      const dismiss = backNavigation.pushModal('eventDetailModal', () => setSelectedEvent(null));
+      return () => dismiss();
+    }
+  }, [selectedEvent]);
+
+  useEffect(() => {
+    if (selectedTournament) {
+      const dismiss = backNavigation.pushModal('tournamentDetailModal', () => setSelectedTournament(null));
+      return () => dismiss();
+    }
+  }, [selectedTournament]);
+
+  useEffect(() => {
+    if (liveScoreTournament || liveScoreMatch) {
+      const dismiss = backNavigation.pushModal('liveScoreModal', () => {
+        setLiveScoreTournament(null);
+        setLiveScoreMatch(null);
+      });
+      return () => dismiss();
+    }
+  }, [liveScoreTournament, liveScoreMatch]);
+
+  useEffect(() => {
+    if (selectedCrop) {
+      const dismiss = backNavigation.pushModal('cropDetailModal', () => setSelectedCrop(null));
+      return () => dismiss();
+    }
+  }, [selectedCrop]);
+
+  useEffect(() => {
+    if (selectedTemple) {
+      const dismiss = backNavigation.pushModal('templeDetailModal', () => setSelectedTemple(null));
+      return () => dismiss();
+    }
+  }, [selectedTemple]);
+
+  useEffect(() => {
+    if (selectedGallery) {
+      const dismiss = backNavigation.pushModal('galleryDetailModal', () => setSelectedGallery(null));
+      return () => dismiss();
+    }
+  }, [selectedGallery]);
+
+  useEffect(() => {
+    if (reportState.isOpen) {
+      const dismiss = backNavigation.pushModal('reportModal', () =>
+        setReportState((prev) => ({ ...prev, isOpen: false }))
+      );
+      return () => dismiss();
+    }
+  }, [reportState.isOpen]);
+
+  useEffect(() => {
+    if (isChatOpen) {
+      const dismiss = backNavigation.pushModal('chatModal', () => setIsChatOpen(false));
+      return () => dismiss();
+    }
+  }, [isChatOpen]);
+
+  useEffect(() => {
+    if (isAuthModalOpen) {
+      const dismiss = backNavigation.pushModal('authModal', () => setIsAuthModalOpen(false));
+      return () => dismiss();
+    }
+  }, [isAuthModalOpen]);
+
+  useEffect(() => {
+    if (openHeritageTab !== 'NONE') {
+      const dismiss = backNavigation.pushModal('heritageTab', () => setOpenHeritageTab('NONE'));
+      return () => dismiss();
+    }
+  }, [openHeritageTab]);
 
   useEffect(() => {
     const unsubEmergency = dbService.subscribeEmergencyAlert(setEmergencyAlert);
@@ -163,6 +284,7 @@ export const App: React.FC = () => {
   }, [currentUser]);
 
   const navigateTo = (section: MainSection) => {
+    backNavigation.navigateTo(section);
     setCurrentSection(section);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1845,6 +1967,36 @@ export const App: React.FC = () => {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
       />
+
+      {/* 📱 Double-Back Exit Confirmation Toast */}
+      {showExitToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '84px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 9999,
+          background: 'rgba(15, 23, 42, 0.95)',
+          border: '1px solid rgba(245, 158, 11, 0.5)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '9999px',
+          padding: '10px 22px',
+          color: '#F8FAFC',
+          fontSize: '0.85rem',
+          fontWeight: 700,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none'
+        }}>
+          <span style={{ fontSize: '1.1rem' }}>👋</span>
+          <span>
+            {isKannada ? 'ಅಪ್ಲಿಕೇಶನ್‌ನಿಂದ ನಿರ್ಗಮಿಸಲು ಮತ್ತೊಮ್ಮೆ ಬ್ಯಾಕ್ ಒತ್ತಿ' : 'Press back again to leave app'}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

@@ -175,7 +175,98 @@ class DatabaseService {
     this.events = this.loadCollection('events', this.isDemoMode ? SEED_EVENTS : []);
     this.tournaments = this.loadCollection('tournaments', this.isDemoMode ? SEED_TOURNAMENTS : []);
     this.crops = this.loadCollection('crops', this.isDemoMode ? SEED_CROPS : []);
-    this.temples = this.loadCollection('temples', this.isDemoMode ? SEED_TEMPLES : []);
+    const defaultTemples: TempleItem[] = [
+      {
+        id: 'temple_anjaneya_default',
+        name_en: 'Sri Anjaneya Swamy Temple',
+        name_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ',
+        deity_en: 'Sri Rama Devru & Anjaneya Swamy',
+        deity_kn: 'ಶ್ರೀ ರಾಮ ದೇವರು & ಆಂಜನೇಯ ಸ್ವಾಮಿ',
+        timings_en: '6:30 AM - 1:00 PM and 5:00 PM - 8:30 PM',
+        timings_kn: 'ಬೆಳಗ್ಗೆ ೬:೩೦ - ಮಧ್ಯಾಹ್ನ ೧:೦೦ ಮತ್ತು ಸಂಜೆ ೫:೦೦ - ೮:೩೦',
+        location_en: 'Car Street, Central Muttagundi',
+        location_kn: 'ತೇರು ಬೀದಿ, ಮಧ್ಯ ಮುಟ್ಟಗುಂಡಿ',
+        history_en: 'Sri Anjaneya Swamy Temple – Muttagundi Sri Anjaneya Swamy Temple is a sacred center of devotion for the people of Muttagundi and neighboring taluks. Blessed with centuries of devotion, annual Hanuma Jayanthi, and grand Rathotsava.',
+        history_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ – ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಭಕ್ತರ ಪವಿತ್ರ ಆರಾಧನಾ ಕೇಂದ್ರ. ಶತಮಾನಗಳ ಭಕ್ತಿ, ವಾರ್ಷಿಕ ಹನುಮ ಜಯಂತಿ ಮತ್ತು ಭವ್ಯ ರಥೋತ್ಸವದ ಇತಿಹಾಸವನ್ನು ಹೊಂದಿದೆ.',
+        festivals_en: 'Annual Hanuma Jayanthi, Ramanavami & Rathotsava',
+        festivals_kn: 'ವಾರ್ಷಿಕ ಹನುಮ ಜಯಂತಿ, ಶ್ರೀರಾಮನವಮಿ ಮತ್ತು ರಥೋತ್ಸವ',
+        special_pooja_en: 'Saturday Special Abhisheka & Vada Male Seva',
+        special_pooja_kn: 'ಶನಿವಾರ ವಿಶೇಷ ಅಭಿಷೇಕ ಮತ್ತು ವಡೆ ಮಾಲೆ ಸೇವೆ',
+        image_url: '/anime/temple_gopuram.jpg',
+        source: 'Muttagundi Grama Panchayat Heritage Register',
+        verified: true,
+        is_demo: false
+      },
+      {
+        id: 'temple_kalleshwara_default',
+        name_en: 'Sri Kalleshwara Swamy Temple',
+        name_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ದೇವಾಲಯ',
+        deity_en: 'Lord Shiva (Kalleshwara)',
+        deity_kn: 'ಶ್ರೀ ಈಶ್ವರ (ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ)',
+        timings_en: '6:00 AM - 12:30 PM and 5:30 PM - 8:30 PM',
+        timings_kn: 'ಬೆಳಗ್ಗೆ ೬:೦೦ - ೧೨:೩೦ ಮತ್ತು ಸಂಜೆ ೫:೩೦ - ೮:೩೦',
+        location_en: 'Muttagundi Heritage Complex',
+        location_kn: 'ಮುತ್ತಾಗೊಂದಿ ಪುರಾತನ ಬಡಾವಣೆ',
+        history_en: 'Ancient stone temple dedicated to Lord Shiva with sacred Nandi pavilion and intricate Hoysala period stone pillars. Famed for peaceful spiritual vibrations.',
+        history_kn: 'ಹೊಯ್ಸಳ ಕಾಲದ ಶಿಲ್ಪಕಲೆ, ನಂದಿ ಮಂಟಪ ಹಾಗೂ ಕೆತ್ತನೆಯ ಕಂಬಗಳನ್ನು ಹೊಂದಿರುವ ಪುರಾತನ ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ದೇವಾಲಯ.',
+        festivals_en: 'Maha Shivaratri & Karthika Somavara Deepotsava',
+        festivals_kn: 'ಮಹಾ ಶಿವರಾತ್ರಿ ಮತ್ತು ಕಾರ್ತಿಕ ಸೋಮವಾರ ದೀಪೋತ್ಸವ',
+        special_pooja_en: 'Pradosha Pooja & Rudrabhisheka',
+        special_pooja_kn: 'ಪ್ರದೋಷ ಪೂಜೆ ಮತ್ತು ರುದ್ರಾಭಿಷೇಕ',
+        image_url: '/anime/kalleshwara.jpg',
+        source: 'Archaeological & Village Heritage Survey',
+        verified: true,
+        is_demo: false
+      },
+      {
+        id: 'temple_thimmappa_default',
+        name_en: 'Sri Lakshmi Thimmappa Swamy Temple',
+        name_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ',
+        deity_en: 'Sri Lakshmi Venkateshwara / Thimmappa',
+        deity_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ವೆಂಕಟೇಶ್ವರ / ತಿಮ್ಮಪ್ಪ',
+        timings_en: '6:00 AM - 12:00 PM and 5:00 PM - 8:00 PM',
+        timings_kn: 'ಬೆಳಗ್ಗೆ ೬:೦೦ - ೧೨:೦೦ ಮತ್ತು ಸಂಜೆ ೫:೦೦ - ೮:೦೦',
+        location_en: 'Muttagundi Hillock Sanctuary',
+        location_kn: 'ಮುತ್ತಾಗೊಂದಿ ಬೆಟ್ಟದ ಸನ್ನಿಧಿ',
+        history_en: 'Venerated hillock temple blessing devotees across generations with peace, health, and prosperity.',
+        history_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಭಕ್ತರ ಆರಾಧ್ಯ ದೈವ ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಾಲಯ. ಸಮೃದ್ಧಿ ಮತ್ತು ಕೃಪೆಗೆ ಪ್ರಸಿದ್ಧ.',
+        festivals_en: 'Shravana Shanivara & Vaikunta Ekadashi',
+        festivals_kn: 'ಶ್ರಾವಣ ಶನಿವಾರ ಮತ್ತು ವೈಕುಂಠ ಏಕಾದಶಿ ಮಹೋತ್ಸವ',
+        special_pooja_en: 'Kalyanotsava & Maha Mangalarathi',
+        special_pooja_kn: 'ಕಲ್ಯಾಣೋತ್ಸವ ಮತ್ತು ಮಹಾ ಮಂಗಳಾರತಿ',
+        image_url: '/anime/stone_shrine.jpg',
+        source: 'Muttagundi Grama Panchayat Heritage Register',
+        verified: true,
+        is_demo: false
+      }
+    ];
+
+    this.temples = this.loadCollection('temples', defaultTemples);
+
+    // Auto-migrate any legacy bedroom images to authentic temple imagery
+    let templesModified = false;
+    if (this.temples.length === 0) {
+      this.temples = defaultTemples;
+      templesModified = true;
+    } else {
+      this.temples = this.temples.map((t) => {
+        if (
+          !t.image_url ||
+          t.image_url.includes('photo-1609766857041-ed402ea8069a') ||
+          t.image_url.toLowerCase().includes('bedroom')
+        ) {
+          templesModified = true;
+          return {
+            ...t,
+            image_url: '/anime/temple_gopuram.jpg'
+          };
+        }
+        return t;
+      });
+    }
+    if (templesModified) {
+      this.saveCollection('temples', this.temples);
+    }
     this.history = this.loadCollection('history', this.isDemoMode ? SEED_HISTORY : []);
     this.stories = this.loadCollection('stories', this.isDemoMode ? SEED_STORIES : []);
     this.villageStats = this.loadCollection('village_stats', this.isDemoMode ? SEED_VILLAGE_STATS : {
@@ -1209,8 +1300,15 @@ class DatabaseService {
   }
 
   public async addTemple(temple: Omit<TempleItem, 'id'>): Promise<TempleItem> {
+    const rawImage = temple.image_url?.trim() || '';
+    const safeImage =
+      !rawImage || rawImage.includes('photo-1609766857041-ed402ea8069a') || rawImage.toLowerCase().includes('bedroom')
+        ? '/anime/temple_gopuram.jpg'
+        : rawImage;
+
     const newTemple: TempleItem = {
       ...temple,
+      image_url: safeImage,
       id: 'temple_' + Date.now(),
       is_demo: false
     };
