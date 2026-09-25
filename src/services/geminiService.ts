@@ -3,8 +3,8 @@ import { Language } from '../types';
 
 // Pool of Gemini API keys for seamless quota load balancing and failover
 const API_KEY_POOL = [
-  import.meta.env.VITE_GEMINI_API_KEY,
   import.meta.env.VITE_GEMINI_API_KEY_2,
+  import.meta.env.VITE_GEMINI_API_KEY,
   import.meta.env.VITE_GEMINI_API_KEY_3,
 ].filter(Boolean) as string[];
 
@@ -22,7 +22,7 @@ function rotateApiKey() {
 }
 
 // Default active Gemini models verified with current API key
-const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-flash-latest'];
+const GEMINI_MODELS = ['gemini-3-flash-preview', 'gemini-3.6-flash', 'gemini-flash-lite-latest'];
 
 export interface GeminiResponse {
   answer_en: string;
