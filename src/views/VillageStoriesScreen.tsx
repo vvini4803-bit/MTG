@@ -3,13 +3,18 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { dbService } from '../services/dbService';
 import { StoryItem } from '../types';
-import { Flame, Plus, User, ShieldCheck, Heart, Share2 } from 'lucide-react';
+import { Flame, Plus, User, ShieldCheck, Heart, Share2, MessageSquare } from 'lucide-react';
+import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
+import { CommentsModal } from './CommentsModal';
 
 export const VillageStoriesScreen: React.FC = () => {
   const { language, isKannada } = useLanguage();
   const { currentUser } = useAuth();
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [commentsStory, setCommentsStory] = useState<StoryItem | null>(null);
+
+  const effectiveUid = getEffectiveUserId(currentUser);
 
   // New story state
   const [title, setTitle] = useState('');
@@ -19,6 +24,24 @@ export const VillageStoriesScreen: React.FC = () => {
   useEffect(() => {
     return dbService.subscribeStories(setStories);
   }, []);
+
+  const handleLike = async (e: React.MouseEvent, storyId: string) => {
+    e.stopPropagation();
+    triggerHapticFeedback();
+    await dbService.toggleLikeStory(storyId, effectiveUid);
+  };
+
+  const handleShare = (e: React.MouseEvent, story: StoryItem) => {
+    e.stopPropagation();
+    triggerHapticFeedback();
+    const sTitle = language === 'kn' ? story.title_kn : story.title_en;
+    const text = `📖 *${sTitle}* - ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕಥೆ:\n${window.location.href}`;
+    if (navigator.share) {
+      navigator.share({ title: sTitle, text, url: window.location.href }).catch(() => {});
+    } else {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    }
+  };
 
   const handleAddStory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +94,7 @@ export const VillageStoriesScreen: React.FC = () => {
           const sTitle = language === 'kn' ? story.title_kn : story.title_en;
           const sContent = language === 'kn' ? story.content_kn : story.content_en;
           const sTeller = language === 'kn' ? story.storyteller_kn : story.storyteller_en;
+          const isLiked = Array.isArray(story.liked_by) && story.liked_by.includes(effectiveUid);
 
           return (
             <article key={story.id} className="glass-card" style={{ padding: '24px' }}>
@@ -92,9 +116,108 @@ export const VillageStoriesScreen: React.FC = () => {
                 🎙️ {sTeller}
               </span>
 
-              <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+              <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: '0 0 14px 0' }}>
                 {sContent}
               </p>
+
+              {/* Action Bar */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderTop: '1px solid var(--glass-border)',
+                  paddingTop: '14px',
+                  marginTop: '16px',
+                  flexWrap: 'wrap',
+                  gap: '10px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Like button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleLike(e, story.id)}
+                    style={{
+                      background: isLiked ? 'rgba(239, 68, 68, 0.16)' : 'rgba(255,255,255,0.06)',
+                      border: `1.5px solid ${isLiked ? '#EF4444' : 'rgba(255,255,255,0.12)'}`,
+                      borderRadius: 'var(--radius-full)',
+                      padding: '5px 12px',
+                      color: isLiked ? '#EF4444' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      minHeight: '36px',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title={isLiked ? 'Liked' : 'Like'}
+                  >
+                    <Heart
+                      size={15}
+                      fill={isLiked ? '#EF4444' : 'none'}
+                      color={isLiked ? '#EF4444' : 'currentColor'}
+                      style={{ animation: isLiked ? 'heartPop 0.3s ease' : 'none' }}
+                    />
+                    <span>{story.likes_count || 0}</span>
+                  </button>
+
+                  {/* Comment button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCommentsStory(story);
+                    }}
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.1)',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '5px 12px',
+                      color: '#38BDF8',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      minHeight: '36px',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title={isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'}
+                  >
+                    <MessageSquare size={15} />
+                    <span>{story.comments_count || 0}</span>
+                  </button>
+
+                  {/* Share button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleShare(e, story)}
+                    style={{
+                      background: 'rgba(34, 197, 94, 0.12)',
+                      border: '1px solid rgba(34, 197, 94, 0.35)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '5px 12px',
+                      color: '#22C55E',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      minHeight: '36px',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title={isKannada ? 'ವಾಟ್ಸಾಪ್ / ಹಂಚಿಕೊಳ್ಳಿ' : 'Share'}
+                  >
+                    <Share2 size={14} />
+                    <span>{isKannada ? 'ಹಂಚಿ' : 'Share'}</span>
+                  </button>
+                </div>
+              </div>
             </article>
           );
         })}
@@ -156,6 +279,14 @@ export const VillageStoriesScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Comments Modal for Stories */}
+      <CommentsModal
+        news={commentsStory}
+        isOpen={!!commentsStory}
+        onClose={() => setCommentsStory(null)}
+        onOpenReportModal={() => {}}
+      />
     </div>
   );
 };

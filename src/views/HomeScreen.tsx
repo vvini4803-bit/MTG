@@ -29,8 +29,10 @@ import {
   ChevronRight,
   Heart,
   MessageSquare,
+  Share2,
   Maximize2
 } from 'lucide-react';
+import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
 import { ImageLightboxModal } from '../components/common/ImageLightboxModal';
 
 interface HomeScreenProps {
@@ -41,6 +43,7 @@ interface HomeScreenProps {
   onOpenTempleDetail: (temple: TempleItem) => void;
   onOpenGalleryDetail: (gal: GalleryItem) => void;
   onOpenVoice: () => void;
+  onOpenComments?: (news: NewsItem) => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -50,7 +53,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenCropDetail,
   onOpenTempleDetail,
   onOpenGalleryDetail,
-  onOpenVoice
+  onOpenVoice,
+  onOpenComments
 }) => {
   const { language, isKannada } = useLanguage();
   const { currentUser } = useAuth();
@@ -97,6 +101,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Find any active live match
   const liveMatch = tournaments.flatMap((t) => t.matches).find((m) => m.is_live);
   const liveEvent = eventsList.find((e) => e.status === 'LIVE');
+
+  const effectiveUid = getEffectiveUserId(currentUser);
+
+  const handleLikeNews = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    triggerHapticFeedback();
+    await dbService.toggleLikeNews(id, effectiveUid);
+  };
+
+  const handleShareNews = (e: React.MouseEvent, item: NewsItem) => {
+    e.stopPropagation();
+    triggerHapticFeedback();
+    const title = isKannada ? item.title_kn : item.title_en;
+    const text = `📰 *${title}* - ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಸುದ್ದಿ:\n${window.location.href}`;
+    if (navigator.share) {
+      navigator.share({ title, text, url: window.location.href }).catch(() => {});
+    } else {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    }
+  };
 
   return (
     <div style={{ paddingBottom: '40px' }}>
@@ -406,7 +430,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-            {newsList.map((item) => (
+            {newsList.map((item) => {
+              const isLiked = Array.isArray(item.liked_by) && item.liked_by.includes(effectiveUid);
+              return (
               <div
                 key={item.id}
                 onClick={() => onOpenNewsDetail(item)}
@@ -523,21 +549,99 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   justifyContent: 'space-between',
                   borderTop: '1px solid var(--glass-border)',
                   paddingTop: '12px',
-                  fontSize: '0.75rem',
-                  color: 'var(--text-muted)'
+                  fontSize: '0.78rem',
+                  gap: '8px',
+                  flexWrap: 'wrap'
                 }}>
-                  <span>By: {item.author_name}</span>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Heart size={13} /> {item.likes_count}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <MessageSquare size={13} /> {item.comments_count}
-                    </span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.76rem' }}>
+                    By: {item.author_name}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* Like button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleLikeNews(e, item.id)}
+                      style={{
+                        background: isLiked ? 'rgba(239, 68, 68, 0.16)' : 'rgba(255,255,255,0.06)',
+                        border: `1px solid ${isLiked ? '#EF4444' : 'rgba(255,255,255,0.12)'}`,
+                        borderRadius: 'var(--radius-full)',
+                        padding: '4px 10px',
+                        color: isLiked ? '#EF4444' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        fontWeight: 700,
+                        fontSize: '0.78rem',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={isLiked ? 'Liked' : 'Like'}
+                    >
+                      <Heart
+                        size={14}
+                        fill={isLiked ? '#EF4444' : 'none'}
+                        color={isLiked ? '#EF4444' : 'currentColor'}
+                        style={{ animation: isLiked ? 'heartPop 0.3s ease' : 'none' }}
+                      />
+                      <span>{item.likes_count || 0}</span>
+                    </button>
+
+                    {/* Comment button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onOpenComments) onOpenComments(item);
+                        else onOpenNewsDetail(item);
+                      }}
+                      style={{
+                        background: 'rgba(56, 189, 248, 0.1)',
+                        border: '1px solid rgba(56, 189, 248, 0.25)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '4px 10px',
+                        color: '#38BDF8',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        fontWeight: 700,
+                        fontSize: '0.78rem',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'}
+                    >
+                      <MessageSquare size={14} />
+                      <span>{item.comments_count || 0}</span>
+                    </button>
+
+                    {/* Share button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleShareNews(e, item)}
+                      style={{
+                        background: 'rgba(34, 197, 94, 0.12)',
+                        border: '1px solid rgba(34, 197, 94, 0.3)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '4px 10px',
+                        color: '#22C55E',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        fontWeight: 700,
+                        fontSize: '0.78rem',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={isKannada ? 'ವಾಟ್ಸಾಪ್ / ಹಂಚಿಕೊಳ್ಳಿ' : 'Share'}
+                    >
+                      <Share2 size={13} />
+                      <span>{isKannada ? 'ಹಂಚಿ' : 'Share'}</span>
+                    </button>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
           )}
         </section>
@@ -843,14 +947,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <div style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%)',
+                    background: 'linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.88) 100%)',
                     display: 'flex',
-                    alignItems: 'flex-end',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
                     padding: '12px'
                   }}>
-                    <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 600 }}>
+                    <span style={{ fontSize: '0.82rem', color: '#FFFFFF', fontWeight: 700, marginBottom: '4px', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
                       {isKannada ? g.title_kn : g.title_en}
                     </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', color: '#E2E8F0' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>
+                        <Heart size={11} fill="#EF4444" color="#EF4444" /> {g.likes_count || 0}
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>
+                        <MessageSquare size={11} color="#38BDF8" /> {g.comments_count || 0}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -261,6 +261,9 @@ export interface StoryItem {
   author_id: string;
   verified: boolean;
   created_at: string;
+  likes_count?: number;
+  liked_by?: string[];
+  comments_count?: number;
   is_demo?: boolean;
 }
 
@@ -327,6 +330,7 @@ export interface GalleryItem {
   approved: boolean;
   likes_count: number;
   liked_by: string[];
+  comments_count?: number;
   created_at: string;
   active_until?: string;
   is_demo?: boolean;

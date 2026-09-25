@@ -458,54 +458,98 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    {/* Like Button */}
                     <button
                       onClick={(e) => handleLike(e, item.id)}
                       style={{
-                        background: isLiked ? 'rgba(239, 68, 68, 0.12)' : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${isLiked ? 'rgba(239, 68, 68, 0.35)' : 'var(--glass-border)'}`,
+                        background: isLiked ? 'rgba(239, 68, 68, 0.16)' : 'rgba(255,255,255,0.06)',
+                        border: `1.5px solid ${isLiked ? '#EF4444' : 'rgba(255,255,255,0.12)'}`,
                         borderRadius: 'var(--radius-full)',
-                        padding: '4px 10px',
-                        color: isLiked ? '#EF4444' : 'var(--text-muted)',
+                        padding: '5px 12px',
+                        color: isLiked ? '#EF4444' : 'var(--text-secondary)',
                         cursor: 'pointer',
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
                         gap: '6px',
-                        fontWeight: 600,
-                        minHeight: '34px',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        minHeight: '36px',
                         transition: 'all 0.15s ease'
                       }}
                       title={isLiked ? 'Liked' : 'Like'}
                     >
                       <Heart
-                        size={15}
+                        size={16}
                         fill={isLiked ? '#EF4444' : 'none'}
                         color={isLiked ? '#EF4444' : 'currentColor'}
                         style={{ animation: isLiked ? 'heartPop 0.3s ease' : 'none' }}
                       />
-                      <span>{item.likes_count}</span>
+                      <span>{item.likes_count || 0}</span>
                     </button>
 
+                    {/* Comment Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onOpenComments(item);
                       }}
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--text-muted)',
+                        background: 'rgba(56, 189, 248, 0.1)',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '5px 12px',
+                        color: '#38BDF8',
                         cursor: 'pointer',
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '5px',
-                        fontWeight: 600
+                        gap: '6px',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        minHeight: '36px',
+                        transition: 'all 0.15s ease'
                       }}
+                      title={isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'}
                     >
-                      <MessageSquare size={15} />
-                      <span>{item.comments_count}</span>
+                      <MessageSquare size={16} />
+                      <span>{item.comments_count || 0}</span>
                     </button>
 
+                    {/* Share Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerHapticFeedback();
+                        const title = isKannada ? item.title_kn : item.title_en;
+                        const text = `📰 *${title}* - ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಸುದ್ದಿ:\n${window.location.href}`;
+                        if (navigator.share) {
+                          navigator.share({ title, text, url: window.location.href }).catch(() => {});
+                        } else {
+                          window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+                        }
+                      }}
+                      style={{
+                        background: 'rgba(34, 197, 94, 0.12)',
+                        border: '1px solid rgba(34, 197, 94, 0.35)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '5px 12px',
+                        color: '#22C55E',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        minHeight: '36px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={isKannada ? 'ವಾಟ್ಸಾಪ್ / ಹಂಚಿಕೊಳ್ಳಿ' : 'Share on WhatsApp'}
+                    >
+                      <Share2 size={15} />
+                      <span>{isKannada ? 'ಹಂಚಿ' : 'Share'}</span>
+                    </button>
+
+                    {/* Report Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -516,7 +560,7 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
                         border: 'none',
                         color: 'var(--text-muted)',
                         cursor: 'pointer',
-                        padding: '4px'
+                        padding: '6px'
                       }}
                       title="Report misleading or incorrect info"
                     >

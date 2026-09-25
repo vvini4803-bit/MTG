@@ -65,8 +65,11 @@ import {
   Users,
   Search as SearchIcon,
   ShieldAlert,
-  MessageSquare
+  MessageSquare,
+  Heart,
+  Share2
 } from 'lucide-react';
+import { getEffectiveUserId, triggerHapticFeedback } from './services/deviceIdentity';
 
 export type MainSection =
   | 'home'
@@ -104,7 +107,7 @@ export const App: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
-  const [commentsNews, setCommentsNews] = useState<NewsItem | null>(null);
+  const [commentsNews, setCommentsNews] = useState<{ id: string; title_en: string; title_kn?: string; [key: string]: any } | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [liveScoreTournament, setLiveScoreTournament] = useState<Tournament | null>(null);
@@ -703,7 +706,113 @@ export const App: React.FC = () => {
                   </div>
 
                   {/* Actions right side */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                    {liveItem && (() => {
+                      const effectiveUid = getEffectiveUserId(currentUser);
+                      const isLiked = Array.isArray(liveItem.liked_by) && liveItem.liked_by.includes(effectiveUid);
+
+                      const handleLikeLive = async (e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        triggerHapticFeedback();
+                        await dbService.toggleLikeNews(liveItem.id, effectiveUid);
+                      };
+
+                      const handleCommentLive = (e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        setCommentsNews(liveItem);
+                      };
+
+                      const handleShareLive = (e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        triggerHapticFeedback();
+                        const title = isKannada ? liveItem.title_kn : liveItem.title_en;
+                        const text = `📰 *${title}* - ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಲೈವ್ ಸುದ್ದಿ:\n${window.location.href}`;
+                        if (navigator.share) {
+                          navigator.share({ title, text, url: window.location.href }).catch(() => {});
+                        } else {
+                          window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+                        }
+                      };
+
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {/* Live Like */}
+                          <button
+                            type="button"
+                            onClick={handleLikeLive}
+                            style={{
+                              background: isLiked ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                              border: `1px solid ${isLiked ? '#EF4444' : 'rgba(255, 255, 255, 0.15)'}`,
+                              borderRadius: '16px',
+                              padding: '5px 10px',
+                              color: isLiked ? '#EF4444' : '#F8FAFC',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s ease'
+                            }}
+                            title={isLiked ? 'Liked' : 'Like'}
+                          >
+                            <Heart
+                              size={14}
+                              fill={isLiked ? '#EF4444' : 'none'}
+                              color={isLiked ? '#EF4444' : 'currentColor'}
+                            />
+                            <span>{liveItem.likes_count || 0}</span>
+                          </button>
+
+                          {/* Live Comment */}
+                          <button
+                            type="button"
+                            onClick={handleCommentLive}
+                            style={{
+                              background: 'rgba(56, 189, 248, 0.12)',
+                              border: '1px solid rgba(56, 189, 248, 0.3)',
+                              borderRadius: '16px',
+                              padding: '5px 10px',
+                              color: '#38BDF8',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title={isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'}
+                          >
+                            <MessageSquare size={14} />
+                            <span>{liveItem.comments_count || 0}</span>
+                          </button>
+
+                          {/* Live Share */}
+                          <button
+                            type="button"
+                            onClick={handleShareLive}
+                            style={{
+                              background: 'rgba(34, 197, 94, 0.12)',
+                              border: '1px solid rgba(34, 197, 94, 0.3)',
+                              borderRadius: '16px',
+                              padding: '5px 10px',
+                              color: '#22C55E',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title={isKannada ? 'ವಾಟ್ಸಾಪ್ / ಹಂಚಿಕೊಳ್ಳಿ' : 'Share'}
+                          >
+                            <Share2 size={13} />
+                            <span>{isKannada ? 'ಹಂಚಿ' : 'Share'}</span>
+                          </button>
+                        </div>
+                      );
+                    })()}
+
                     {latestNews.length > 1 && (
                       <button
                         type="button"
@@ -1193,6 +1302,7 @@ export const App: React.FC = () => {
         {currentSection === 'photos' && (
           <GalleryScreen
             onOpenGalleryDetail={(item) => setSelectedGallery(item)}
+            onOpenComments={(item) => setCommentsNews(item)}
           />
         )}
 
@@ -1701,6 +1811,10 @@ export const App: React.FC = () => {
         isOpen={!!selectedGallery}
         onClose={() => setSelectedGallery(null)}
         onOpenReportModal={(type, id, title) => setReportState({ isOpen: true, itemType: type, itemId: id, itemTitle: title })}
+        onOpenComments={(item) => {
+          setSelectedGallery(null);
+          setCommentsNews(item);
+        }}
       />
 
       {/* Submit Report Modal */}

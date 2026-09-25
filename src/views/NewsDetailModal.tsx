@@ -450,7 +450,29 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
               style={{ fontSize: '0.82rem', minHeight: '40px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               <MessageSquare size={16} />
-              <span>{isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'} ({news.comments_count})</span>
+              <span>{isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'} ({news.comments_count || 0})</span>
+            </button>
+
+            <button
+              onClick={handleShare}
+              style={{
+                background: 'rgba(34, 197, 94, 0.12)',
+                border: '1px solid rgba(34, 197, 94, 0.35)',
+                borderRadius: 'var(--radius-md)',
+                color: '#22C55E',
+                padding: '8px 14px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                minHeight: '40px'
+              }}
+              title={isKannada ? 'ವಾಟ್ಸಾಪ್ / ಹಂಚಿಕೊಳ್ಳಿ' : 'Share on WhatsApp'}
+            >
+              {isCopied ? <Check size={16} /> : <Share2 size={16} />}
+              <span>{isCopied ? (isKannada ? 'ನಕಲು ಮಾಡಲಾಗಿದೆ' : 'Copied') : (isKannada ? 'ಹಂಚಿ' : 'Share')}</span>
             </button>
           </div>
 

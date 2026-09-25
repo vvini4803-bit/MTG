@@ -7,7 +7,7 @@ import { NewsItem, CommentItem } from '../types';
 import { X, Send, Heart, Flag, MessageSquare, User, Sparkles } from 'lucide-react';
 
 interface CommentsModalProps {
-  news: NewsItem | null;
+  news: { id: string; title_en: string; title_kn?: string; [key: string]: any } | null;
   isOpen: boolean;
   onClose: () => void;
   onOpenReportModal: (type: 'COMMENT', id: string, title: string) => void;
@@ -142,7 +142,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
           }}
         >
           <strong style={{ color: '#10B981' }}>{isKannada ? 'ವಿಷಯ: ' : 'Topic: '}</strong>
-          "{isKannada ? news.title_kn : news.title_en}"
+          "{isKannada ? (news.title_kn || news.title_en) : (news.title_en || news.title_kn)}"
         </div>
 
         {/* Comments List */}

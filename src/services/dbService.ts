@@ -987,14 +987,34 @@ class DatabaseService {
     this.comments = [newComment, ...this.comments];
     this.saveCollection('comments', this.comments);
 
-    // Increment post comment count
+    // Increment post/photo/story comment count
     const post = this.news.find((n) => n.id === comment.post_id);
     if (post) {
-      post.comments_count += 1;
+      post.comments_count = (post.comments_count || 0) + 1;
       this.saveCollection('news', [...this.news]);
       this.emit('news', this.news);
       if (isFirebaseConfigured && db) {
         updateDoc(doc(db, 'news', post.id), { comments_count: post.comments_count }).catch(() => {});
+      }
+    }
+
+    const photo = this.gallery.find((g) => g.id === comment.post_id);
+    if (photo) {
+      photo.comments_count = (photo.comments_count || 0) + 1;
+      this.saveCollection('gallery', [...this.gallery]);
+      this.emit('gallery', this.gallery);
+      if (isFirebaseConfigured && db) {
+        updateDoc(doc(db, 'gallery', photo.id), { comments_count: photo.comments_count }).catch(() => {});
+      }
+    }
+
+    const story = this.stories.find((s) => s.id === comment.post_id);
+    if (story) {
+      story.comments_count = (story.comments_count || 0) + 1;
+      this.saveCollection('stories', [...this.stories]);
+      this.emit('stories', this.stories);
+      if (isFirebaseConfigured && db) {
+        updateDoc(doc(db, 'stories', story.id), { comments_count: story.comments_count }).catch(() => {});
       }
     }
 
@@ -1229,7 +1249,34 @@ class DatabaseService {
     };
     this.stories = [newStory, ...this.stories];
     this.saveCollection('stories', this.stories);
+    this.emit('stories', this.stories);
     return newStory;
+  }
+
+  public async toggleLikeStory(storyId: string, uid: string): Promise<void> {
+    const item = this.stories.find((s) => s.id === storyId);
+    if (!item) return;
+
+    if (!Array.isArray(item.liked_by)) {
+      item.liked_by = [];
+    }
+    const alreadyLiked = item.liked_by.includes(uid);
+    if (alreadyLiked) {
+      item.liked_by = item.liked_by.filter((id) => id !== uid);
+      item.likes_count = Math.max(0, (item.likes_count || 1) - 1);
+    } else {
+      item.liked_by.push(uid);
+      item.likes_count = (item.likes_count || 0) + 1;
+    }
+
+    this.saveCollection('stories', [...this.stories]);
+    this.emit('stories', this.stories);
+    if (isFirebaseConfigured && db) {
+      updateDoc(doc(db, 'stories', item.id), {
+        likes_count: item.likes_count,
+        liked_by: item.liked_by
+      }).catch(() => {});
+    }
   }
 
   // --- VILLAGE DATA & STATS ---

@@ -4,20 +4,22 @@ import { useAuth } from '../context/AuthContext';
 import { dbService } from '../services/dbService';
 import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
 import { GalleryItem } from '../types';
-import { X, Heart, Flag, Share2, Download, HardDrive, Trash2, Check } from 'lucide-react';
+import { X, Heart, Flag, Share2, Download, HardDrive, Trash2, Check, MessageSquare } from 'lucide-react';
 
 interface GalleryDetailModalProps {
   item: GalleryItem | null;
   isOpen: boolean;
   onClose: () => void;
   onOpenReportModal: (type: 'MEDIA', id: string, title: string) => void;
+  onOpenComments?: (item: GalleryItem) => void;
 }
 
 export const GalleryDetailModal: React.FC<GalleryDetailModalProps> = ({
   item,
   isOpen,
   onClose,
-  onOpenReportModal
+  onOpenReportModal,
+  onOpenComments
 }) => {
   const { language, isKannada } = useLanguage();
   const { currentUser, isModerator, isAdmin } = useAuth();
@@ -194,6 +196,26 @@ export const GalleryDetailModal: React.FC<GalleryDetailModalProps> = ({
                   style={{ animation: isLiked ? 'heartPop 0.3s ease' : 'none' }}
                 />
                 <span>{likesCount} {isKannada ? 'ಮೆಚ್ಚುಗೆ' : 'Likes'}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  onClose();
+                  if (onOpenComments) onOpenComments(item);
+                }}
+                className="btn-secondary"
+                style={{
+                  padding: '8px 14px',
+                  fontSize: '0.85rem',
+                  minHeight: '40px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title={isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'}
+              >
+                <MessageSquare size={16} />
+                <span>{isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'} ({item.comments_count || 0})</span>
               </button>
 
               <button

@@ -10,6 +10,7 @@ import {
   Plus,
   Heart,
   Share2,
+  MessageSquare,
   Filter,
   ShieldCheck,
   CheckCircle2,
@@ -22,9 +23,10 @@ import {
 
 interface GalleryScreenProps {
   onOpenGalleryDetail: (item: GalleryItem) => void;
+  onOpenComments?: (item: GalleryItem) => void;
 }
 
-export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetail }) => {
+export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetail, onOpenComments }) => {
   const { language, isKannada } = useLanguage();
   const { currentUser } = useAuth();
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
@@ -254,12 +256,13 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
                     zIndex: 2
                   }}
                 >
+                  {/* Like Button */}
                   <button
                     onClick={(e) => handleLikePhoto(e, item.id)}
                     style={{
-                      background: isLiked ? 'rgba(239, 68, 68, 0.85)' : 'rgba(0, 0, 0, 0.55)',
+                      background: isLiked ? 'rgba(239, 68, 68, 0.88)' : 'rgba(0, 0, 0, 0.65)',
                       backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
                       borderRadius: 'var(--radius-full)',
                       padding: '5px 10px',
                       color: '#FFFFFF',
@@ -270,7 +273,7 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
                       fontSize: '0.78rem',
                       fontWeight: 700,
                       minHeight: '32px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                       transition: 'all 0.15s ease'
                     }}
                     title={isLiked ? 'Liked' : 'Like'}
@@ -284,12 +287,47 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
                     <span>{item.likes_count || 0}</span>
                   </button>
 
+                  {/* Comment Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerHapticFeedback();
+                      if (onOpenComments) {
+                        onOpenComments(item);
+                      } else {
+                        onOpenGalleryDetail(item);
+                      }
+                    }}
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.65)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(56, 189, 248, 0.4)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '5px 10px',
+                      color: '#38BDF8',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      minHeight: '32px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title={isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'}
+                  >
+                    <MessageSquare size={13} color="#38BDF8" />
+                    <span>{item.comments_count || 0}</span>
+                  </button>
+
+                  {/* Share Button */}
                   <button
                     onClick={(e) => handleShareWhatsApp(e, item)}
                     style={{
-                      background: 'rgba(0, 0, 0, 0.55)',
+                      background: 'rgba(0, 0, 0, 0.65)',
                       backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
                       borderRadius: '50%',
                       width: '32px',
                       height: '32px',
@@ -298,9 +336,9 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
                     }}
-                    title="Share on WhatsApp"
+                    title={isKannada ? 'ವಾಟ್ಸಾಪ್ / ಹಂಚಿಕೊಳ್ಳಿ' : 'Share on WhatsApp'}
                   >
                     <Share2 size={13} />
                   </button>
@@ -311,7 +349,7 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.88) 100%)',
+                    background: 'linear-gradient(180deg, transparent 35%, rgba(0,0,0,0.9) 100%)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'flex-end',
@@ -340,9 +378,19 @@ export const GalleryScreen: React.FC<GalleryScreenProps> = ({ onOpenGalleryDetai
                   >
                     {isKannada ? item.title_kn : item.title_en}
                   </h4>
-                  <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>
-                    {item.author_name}
-                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '3px' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>
+                      {item.author_name}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', color: 'rgba(255,255,255,0.85)' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <Heart size={11} fill={isLiked ? '#EF4444' : 'none'} color={isLiked ? '#EF4444' : '#FFFFFF'} /> {item.likes_count || 0}
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <MessageSquare size={11} color="#38BDF8" /> {item.comments_count || 0}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
