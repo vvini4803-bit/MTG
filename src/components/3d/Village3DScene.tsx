@@ -70,7 +70,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
   // Map any incoming location ID to landmark ID
   const activeLandmarkId: LandmarkId = useMemo(() => {
     const raw = (selectedId || '').toLowerCase();
-    if (raw.includes('shrine') || raw.includes('stone') || raw.includes('huchharaya') || raw.includes('ancient')) return 'shrine';
+    if (raw.includes('thimmappa') || raw.includes('lakshmi') || raw.includes('shrine') || raw.includes('stone') || raw.includes('huchharaya') || raw.includes('ancient')) return 'shrine';
     if (raw.includes('kalle') || raw.includes('temple1') || raw.includes('sports') || raw.includes('ground')) return 'temple1';
     if (raw.includes('anganwadi') || raw.includes('kindergarden') || raw.includes('clinic') || raw.includes('health') || raw.includes('children')) return 'kindergarden';
     if (raw.includes('anjaneya') || raw.includes('temple') || raw.includes('ranganatha')) return 'temple';
@@ -126,22 +126,24 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     },
     {
       id: 'school',
-      label_en: 'Govt Primary School',
-      label_kn: 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ',
-      sub_en: 'Karnataka Flag',
+      label_en: 'Govt Lower Primary School',
+      label_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ',
+      sub_en: 'School & Playground',
       sub_kn: 'ಶಾಲಾ ಆವರಣ & ಧ್ವಜ',
       icon: '🏫',
       color: '#3B82F6',
+      map_url: 'https://maps.app.goo.gl/fcnALXpVzfTrZ3UG6?g_st=aw',
       anime_image: '/anime/school.jpg'
     },
     {
       id: 'shrine',
-      label_en: 'Ancient Stone Cave Shrine',
-      label_kn: 'ಪುರಾತನ ಶಿಲಾ ಗುಡಿ (ಹುಚ್ಚರಾಯ)',
-      sub_en: 'Megalithic Dolmen',
-      sub_kn: 'ಪ್ರಾಚೀನ ಕಲ್ಲಿನ ಗುಡಿ',
-      icon: '🪨',
+      label_en: 'Sri Lakshmi Thimmappa Temple',
+      label_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ',
+      sub_en: 'Revered Sacred Shrine',
+      sub_kn: 'ಪವಿತ್ರ ದೇವಸ್ಥಾನ',
+      icon: '🛕',
       color: '#059669',
+      map_url: 'https://maps.app.goo.gl/aekVSfTPkpzUh2hj9?g_st=aw',
       anime_image: '/anime/stone_shrine.jpg'
     },
     {
@@ -674,7 +676,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     createAnimeBillboard('temple', templeGroup, 5.6);
 
     // =========================================================================
-    // 🪨 LANDMARK 3: ANCIENT STONE CAVE SHRINE (North-East: 5.2, 0, -5.5)
+    // 🛕 LANDMARK 3: SRI LAKSHMI THIMMAPPA SWAMY TEMPLE (North-East: 5.2, 0, -5.5)
     // =========================================================================
     const shrineGroup = new THREE.Group();
     shrineGroup.position.set(5.2, 0, -5.5);
@@ -726,11 +728,11 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     shrineGroup.add(shrineLight);
     pointLights.push(shrineLight);
 
-    // Floating Anime Billboard above Ancient Stone Shrine
+    // Floating Anime Billboard above Sri Lakshmi Thimmappa Swamy Temple
     createAnimeBillboard('shrine', shrineGroup, 3.6);
 
     // =========================================================================
-    // 🏫 LANDMARK 4: GOVT HIGHER PRIMARY SCHOOL (South-East: 6.2, 0, 5.2)
+    // 🏫 LANDMARK 4: GOVT LOWER PRIMARY SCHOOL (South-East: 6.2, 0, 5.2)
     // =========================================================================
     const schoolGroup = new THREE.Group();
     schoolGroup.position.set(6.2, 0, 5.2);

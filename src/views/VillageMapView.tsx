@@ -116,42 +116,44 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     anime_title_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ಗುಡಿ & ಗೋಪುರ (ಅನಿಮೆ 3D)'
   },
   {
-    id: 'mtg_stone_shrine',
-    name_en: 'Ancient Stone Cave Shrine (Huchharaya Gudi)',
-    name_kn: 'ಪುರಾತನ ಶಿಲಾ ಗುಡಿ (ಹುಚ್ಚರಾಯ ಸ್ವಾಮಿ)',
+    id: 'mtg_temple_thimmappa',
+    name_en: 'Sri Lakshmi Thimmappa Swamy Temple',
+    name_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ',
     category: 'TEMPLE',
-    icon: '🪨',
+    icon: '🛕',
     color: '#059669',
-    desc_en: 'Prehistoric megalithic stone dolmen rock shrine enveloped in lush green vines, housing a sacred ancestral deity.',
-    desc_kn: 'ನೈಸರ್ಗಿಕ ಶಿಲಾ ಹಲಗೆಗಳಿಂದ ನಿರ್ಮಿತ ಪ್ರಾಚೀನ ಪವಿತ್ರ ಗುಡಿ ಹಾಗೂ ಗ್ರಾಮ ದೇವತೆಯ ಸನ್ನಿಧಿ.',
-    distance_en: 'North-East Hillock',
-    distance_kn: 'ಈಶಾನ್ಯ ಗುಡ್ಡದ ಸಾಲು',
+    desc_en: 'Sacred historic shrine of Lord Sri Lakshmi Thimmappa Swamy in Muttagundi, revered village deity and holy pilgrimage site.',
+    desc_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಪವಿತ್ರ ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ, ಗ್ರಾಮಸ್ಥರ ಆರಾಧ್ಯ ದೈವ ಹಾಗೂ ಭಕ್ತರ ಶ್ರದ್ಧಾ ಕೇಂದ್ರ.',
+    distance_en: 'North-East Side',
+    distance_kn: 'ಈಶಾನ್ಯ ಭಾಗ',
     timings_en: 'Open all day for darshan',
     timings_kn: 'ದಿನವಿಡೀ ದರ್ಶನ ಲಭ್ಯ',
     coords: { lat: 13.7572, lng: 76.3342 },
+    map_url: 'https://maps.app.goo.gl/aekVSfTPkpzUh2hj9?g_st=aw',
     verified: true,
     anime_image: '/anime/stone_shrine.jpg',
-    anime_title_en: 'Ancient Megalithic Stone Shrine (Anime 3D)',
-    anime_title_kn: 'ಪುರಾತನ ಶಿಲಾ ಗುಡಿ (ಅನಿಮೆ 3D ನೋಟ)'
+    anime_title_en: 'Sri Lakshmi Thimmappa Swamy Temple (Anime 3D)',
+    anime_title_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ (ಅನಿಮೆ 3D)'
   },
   {
     id: 'mtg_school',
-    name_en: 'Govt Higher Primary School Muttagondi',
-    name_kn: 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ಮುತ್ತಾಗೊಂದಿ',
+    name_en: 'Govt Lower Primary School Muttagondi',
+    name_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ಮುತ್ತಾಗೊಂದಿ',
     category: 'SCHOOL',
     icon: '🏫',
     color: '#3B82F6',
-    desc_en: 'Village primary school with Karnataka flag insignia, children classrooms, shaded veranda, and mid-day meal.',
-    desc_kn: 'ಕನ್ನಡ ಧ್ವಜ ಲಾಂಛನವಿರುವ ಗ್ರಾಮದ ಪ್ರಾಥಮಿಕ ಶಿಕ್ಷಣ ಕೇಂದ್ರ, ಮಕ್ಕಳಿಗೆ ಬಿಸಿಯೂಟ ಮತ್ತು ಆವರಣ.',
+    desc_en: 'Village lower primary school with Karnataka flag insignia, classrooms, shaded veranda, and mid-day meal scheme.',
+    desc_kn: 'ಕನ್ನಡ ಧ್ವಜ ಲಾಂಛನವಿರುವ ಗ್ರಾಮದ ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ, ಮಕ್ಕಳಿಗೆ ಬಿಸಿಯೂಟ ಮತ್ತು ಶಾಲಾ ಆವರಣ.',
     distance_en: 'School Road',
     distance_kn: 'ಶಾಲೆ ರಸ್ತೆ',
     timings_en: '9:30 AM - 4:30 PM',
     timings_kn: 'ಬೆಳಗ್ಗೆ ೯:೩೦ - ಸಂಜೆ ೪:೩೦',
     coords: { lat: 13.7554, lng: 76.3330 },
+    map_url: 'https://maps.app.goo.gl/fcnALXpVzfTrZ3UG6?g_st=aw',
     verified: true,
     anime_image: '/anime/school.jpg',
-    anime_title_en: 'Govt Primary School Muttagondi (Anime 3D)',
-    anime_title_kn: 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಅನಿಮೆ 3D)'
+    anime_title_en: 'Govt Lower Primary School Muttagondi (Anime 3D)',
+    anime_title_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಅನಿಮೆ 3D)'
   },
   {
     id: 'mtg_anganwadi',
@@ -287,7 +289,7 @@ export const VillageMapView: React.FC = () => {
         if (Array.isArray(parsed) && parsed.length > 0) {
           // Keep user-added custom places and ensure latest verified locations are always up-to-date
           const customPlaces = parsed.filter(
-            (p: MapLocationItem) => !p.verified || !VERIFIED_VILLAGE_LOCATIONS.some((v) => v.id === p.id)
+            (p: MapLocationItem) => p.id !== 'mtg_stone_shrine' && (!p.verified || !VERIFIED_VILLAGE_LOCATIONS.some((v) => v.id === p.id))
           );
           return [...VERIFIED_VILLAGE_LOCATIONS, ...customPlaces];
         }
@@ -318,9 +320,9 @@ export const VillageMapView: React.FC = () => {
   const handle3DLandmarkSelect = (landmarkId: LandmarkId) => {
     let match: MapLocationItem | undefined;
     if (landmarkId === 'shrine') {
-      match = locations.find((l) => l.id.includes('stone') || l.id.includes('shrine') || l.name_en.toLowerCase().includes('stone'));
+      match = locations.find((l) => l.id.includes('thimmappa') || l.id.includes('stone') || l.id.includes('shrine') || l.name_kn.includes('ತಿಮ್ಮಪ್ಪ'));
     } else if (landmarkId === 'temple') {
-      match = locations.find((l) => l.id.includes('anjaneya') || (l.category === 'TEMPLE' && !l.id.includes('kalle') && !l.id.includes('stone')));
+      match = locations.find((l) => l.id.includes('anjaneya') || (l.category === 'TEMPLE' && !l.id.includes('kalle') && !l.id.includes('stone') && !l.id.includes('thimmappa')));
     } else if (landmarkId === 'temple1') {
       match = locations.find((l) => l.id.includes('kalle') || l.category === 'TEMPLE');
     } else if (landmarkId === 'panchayat') {
@@ -921,7 +923,7 @@ export const VillageMapView: React.FC = () => {
                   (id === 'temple1' && l.id.includes('kalle')) ||
                   (id === 'school' && l.id.includes('school')) ||
                   (id === 'kindergarden' && l.id.includes('anganwadi')) ||
-                  (id === 'shrine' && l.id.includes('stone'))
+                  (id === 'shrine' && (l.id.includes('thimmappa') || l.id.includes('stone')))
                 ));
                 if (match) {
                   setSelectedLocation(match);
