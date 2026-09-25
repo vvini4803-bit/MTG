@@ -411,7 +411,7 @@ button, input, textarea, select {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 1000;
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -419,7 +419,7 @@ button, input, textarea, select {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .modal-content {
@@ -585,6 +585,7 @@ button, input, textarea, select {
   .modal-overlay {
     align-items: flex-end;
     padding: 0;
+    overflow: hidden;
   }
 
   .modal-content {

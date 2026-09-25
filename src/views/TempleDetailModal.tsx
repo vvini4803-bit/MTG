@@ -43,13 +43,23 @@ export const TempleDetailModal: React.FC<TempleDetailModalProps> = ({
       : temple.image_url;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} style={{ overflow: 'hidden' }}>
       <div
         className="modal-content"
-        style={{ maxWidth: '640px', padding: 0, maxHeight: '90vh', overflowY: 'auto' }}
+        style={{
+          maxWidth: '680px',
+          width: '100%',
+          height: '90vh',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 0,
+          overflow: 'hidden',
+          borderRadius: '24px 24px 0 0'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ position: 'relative', height: '240px', background: '#0D1629' }}>
+        <div style={{ position: 'relative', height: '190px', minHeight: '190px', flexShrink: 0, background: '#0D1629' }}>
           <img
             src={cleanImageUrl}
             alt={name}
@@ -62,25 +72,37 @@ export const TempleDetailModal: React.FC<TempleDetailModalProps> = ({
             onClick={onClose}
             style={{
               position: 'absolute',
-              top: '16px',
-              right: '16px',
-              background: 'rgba(0,0,0,0.6)',
-              border: 'none',
+              top: '14px',
+              right: '14px',
+              background: 'rgba(0,0,0,0.7)',
+              border: '1px solid rgba(255,255,255,0.25)',
               borderRadius: '50%',
               color: '#FFFFFF',
-              width: '36px',
-              height: '36px',
+              width: '38px',
+              height: '38px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              zIndex: 20
             }}
+            aria-label="Close"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div style={{ padding: '24px' }}>
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          overscrollBehavior: 'contain',
+          padding: '20px 20px 36px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span className="badge badge-verified">
               <ShieldCheck size={12} />
