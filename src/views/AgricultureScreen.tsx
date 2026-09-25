@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { dbService } from '../services/dbService';
+import { backNavigation } from '../services/backNavigation';
 import { CropItem } from '../types';
 import {
   Wheat,
@@ -40,6 +41,13 @@ export const AgricultureScreen: React.FC<AgricultureScreenProps> = ({
   useEffect(() => {
     return dbService.subscribeCrops(setCrops);
   }, []);
+
+  useEffect(() => {
+    if (showAddModal) {
+      const dismiss = backNavigation.pushModal('addCropModal', () => setShowAddModal(false));
+      return () => dismiss();
+    }
+  }, [showAddModal]);
 
   const handleAddCrop = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,7 +249,17 @@ export const AgricultureScreen: React.FC<AgricultureScreenProps> = ({
       {/* Add Crop Guide Modal */}
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-content" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-content"
+            style={{
+              maxWidth: '520px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
                 {isKannada ? '🌾 ಹೊಸ ಬೆಳೆ ಮಾಹಿತಿ ಸೇರಿಸಿ' : '🌾 Add Crop Cultivation Guide'}

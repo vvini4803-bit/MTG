@@ -66,10 +66,18 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} style={{ touchAction: 'pan-y' }}>
       <div
         className="modal-content"
-        style={{ maxWidth: '620px', padding: 0, overflow: 'hidden' }}
+        style={{
+          maxWidth: '620px',
+          padding: 0,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          overscrollBehavior: 'contain'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ position: 'relative', height: '240px' }}>

@@ -82,10 +82,18 @@ export const GalleryDetailModal: React.FC<GalleryDetailModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} style={{ touchAction: 'pan-y' }}>
       <div
         className="modal-content mobile-bottom-sheet"
-        style={{ maxWidth: '720px', padding: 0, overflow: 'hidden' }}
+        style={{
+          maxWidth: '720px',
+          padding: 0,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          overscrollBehavior: 'contain'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Photo Container */}

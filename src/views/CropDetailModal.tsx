@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { backNavigation } from '../services/backNavigation';
 import { CropItem } from '../types';
 import {
   X,
@@ -25,6 +26,13 @@ export const CropDetailModal: React.FC<CropDetailModalProps> = ({
 }) => {
   const { language, isKannada } = useLanguage();
 
+  useEffect(() => {
+    if (isOpen) {
+      const dismiss = backNavigation.pushModal('cropDetailModal', onClose);
+      return () => dismiss();
+    }
+  }, [isOpen, onClose]);
+
   if (!isOpen || !crop) return null;
 
   const name = language === 'kn' ? crop.name_kn : crop.name_en;
@@ -37,13 +45,21 @@ export const CropDetailModal: React.FC<CropDetailModalProps> = ({
   const risks = language === 'kn' ? crop.risks_kn : crop.risks_en;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} style={{ touchAction: 'pan-y' }}>
       <div
         className="modal-content"
-        style={{ maxWidth: '640px', padding: 0, overflow: 'hidden' }}
+        style={{
+          maxWidth: '640px',
+          padding: 0,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          overscrollBehavior: 'contain'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ position: 'relative', height: '220px' }}>
+        <div style={{ position: 'relative', height: '220px', background: '#0D1629' }}>
           <img src={crop.image_url} alt={crop.name_en} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <button
             onClick={onClose}
@@ -51,8 +67,8 @@ export const CropDetailModal: React.FC<CropDetailModalProps> = ({
               position: 'absolute',
               top: '16px',
               right: '16px',
-              background: 'rgba(0,0,0,0.6)',
-              border: 'none',
+              background: 'rgba(0,0,0,0.65)',
+              border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: '50%',
               color: '#FFFFFF',
               width: '36px',
@@ -60,8 +76,10 @@ export const CropDetailModal: React.FC<CropDetailModalProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              zIndex: 10
             }}
+            aria-label="Close"
           >
             <X size={20} />
           </button>
@@ -150,18 +168,37 @@ export const CropDetailModal: React.FC<CropDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Source Attribution */}
+          {/* Source Attribution & Bottom Close */}
           <div style={{
             borderTop: '1px solid var(--glass-border)',
-            paddingTop: '12px',
+            paddingTop: '14px',
             fontSize: '0.75rem',
             color: 'var(--text-muted)',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px'
           }}>
-            <span>Verified Source: {crop.source}</span>
-            <span>Date: {crop.verified_date}</span>
+            <div>
+              <span>Verified Source: {crop.source}</span>
+              <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.7rem' }}>
+                Date: {crop.verified_date}
+              </span>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="btn-secondary"
+              style={{
+                fontSize: '0.78rem',
+                padding: '6px 14px',
+                minHeight: '34px',
+                borderRadius: 'var(--radius-sm)'
+              }}
+            >
+              {isKannada ? 'ಮುಚ್ಚಿ (Close)' : 'Close'}
+            </button>
           </div>
         </div>
       </div>
