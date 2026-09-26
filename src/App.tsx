@@ -795,6 +795,7 @@ export const App: React.FC = () => {
 
             {/* 🔴 LIVE VILLAGE UPDATE (Interactive Live Banner - Click shows new update) */}
             {(() => {
+              const latestNews = dbService.getNews();
               const liveItem = (latestNews.length > 0 && latestNews[liveNewsIndex % latestNews.length])
                 ? latestNews[liveNewsIndex % latestNews.length]
                 : (latestNews.length > 0 ? latestNews[0] : (dbService.getNews()[0] || null));
@@ -824,14 +825,12 @@ export const App: React.FC = () => {
                   style={{
                     background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(6, 78, 59, 0.25) 100%)',
                     border: '1.5px solid rgba(16, 185, 129, 0.4)',
-                    borderRadius: '16px',
+                    borderRadius: '18px',
                     padding: '12px 18px',
                     marginBottom: '22px',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '12px',
+                    flexDirection: 'column',
+                    gap: '10px',
                     cursor: 'pointer',
                     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3), 0 0 16px rgba(16, 185, 129, 0.15)',
                     transition: 'all 0.25s ease'
@@ -839,253 +838,271 @@ export const App: React.FC = () => {
                   className="card-3d"
                   title={isKannada ? 'ಹೊಸ ಲೈವ್ ಅಪ್‌ಡೇಟ್ ವಿವರ ನೋಡಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to view live update details'}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '240px' }}>
-                    {/* 🔴 Live Indicator Badge */}
-                    <div
-                      style={{
-                        background: 'rgba(239, 68, 68, 0.2)',
-                        color: '#EF4444',
-                        border: '1px solid rgba(239, 68, 68, 0.5)',
-                        padding: '5px 12px',
-                        borderRadius: '20px',
-                        fontSize: '0.74rem',
-                        fontWeight: 900,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        flexShrink: 0,
-                        letterSpacing: '0.04em'
-                      }}
-                    >
-                      <span
+                  {/* Top Row: Live Badge, Thumbnail, Title/Author & Social Actions */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '12px',
+                      width: '100%'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '220px' }}>
+                      {/* 🔴 Live Indicator Badge */}
+                      <div
                         style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: '#EF4444',
-                          display: 'inline-block',
-                          boxShadow: '0 0 8px #EF4444'
-                        }}
-                      />
-                      <span>{isKannada ? '🔴 ಲೈವ್ ಅಪ್‌ಡೇಟ್' : '🔴 LIVE UPDATE'}</span>
-                      {latestNews.length > 1 && (
-                        <span
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.2)',
-                            color: '#FFFFFF',
-                            borderRadius: '8px',
-                            padding: '1px 5px',
-                            fontSize: '0.65rem',
-                            fontWeight: 800,
-                            marginLeft: '2px'
-                          }}
-                        >
-                          {(liveNewsIndex % latestNews.length) + 1}/{latestNews.length}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Thumbnail preview if update has image */}
-                    {liveItem?.media_url && (
-                      <img
-                        src={liveItem.media_url}
-                        alt="preview"
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '8px',
-                          objectFit: 'cover',
-                          border: '1px solid rgba(16, 185, 129, 0.35)',
-                          flexShrink: 0
-                        }}
-                      />
-                    )}
-
-                    {/* Title & metadata */}
-                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-                      <span
-                        style={{
-                          fontSize: '0.92rem',
-                          color: '#F8FAFC',
-                          fontWeight: 700,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          lineHeight: 1.3
+                          background: 'rgba(239, 68, 68, 0.2)',
+                          color: '#EF4444',
+                          border: '1px solid rgba(239, 68, 68, 0.5)',
+                          padding: '5px 12px',
+                          borderRadius: '20px',
+                          fontSize: '0.74rem',
+                          fontWeight: 900,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          flexShrink: 0,
+                          letterSpacing: '0.04em'
                         }}
                       >
-                        {liveItem
-                          ? (isKannada ? liveItem.title_kn : liveItem.title_en)
-                          : (isKannada ? 'ಪ್ರಸ್ತುತ ಯಾವುದೇ ಹೊಸ ಅಪ್‌ಡೇಟ್ ಇಲ್ಲ. ಹೊಸ ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಲು ಕ್ಲಿಕ್ ಮಾಡಿ!' : 'No new updates right now. Click to share an update!')}
-                      </span>
-                      {liveItem && (
-                        <span style={{ fontSize: '0.73rem', color: '#94A3B8', marginTop: '2px' }}>
-                          {liveItem.author_name} • {new Date(liveItem.created_at).toLocaleDateString()}
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#EF4444',
+                            display: 'inline-block',
+                            boxShadow: '0 0 8px #EF4444'
+                          }}
+                        />
+                        <span>{isKannada ? '🔴 ಲೈವ್ ಅಪ್‌ಡೇಟ್' : '🔴 LIVE UPDATE'}</span>
+                        {latestNews.length > 1 && (
+                          <span
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.2)',
+                              color: '#FFFFFF',
+                              borderRadius: '8px',
+                              padding: '1px 5px',
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              marginLeft: '2px'
+                            }}
+                          >
+                            {(liveNewsIndex % latestNews.length) + 1}/{latestNews.length}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Thumbnail preview if update has image */}
+                      {liveItem?.media_url && (
+                        <img
+                          src={liveItem.media_url}
+                          alt="preview"
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '8px',
+                            objectFit: 'cover',
+                            border: '1px solid rgba(16, 185, 129, 0.35)',
+                            flexShrink: 0
+                          }}
+                        />
+                      )}
+
+                      {/* Title & metadata */}
+                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                        <span
+                          style={{
+                            fontSize: '0.92rem',
+                            color: '#F8FAFC',
+                            fontWeight: 700,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            lineHeight: 1.3
+                          }}
+                        >
+                          {liveItem
+                            ? (isKannada ? liveItem.title_kn : liveItem.title_en)
+                            : (isKannada ? 'ಪ್ರಸ್ತುತ ಯಾವುದೇ ಹೊಸ ಅಪ್‌ಡೇಟ್ ಇಲ್ಲ. ಹೊಸ ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಲು ಕ್ಲಿಕ್ ಮಾಡಿ!' : 'No new updates right now. Click to share an update!')}
                         </span>
+                        {liveItem && (
+                          <span style={{ fontSize: '0.73rem', color: '#94A3B8', marginTop: '2px' }}>
+                            {liveItem.author_name} • {new Date(liveItem.created_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Social Actions (Like, Comment, Share, Next) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                      {liveItem && (() => {
+                        const effectiveUid = getEffectiveUserId(currentUser);
+                        const isLiked = Array.isArray(liveItem.liked_by) && liveItem.liked_by.includes(effectiveUid);
+
+                        const handleLikeLive = async (e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          triggerHapticFeedback();
+                          await dbService.toggleLikeNews(liveItem.id, effectiveUid);
+                        };
+
+                        const handleCommentLive = (e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          setCommentsNews(liveItem);
+                        };
+
+                        const handleShareLive = (e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          triggerHapticFeedback();
+                          const title = isKannada ? liveItem.title_kn : liveItem.title_en;
+                          const text = `📰 *${title}* - ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಲೈವ್ ಸುದ್ದಿ:\n${window.location.href}`;
+                          if (navigator.share) {
+                            navigator.share({ title, text, url: window.location.href }).catch(() => {});
+                          } else {
+                            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+                          }
+                        };
+
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {/* Live Like */}
+                            <button
+                              type="button"
+                              onClick={handleLikeLive}
+                              style={{
+                                background: isLiked ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                                border: `1px solid ${isLiked ? '#EF4444' : 'rgba(255, 255, 255, 0.15)'}`,
+                                borderRadius: '16px',
+                                padding: '5px 10px',
+                                color: isLiked ? '#EF4444' : '#F8FAFC',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title={isLiked ? 'Liked' : 'Like'}
+                            >
+                              <Heart
+                                size={14}
+                                fill={isLiked ? '#EF4444' : 'none'}
+                                color={isLiked ? '#EF4444' : 'currentColor'}
+                              />
+                              <span>{liveItem.likes_count || 0}</span>
+                            </button>
+
+                            {/* Live Comment */}
+                            <button
+                              type="button"
+                              onClick={handleCommentLive}
+                              style={{
+                                background: 'rgba(56, 189, 248, 0.12)',
+                                border: '1px solid rgba(56, 189, 248, 0.3)',
+                                borderRadius: '16px',
+                                padding: '5px 10px',
+                                color: '#38BDF8',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                              title={isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'}
+                            >
+                              <MessageSquare size={14} />
+                              <span>{liveItem.comments_count || 0}</span>
+                            </button>
+
+                            {/* Live Share */}
+                            <button
+                              type="button"
+                              onClick={handleShareLive}
+                              style={{
+                                background: 'rgba(34, 197, 94, 0.12)',
+                                border: '1px solid rgba(34, 197, 94, 0.3)',
+                                borderRadius: '16px',
+                                padding: '5px 10px',
+                                color: '#22C55E',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                              title={isKannada ? 'ವಾಟ್ಸಾಪ್ / ಹಂಚಿಕೊಳ್ಳಿ' : 'Share'}
+                            >
+                              <Share2 size={13} />
+                              <span>{isKannada ? 'ಹಂಚಿ' : 'Share'}</span>
+                            </button>
+                          </div>
+                        );
+                      })()}
+
+                      {latestNews.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLiveNewsIndex((prev) => (prev + 1) % latestNews.length);
+                          }}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            borderRadius: '16px',
+                            padding: '4px 10px',
+                            fontSize: '0.72rem',
+                            color: '#CBD5E1',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title={isKannada ? 'ಮುಂದಿನ ಅಪ್‌ಡೇಟ್' : 'Next update'}
+                        >
+                          <span>{isKannada ? 'ಮುಂದಿನದು' : 'Next'}</span>
+                          <span>→</span>
+                        </button>
                       )}
                     </div>
                   </div>
 
-                  {/* Actions right side */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
-                    {liveItem && (() => {
-                      const effectiveUid = getEffectiveUserId(currentUser);
-                      const isLiked = Array.isArray(liveItem.liked_by) && liveItem.liked_by.includes(effectiveUid);
+                  {/* ⬇️ Moved Down: Simple, Comfortable View Details Tagline Bar */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                      paddingTop: '8px',
+                      marginTop: '2px',
+                      width: '100%'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.74rem', color: '#94A3B8' }}>
+                      {isKannada ? 'ಗ್ರಾಮದ ಪ್ರಮುಖ ಲೈವ್ ಸಮಾಚಾರ' : 'Official village live update'}
+                    </span>
 
-                      const handleLikeLive = async (e: React.MouseEvent) => {
-                        e.stopPropagation();
-                        triggerHapticFeedback();
-                        await dbService.toggleLikeNews(liveItem.id, effectiveUid);
-                      };
-
-                      const handleCommentLive = (e: React.MouseEvent) => {
-                        e.stopPropagation();
-                        setCommentsNews(liveItem);
-                      };
-
-                      const handleShareLive = (e: React.MouseEvent) => {
-                        e.stopPropagation();
-                        triggerHapticFeedback();
-                        const title = isKannada ? liveItem.title_kn : liveItem.title_en;
-                        const text = `📰 *${title}* - ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಲೈವ್ ಸುದ್ದಿ:\n${window.location.href}`;
-                        if (navigator.share) {
-                          navigator.share({ title, text, url: window.location.href }).catch(() => {});
-                        } else {
-                          window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
-                        }
-                      };
-
-                      return (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {/* Live Like */}
-                          <button
-                            type="button"
-                            onClick={handleLikeLive}
-                            style={{
-                              background: isLiked ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                              border: `1px solid ${isLiked ? '#EF4444' : 'rgba(255, 255, 255, 0.15)'}`,
-                              borderRadius: '16px',
-                              padding: '5px 10px',
-                              color: isLiked ? '#EF4444' : '#F8FAFC',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              transition: 'all 0.15s ease'
-                            }}
-                            title={isLiked ? 'Liked' : 'Like'}
-                          >
-                            <Heart
-                              size={14}
-                              fill={isLiked ? '#EF4444' : 'none'}
-                              color={isLiked ? '#EF4444' : 'currentColor'}
-                            />
-                            <span>{liveItem.likes_count || 0}</span>
-                          </button>
-
-                          {/* Live Comment */}
-                          <button
-                            type="button"
-                            onClick={handleCommentLive}
-                            style={{
-                              background: 'rgba(56, 189, 248, 0.12)',
-                              border: '1px solid rgba(56, 189, 248, 0.3)',
-                              borderRadius: '16px',
-                              padding: '5px 10px',
-                              color: '#38BDF8',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                            title={isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'}
-                          >
-                            <MessageSquare size={14} />
-                            <span>{liveItem.comments_count || 0}</span>
-                          </button>
-
-                          {/* Live Share */}
-                          <button
-                            type="button"
-                            onClick={handleShareLive}
-                            style={{
-                              background: 'rgba(34, 197, 94, 0.12)',
-                              border: '1px solid rgba(34, 197, 94, 0.3)',
-                              borderRadius: '16px',
-                              padding: '5px 10px',
-                              color: '#22C55E',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                            title={isKannada ? 'ವಾಟ್ಸಾಪ್ / ಹಂಚಿಕೊಳ್ಳಿ' : 'Share'}
-                          >
-                            <Share2 size={13} />
-                            <span>{isKannada ? 'ಹಂಚಿ' : 'Share'}</span>
-                          </button>
-                        </div>
-                      );
-                    })()}
-
-                    {latestNews.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setLiveNewsIndex((prev) => (prev + 1) % latestNews.length);
-                        }}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.08)',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
-                          borderRadius: '16px',
-                          padding: '4px 10px',
-                          fontSize: '0.72rem',
-                          color: '#CBD5E1',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                        title={isKannada ? 'ಮುಂದಿನ ಅಪ್‌ಡೇಟ್' : 'Next update'}
-                      >
-                        <span>{isKannada ? 'ಮುಂದಿನದು' : 'Next'}</span>
-                        <span>→</span>
-                      </button>
-                    )}
-
-                    {/* View Details Button */}
-                    <button
-                      type="button"
-                      onClick={handleOpenLiveUpdate}
+                    <div
                       style={{
-                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.3) 100%)',
-                        border: '1.5px solid #10B981',
-                        borderRadius: '20px',
-                        padding: '6px 14px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
                         color: '#34D399',
                         fontSize: '0.8rem',
                         fontWeight: 800,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        outline: 'none'
+                        transition: 'transform 0.15s ease'
                       }}
-                      title={isKannada ? 'ಲೈವ್ ಅಪ್‌ಡೇಟ್ ಸಂಪೂರ್ಣ ವಿವರ ನೋಡಿ' : 'View live update full details'}
                     >
-                      <span>{isKannada ? 'ವಿವರ ನೋಡಿ (View Details)' : 'View Details'}</span>
+                      <span>{isKannada ? 'ವಿವರ ನೋಡಿ' : 'View Details'}</span>
                       <ChevronRight size={15} />
-                    </button>
+                    </div>
                   </div>
                 </div>
               );
