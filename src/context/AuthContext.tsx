@@ -106,7 +106,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync active user in local storage
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('gramasiri_active_user', JSON.stringify(currentUser));
+      try {
+        localStorage.setItem('gramasiri_active_user', JSON.stringify(currentUser));
+      } catch (e) {
+        console.warn('Could not persist gramasiri_active_user:', e);
+      }
       realtimeSync.setCurrentUser(currentUser.uid);
     } else {
       localStorage.removeItem('gramasiri_active_user');
@@ -538,11 +542,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = { ...currentUser, ...data };
     setCurrentUser(updated);
 
-    if (data.photoUrl) {
-      dbService.syncUserPhoto(currentUser.uid, data.photoUrl, data.name || currentUser.name).catch(() => {});
-    } else {
-      dbService.registerOrUpdateUser(updated).catch(() => {});
+    try {
+      localStorage.setItem('gramasiri_active_user', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Could not persist gramasiri_active_user immediately:', e);
     }
+
+    if (data.photoUrl !== undefined) {
+      dbService.syncUserPhoto(currentUser.uid, data.photoUrl, data.name || currentUser.name).catch(() => {});
+    }
+    dbService.registerOrUpdateUser(updated).catch(() => {});
 
     if (db && currentUser.uid) {
       try {

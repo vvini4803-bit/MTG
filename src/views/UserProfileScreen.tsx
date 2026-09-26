@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth, isSuperAdminEmail } from '../context/AuthContext';
 import { UserRole } from '../types';
@@ -11,7 +11,6 @@ import {
   Calendar,
   LogOut,
   Edit,
-  Lock,
   Eye,
   EyeOff,
   UserCheck,
@@ -24,7 +23,8 @@ import {
   Sparkles,
   Link,
   X,
-  Loader2
+  Loader2,
+  ArrowRight
 } from 'lucide-react';
 
 interface UserProfileScreenProps {
@@ -60,8 +60,6 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
     role,
     loginWithDemo,
     claimAdminRole,
-    isAdmin,
-    isModerator,
     updateProfile
   } = useAuth();
 
@@ -73,36 +71,73 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccessNotice, setUploadSuccessNotice] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [showUrlField, setShowUrlField] = useState(false);
   const [customUrlInput, setCustomUrlInput] = useState('');
-
-  const directFileInputRef = useRef<HTMLInputElement>(null);
-  const modalFileInputRef = useRef<HTMLInputElement>(null);
+  const [localPhotoPreview, setLocalPhotoPreview] = useState<string | null>(null);
 
   const isSuperAdminUser = currentUser ? isSuperAdminEmail(currentUser.email, currentUser.name) : false;
 
+  // Active displayed photo (either optimistic local preview or saved currentUser photoUrl)
+  const currentPhoto = localPhotoPreview || currentUser?.photoUrl;
+
   const handleProcessFile = async (file: File) => {
+    if (!file) return;
     setIsUploading(true);
+    setUploadError(null);
+
+    // Instant local preview so the user sees their photo right away!
     try {
-      const result = await compressImage(file, 400, 400, 0.85);
+      const objectUrl = URL.createObjectURL(file);
+      setLocalPhotoPreview(objectUrl);
+    } catch {
+      // fallback
+    }
+
+    try {
+      // Compress to lightweight 280x280 avatar
+      const result = await compressImage(file, 280, 280, 0.82);
+      setLocalPhotoPreview(result.dataUrl);
+
+      // Save to AuthContext, localStorage, and dbService
       await updateProfile({ photoUrl: result.dataUrl });
+
       setShowPhotoModal(false);
       setUploadSuccessNotice(
         isKannada
           ? 'ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಚಿತ್ರ ಯಶಸ್ವಿಯಾಗಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ! ಎಲ್ಲಾ ಸುದ್ದಿ, ಚರ್ಚೆ ಮತ್ತು ಗ್ರಾಮ ಪಟ್ಟಿಯಲ್ಲಿ ಇದು ಕಾಣಿಸುತ್ತದೆ.'
-          : 'Profile photo uploaded successfully! Now visible across news, community directory, and messages.'
+          : 'Profile photo uploaded successfully! Now active across news, community directory, and messages.'
       );
       setTimeout(() => setUploadSuccessNotice(null), 5000);
     } catch (err: any) {
-      alert(err.message || 'Failed to upload image');
+      console.warn('Compression warning, attempting raw FileReader fallback:', err);
+      // Fallback: Read raw data URL if canvas compression fails
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const rawUrl = e.target?.result as string;
+          if (rawUrl) {
+            setLocalPhotoPreview(rawUrl);
+            await updateProfile({ photoUrl: rawUrl });
+            setShowPhotoModal(false);
+            setUploadSuccessNotice(
+              isKannada
+                ? 'ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಚಿತ್ರ ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ!'
+                : 'Profile photo uploaded and saved successfully!'
+            );
+            setTimeout(() => setUploadSuccessNotice(null), 5000);
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch (fallbackErr: any) {
+        setUploadError(fallbackErr.message || 'Could not process photo');
+      }
     } finally {
       setIsUploading(false);
-      if (directFileInputRef.current) directFileInputRef.current.value = '';
-      if (modalFileInputRef.current) modalFileInputRef.current.value = '';
     }
   };
 
-  const handleDirectFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       await handleProcessFile(file);
@@ -111,6 +146,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
 
   const handleSelectPreset = async (url: string) => {
     setIsUploading(true);
+    setLocalPhotoPreview(url);
     try {
       await updateProfile({ photoUrl: url });
       setShowPhotoModal(false);
@@ -129,6 +165,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
 
   const handleRemovePhoto = async () => {
     setIsUploading(true);
+    setLocalPhotoPreview('');
     try {
       await updateProfile({ photoUrl: '' });
       setShowPhotoModal(false);
@@ -147,6 +184,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
     e.preventDefault();
     if (!customUrlInput.trim()) return;
     setIsUploading(true);
+    setLocalPhotoPreview(customUrlInput.trim());
     try {
       await updateProfile({ photoUrl: customUrlInput.trim() });
       setShowPhotoModal(false);
@@ -169,16 +207,26 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
         <div className="glass-card" style={{ padding: '36px 20px' }}>
           <User size={48} color="var(--text-muted)" style={{ margin: '0 auto 16px' }} />
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>
-            {isKannada ? 'ನಾಗರಿಕ ಲಾಗಿನ್' : 'Resident Sign In Required'}
+            {isKannada ? 'ನಾಗರಿಕ ಪ್ರೊಫೈಲ್ ಪ್ರವೇಶ' : 'Resident Sign In'}
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
             {isKannada
-              ? 'ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ವೀಕ್ಷಿಸಲು ಅಥವಾ ಸುದ್ದಿ ಪ್ರಕಟಿಸಲು ದಯವಿಟ್ಟು ಲಾಗಿನ್ ಆಗಿ'
-              : 'Sign in to access your posts, registered events, and community permissions'}
+              ? 'ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ವೀಕ್ಷಿಸಲು ಮತ್ತು ನಿಮ್ಮ ಭಾವಚಿತ್ರವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಪ್ರವೇಶಿಸಿ'
+              : 'Sign in to access your profile and upload your personal resident photo'}
           </p>
-          <button onClick={onOpenLogin} className="btn-primary" style={{ width: '100%', height: '48px' }}>
-            {isKannada ? 'ಲಾಗಿನ್ / ಸೈನ್ ಅಪ್' : 'Sign In / Register'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button onClick={onOpenLogin} className="btn-primary" style={{ width: '100%', height: '48px', fontSize: '0.92rem' }}>
+              {isKannada ? 'ಲಾಗಿನ್ / ಸೈನ್ ಅಪ್' : 'Sign In / Register'}
+            </button>
+            <button
+              onClick={() => loginWithDemo('USER')}
+              className="btn-secondary"
+              style={{ width: '100%', height: '44px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            >
+              <span>{isKannada ? 'ಗ್ರಾಮಸ್ಥರಾಗಿ ಮುಂದುವರಿಯಿರಿ (ತ್ವರಿತ ಪ್ರವೇಶ)' : 'Continue as Village Resident'}</span>
+              <ArrowRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -186,15 +234,6 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
 
   return (
     <div className="container" style={{ padding: '24px 16px', maxWidth: '640px' }}>
-      {/* Hidden file input for fast 1-tap direct upload */}
-      <input
-        ref={directFileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleDirectFileInputChange}
-        style={{ display: 'none' }}
-      />
-
       <div className="glass-card" style={{ padding: '32px 24px', position: 'relative' }}>
         {/* Success Notice Banner */}
         {uploadSuccessNotice && (
@@ -219,60 +258,94 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
           </div>
         )}
 
+        {/* Error Notice Banner */}
+        {uploadError && (
+          <div
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid #EF4444',
+              borderRadius: '10px',
+              padding: '10px 14px',
+              color: '#FCA5A5',
+              fontSize: '0.82rem',
+              marginBottom: '16px'
+            }}
+          >
+            {uploadError}
+          </div>
+        )}
+
         {/* Header Avatar & Name with Direct Photo Upload Camera Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', flexWrap: 'wrap' }}>
-          {/* Avatar Container with Floating Camera Button Badge */}
-          <div style={{ position: 'relative', width: '92px', height: '92px', flexShrink: 0 }}>
-            {currentUser.photoUrl ? (
+          {/* Avatar Container with Native Tap-to-Upload Camera Badge */}
+          <div style={{ position: 'relative', width: '96px', height: '96px', flexShrink: 0 }}>
+            {currentPhoto ? (
               <img
-                src={currentUser.photoUrl}
+                src={currentPhoto}
                 alt={currentUser.name}
-                onClick={() => setShowPhotoModal(true)}
                 style={{
-                  width: '92px',
-                  height: '92px',
+                  width: '96px',
+                  height: '96px',
                   borderRadius: '50%',
                   objectFit: 'cover',
                   border: '3px solid var(--accent-emerald)',
-                  boxShadow: '0 4px 18px rgba(16, 185, 129, 0.45)',
-                  cursor: 'pointer'
+                  boxShadow: '0 4px 20px rgba(16, 185, 129, 0.45)',
+                  display: 'block'
                 }}
-                title={isKannada ? 'ಫೋಟೋ ಬದಲಾಯಿಸಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to change photo'}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentUser.name)}`;
+                }}
               />
             ) : (
               <div
-                onClick={() => setShowPhotoModal(true)}
                 style={{
-                  width: '92px',
-                  height: '92px',
+                  width: '96px',
+                  height: '96px',
                   borderRadius: '50%',
                   background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                   color: '#FFFFFF',
-                  fontSize: '2.2rem',
+                  fontSize: '2.4rem',
                   fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   border: '3px solid var(--accent-emerald)',
-                  boxShadow: '0 4px 18px rgba(16, 185, 129, 0.35)',
-                  cursor: 'pointer'
+                  boxShadow: '0 4px 18px rgba(16, 185, 129, 0.35)'
                 }}
-                title={isKannada ? 'ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to upload photo'}
               >
                 {currentUser.name.charAt(0)}
               </div>
             )}
 
-            {/* Camera Badge Overlay */}
-            <button
-              type="button"
-              onClick={() => setShowPhotoModal(true)}
+            {isUploading && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.65)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  gap: '4px',
+                  zIndex: 3
+                }}
+              >
+                <Loader2 size={24} className="animate-spin" />
+                <span style={{ fontSize: '0.62rem', fontWeight: 700 }}>Saving...</span>
+              </div>
+            )}
+
+            {/* Direct Native Camera Overlay Label: Tapping this opens the camera/file picker natively! */}
+            <label
               style={{
                 position: 'absolute',
                 bottom: '-2px',
                 right: '-2px',
-                width: '32px',
-                height: '32px',
+                width: '34px',
+                height: '34px',
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #10B981 0%, #047857 100%)',
                 border: '2px solid #064E3B',
@@ -282,12 +355,27 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                 justifyContent: 'center',
                 cursor: 'pointer',
                 boxShadow: '0 3px 10px rgba(0,0,0,0.5)',
-                transition: 'transform 0.15s ease'
+                transition: 'transform 0.15s ease',
+                zIndex: 2,
+                overflow: 'hidden'
               }}
-              title={isKannada ? 'ಫೋಟೋ ಬದಲಾಯಿಸಿ / ಅಪ್‌ಲೋಡ್ ಮಾಡಿ' : 'Upload / Change Photo'}
+              title={isKannada ? 'ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಒತ್ತಿ' : 'Tap to upload photo'}
             >
-              <Camera size={15} />
-            </button>
+              <Camera size={16} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileInputChange}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  opacity: 0,
+                  cursor: 'pointer',
+                  width: '100%',
+                  height: '100%'
+                }}
+              />
+            </label>
           </div>
 
           <div style={{ flex: 1, minWidth: '200px' }}>
@@ -300,7 +388,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
               <span
                 style={{
                   display: 'inline-flex',
@@ -318,32 +406,71 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                 ROLE: {role.replace('_', ' ')}
               </span>
 
-              {/* Instant Photo Upload Action Button */}
+              {/* Direct 1-Tap Photo Upload Button (Native Label) */}
+              <label
+                style={{
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                  border: '1.5px solid var(--accent-emerald)',
+                  color: '#34D399',
+                  borderRadius: '8px',
+                  padding: '5px 12px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                <Upload size={14} />
+                <span>{isKannada ? '📷 ಫೋಟೋ ಅಪ್‌ಲೋಡ್' : '📷 Upload Photo'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileInputChange}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: 0,
+                    cursor: 'pointer',
+                    width: '100%',
+                    height: '100%'
+                  }}
+                />
+              </label>
+
+              {/* Avatar Presets & Options Button */}
               <button
                 type="button"
                 onClick={() => setShowPhotoModal(true)}
                 style={{
-                  background: 'rgba(16, 185, 129, 0.15)',
-                  border: '1px solid rgba(16, 185, 129, 0.45)',
-                  color: '#34D399',
-                  borderRadius: '6px',
-                  padding: '3px 10px',
-                  fontSize: '0.74rem',
-                  fontWeight: 700,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--glass-border)',
+                  color: 'var(--text-secondary)',
+                  borderRadius: '8px',
+                  padding: '5px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '5px'
                 }}
               >
-                <Camera size={13} />
-                <span>{isKannada ? 'ಭಾವಚಿತ್ರ ಅಪ್‌ಲೋಡ್' : 'Upload Photo'}</span>
+                <Sparkles size={13} color="#F59E0B" />
+                <span>{isKannada ? 'ಅವತಾರಗಳು' : 'Avatars'}</span>
               </button>
             </div>
 
-            {currentUser.bio && (
+            {currentUser.bio ? (
               <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
                 {currentUser.bio}
+              </p>
+            ) : (
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಸಕ್ರಿಯ ನಾಗರಿಕ' : 'Active resident of Muttagundi Village'}
               </p>
             )}
           </div>
@@ -462,7 +589,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
           </div>
         </div>
 
-        {/* 👑 Super Admin Governance Hub / Claim Super Admin Desk */}
+        {/* 👑 Super Admin Governance Hub */}
         {isSuperAdminUser && (
           <>
             {role === 'SUPER_ADMIN' ? (
@@ -653,21 +780,12 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
               </button>
             </div>
 
-            {/* Hidden file input inside modal */}
-            <input
-              ref={modalFileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleDirectFileInputChange}
-              style={{ display: 'none' }}
-            />
-
             {/* Current Photo Preview */}
             <div style={{ textAlign: 'center', marginBottom: '22px' }}>
               <div style={{ position: 'relative', width: '110px', height: '110px', margin: '0 auto 12px' }}>
-                {currentUser.photoUrl ? (
+                {currentPhoto ? (
                   <img
-                    src={currentUser.photoUrl}
+                    src={currentPhoto}
                     alt={currentUser.name}
                     style={{
                       width: '110px',
@@ -676,6 +794,9 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                       objectFit: 'cover',
                       border: '3px solid var(--accent-emerald)',
                       boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)'
+                    }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentUser.name)}`;
                     }}
                   />
                 ) : (
@@ -725,28 +846,42 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
               </span>
             </div>
 
-            {/* Option 1: Direct File Upload from Device or Camera */}
+            {/* Option 1: Direct File Upload Label from Device or Camera */}
             <div style={{ marginBottom: '18px' }}>
-              <button
-                type="button"
-                disabled={isUploading}
-                onClick={() => modalFileInputRef.current?.click()}
+              <label
                 className="btn-primary"
                 style={{
                   width: '100%',
-                  height: '46px',
+                  height: '48px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
                   fontSize: '0.9rem',
                   fontWeight: 800,
+                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden',
                   boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
                 }}
               >
                 <Upload size={18} />
-                <span>{isKannada ? '📸 ಮೊಬೈಲ್ / ಗ್ಯಾಲರಿಯಿಂದ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ' : '📸 Upload Photo from Device / Camera'}</span>
-              </button>
+                <span>{isKannada ? '📸 ಮೊಬೈಲ್ / ಗ್ಯಾಲರಿಯಿಂದ ಫೋಟೋ ಆಯ್ಕೆಮಾಡಿ' : '📸 Choose Photo from Device / Camera'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={isUploading}
+                  onChange={handleFileInputChange}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: 0,
+                    cursor: 'pointer',
+                    width: '100%',
+                    height: '100%'
+                  }}
+                />
+              </label>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textAlign: 'center', marginTop: '6px' }}>
                 {isKannada ? 'JPG, PNG, WebP ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಆಪ್ಟಿಮೈಸ್ ಆಗುತ್ತದೆ' : 'Auto-compressed & optimized for high-speed village loading'}
               </span>

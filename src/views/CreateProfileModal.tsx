@@ -178,8 +178,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-              <div
-                onClick={() => fileInputRef.current?.click()}
+              <label
                 style={{
                   width: '92px',
                   height: '92px',
@@ -210,13 +209,19 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
                   </div>
                 )}
                 <input
-                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  style={{ display: 'none' }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: 0,
+                    cursor: 'pointer',
+                    width: '100%',
+                    height: '100%'
+                  }}
                 />
-              </div>
+              </label>
 
               <div style={{ textAlign: 'left', flex: 1, minWidth: '180px' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
@@ -229,9 +234,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
                 </span>
 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                  <label
                     style={{
                       background: 'rgba(16, 185, 129, 0.15)',
                       border: '1px solid var(--accent-emerald)',
@@ -243,12 +246,27 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '5px'
+                      gap: '5px',
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}
                   >
                     <Upload size={13} />
                     <span>{isKannada ? 'ಫೋಟೋ ಆಯ್ಕೆಮಾಡಿ' : 'Choose Photo'}</span>
-                  </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        opacity: 0,
+                        cursor: 'pointer',
+                        width: '100%',
+                        height: '100%'
+                      }}
+                    />
+                  </label>
 
                   {photoDataUrl && (
                     <button
