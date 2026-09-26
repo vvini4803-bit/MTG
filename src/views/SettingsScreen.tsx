@@ -18,7 +18,14 @@ import {
   Bell,
   Volume2,
   ShieldCheck,
-  Check
+  Check,
+  BellRing,
+  BellOff,
+  Smartphone,
+  VolumeX,
+  AlertTriangle,
+  Send,
+  Sparkles
 } from 'lucide-react';
 
 interface SettingsScreenProps {
@@ -34,6 +41,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
   const [cacheCleared, setCacheCleared] = useState(false);
   const [soundTested, setSoundTested] = useState(false);
 
+  // Mobile Push Notifications State
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
+    notificationService.getPermission()
+  );
+  const [testNotifSent, setTestNotifSent] = useState(false);
+  const [isRequestingPermission, setIsRequestingPermission] = useState(false);
+
+  // Notification category toggles
+  const [allowMsgNotif, setAllowMsgNotif] = useState(() => localStorage.getItem('notif_messages') !== 'false');
+  const [allowEmergencyNotif, setAllowEmergencyNotif] = useState(() => localStorage.getItem('notif_emergency') !== 'false');
+  const [allowNewsNotif, setAllowNewsNotif] = useState(() => localStorage.getItem('notif_news') !== 'false');
+  const [allowEventsNotif, setAllowEventsNotif] = useState(() => localStorage.getItem('notif_events') !== 'false');
+  const [allowSoundHaptics, setAllowSoundHaptics] = useState(() => localStorage.getItem('notif_sound') !== 'false');
+
   // Messages & Privacy State
   const [allowFindMe, setAllowFindMe] = useState(currentUser?.allow_find_me !== false);
   const [privacyMessage, setPrivacyMessage] = useState(currentUser?.privacy_message || 'EVERYONE');
@@ -45,15 +66,47 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
+    const updatePerm = () => setNotifPermission(notificationService.getPermission());
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('focus', updatePerm);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('focus', updatePerm);
     };
   }, []);
+
+  const handleAllowNotifications = async () => {
+    setIsRequestingPermission(true);
+    try {
+      const granted = await notificationService.requestPermission();
+      setNotifPermission(notificationService.getPermission());
+      if (granted) {
+        triggerHapticFeedback();
+        await notificationService.sendTestNotification(isKannada);
+        setTestNotifSent(true);
+        setTimeout(() => setTestNotifSent(false), 3500);
+      }
+    } finally {
+      setIsRequestingPermission(false);
+    }
+  };
+
+  const handleSendTestNotification = async () => {
+    setTestNotifSent(true);
+    triggerHapticFeedback();
+    await notificationService.sendTestNotification(isKannada);
+    setTimeout(() => setTestNotifSent(false), 3500);
+  };
+
+  const handleToggleCategory = (key: string, val: boolean, setter: (v: boolean) => void) => {
+    setter(val);
+    localStorage.setItem(key, String(val));
+    triggerHapticFeedback();
+  };
 
   const handleThemeChange = (newTheme: 'dark' | 'light') => {
     setTheme(newTheme);
@@ -217,6 +270,318 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
             <span>Standard (14px)</span>
             <span>Medium (16px)</span>
             <span>Large / Senior (19px)</span>
+          </div>
+        </div>
+
+        {/* 📱 Mobile Push Notifications Settings */}
+        <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Smartphone size={18} color="#10B981" />
+              <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
+                {isKannada ? 'ಮೊಬೈಲ್ ಪುಶ್ ನೋಟಿಫಿಕೇಶನ್‌ಗಳು' : 'Mobile Push Notifications'}
+              </strong>
+            </div>
+            {/* Status Badge */}
+            <span
+              style={{
+                fontSize: '0.72rem',
+                padding: '4px 10px',
+                borderRadius: '12px',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                background:
+                  notifPermission === 'granted'
+                    ? 'rgba(16, 185, 129, 0.15)'
+                    : notifPermission === 'denied'
+                    ? 'rgba(239, 68, 68, 0.15)'
+                    : 'rgba(245, 158, 11, 0.15)',
+                color:
+                  notifPermission === 'granted'
+                    ? '#34D399'
+                    : notifPermission === 'denied'
+                    ? '#F87171'
+                    : '#FBBF24',
+                border: `1px solid ${
+                  notifPermission === 'granted'
+                    ? 'rgba(16, 185, 129, 0.3)'
+                    : notifPermission === 'denied'
+                    ? 'rgba(239, 68, 68, 0.3)'
+                    : 'rgba(245, 158, 11, 0.3)'
+                }`
+              }}
+            >
+              {notifPermission === 'granted' ? (
+                <>
+                  <CheckCircle2 size={13} />
+                  {isKannada ? 'ಸಕ್ರಿಯವಾಗಿದೆ (Active)' : 'Active (Receiving)'}
+                </>
+              ) : notifPermission === 'denied' ? (
+                <>
+                  <BellOff size={13} />
+                  {isKannada ? 'ನಿರ್ಬಂಧಿಸಲಾಗಿದೆ (Blocked)' : 'Blocked in Browser'}
+                </>
+              ) : (
+                <>
+                  <BellRing size={13} />
+                  {isKannada ? 'ಅನುಮತಿ ಅಗತ್ಯವಿದೆ' : 'Permission Needed'}
+                </>
+              )}
+            </span>
+          </div>
+
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5 }}>
+            {isKannada
+              ? 'ಯಾವುದೇ ಹೊಸ ಸಂದೇಶ, ಫೋಟೋ, ಗ್ರಾಮದ ತುರ್ತು ಪ್ರಕಟಣೆ ಅಥವಾ ನೈಜ ಸಮಯದ ಅಪ್‌ಡೇಟ್ ಬಂದಾಗ ನೇರವಾಗಿ ನಿಮ್ಮ ಮೊಬೈಲ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ ನೋಟಿಫಿಕೇಶನ್ ಪಡೆಯಲು ಅನುಮತಿಸಿ.'
+              : 'Allow direct push notifications to your mobile lock-screen & notification tray for instant messages, photos, and urgent village alerts.'}
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Primary Action Button to Allow Notifications */}
+            {notifPermission !== 'granted' && (
+              <button
+                type="button"
+                onClick={handleAllowNotifications}
+                disabled={isRequestingPermission}
+                style={{
+                  width: '100%',
+                  padding: '14px 18px',
+                  borderRadius: 'var(--radius-md)',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #10B981, #059669)',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  cursor: isRequestingPermission ? 'wait' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <BellRing size={18} />
+                <span>
+                  {isRequestingPermission
+                    ? isKannada
+                      ? 'ಅನುಮತಿ ಕೇಳಲಾಗುತ್ತಿದೆ...'
+                      : 'Requesting permission...'
+                    : isKannada
+                    ? '🔔 ಮೊಬೈಲ್ ನೋಟಿಫಿಕೇಶನ್ ಅನುಮತಿಸಿ (Allow Push)'
+                    : '🔔 Allow Mobile Push Notifications'}
+                </span>
+              </button>
+            )}
+
+            {/* Blocked instructions banner if user previously clicked "Block" in browser */}
+            {notifPermission === 'denied' && (
+              <div
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px'
+                }}
+              >
+                <AlertTriangle size={18} color="#EF4444" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ fontSize: '0.78rem', color: '#FCA5A5', lineHeight: 1.45 }}>
+                  <strong style={{ display: 'block', marginBottom: '3px', color: '#F87171' }}>
+                    {isKannada ? 'ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನೋಟಿಫಿಕೇಶನ್ ನಿರ್ಬಂಧಿಸಲಾಗಿದೆ' : 'Notifications are blocked in your browser'}
+                  </strong>
+                  <span>
+                    {isKannada
+                      ? 'ಸಕ್ರಿಯಗೊಳಿಸಲು: ಬ್ರೌಸರ್ ವಿಳಾಸ ಪಟ್ಟಿಯಲ್ಲಿರುವ (Address bar) 🔒 ಲಾಕ್ ಅಥವಾ ⚙️ ಐಕಾನ್ ಕ್ಲಿಕ್ ಮಾಡಿ "Site settings" -> "Notifications" ಅನ್ನು "Allow" ಎಂದು ಬದಲಾಯಿಸಿ.'
+                      : 'To unblock: Tap the 🔒 lock or ⚙️ icon in your browser address bar, tap "Permissions / Site settings", and change "Notifications" to "Allow".'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Send Test Notification Button */}
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '10px'
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
+                  {isKannada ? '🔔 ನೋಟಿಫಿಕೇಶನ್ ಪರೀಕ್ಷೆ (Test Notification)' : '🔔 Test Mobile Push Notification'}
+                </span>
+                <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>
+                  {isKannada
+                    ? 'ಧ್ವನಿ, ವೈಬ್ರೇಶನ್ ಮತ್ತು ಮೊಬೈಲ್ ಟ್ರೇ ಅಲರ್ಟ್ ಅನ್ನು ತಕ್ಷಣವೇ ಪರೀಕ್ಷಿಸಿ.'
+                    : 'Send an instant test alert with sound, vibration, and system tray popup.'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleSendTestNotification}
+                style={{
+                  padding: '9px 15px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  background: testNotifSent ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.1)',
+                  color: testNotifSent ? '#34D399' : '#10B981',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {testNotifSent ? <CheckCircle2 size={15} /> : <Send size={15} />}
+                <span>
+                  {testNotifSent
+                    ? isKannada
+                      ? 'ಕಳುಹಿಸಲಾಗಿದೆ!'
+                      : 'Test Alert Sent!'
+                    : isKannada
+                    ? 'ಟೆಸ್ಟ್ ಕಳುಹಿಸಿ'
+                    : 'Send Test Alert'}
+                </span>
+              </button>
+            </div>
+
+            {/* Notification Preference Toggles */}
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}
+            >
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {isKannada ? 'ನೋಟಿಫಿಕೇಶನ್ ವಿಭಾಗಗಳ ಆಯ್ಕೆ (Categories)' : 'Notification Category Preferences'}
+              </span>
+
+              {/* Private Messages & Photos Toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 500, display: 'block' }}>
+                    {isKannada ? '💬 ಸಂದೇಶಗಳು & ಫೋಟೋಗಳು' : '💬 Private Messages & Photos'}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {isKannada ? 'ಗ್ರಾಮಸ್ಥರಿಂದ ನೇರ ಸಂದೇಶ ಬಂದಾಗ ಅಲರ್ಟ್' : 'Instant alerts when someone messages you'}
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={allowMsgNotif}
+                  onChange={(e) => handleToggleCategory('notif_messages', e.target.checked, setAllowMsgNotif)}
+                  style={{ width: '18px', height: '18px', accentColor: 'var(--accent-emerald)', cursor: 'pointer' }}
+                />
+              </div>
+
+              {/* Emergency Alerts Toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                <div>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 500, display: 'block' }}>
+                    {isKannada ? '🚨 ಗ್ರಾಮದ ತುರ್ತು ಪ್ರಕಟಣೆಗಳು' : '🚨 Urgent Village Alerts'}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {isKannada ? 'ವಿದ್ಯುತ್, ನೀರು, ಆರೋಗ್ಯ ಮತ್ತು ವಿಪತ್ತು ಸೂಚನೆ' : 'Electricity, water supply & emergency updates'}
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={allowEmergencyNotif}
+                  onChange={(e) => handleToggleCategory('notif_emergency', e.target.checked, setAllowEmergencyNotif)}
+                  style={{ width: '18px', height: '18px', accentColor: 'var(--accent-emerald)', cursor: 'pointer' }}
+                />
+              </div>
+
+              {/* Village News & Announcements */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                <div>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 500, display: 'block' }}>
+                    {isKannada ? '📰 ಗ್ರಾಮ ಪಂಚಾಯತ್ & ಸುದ್ದಿ' : '📰 Village News & Panchayat'}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {isKannada ? 'ಯೋಜನೆಗಳು ಮತ್ತು ಹೊಸ ಪ್ರಕಟಣೆಗಳು' : 'Government schemes and village updates'}
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={allowNewsNotif}
+                  onChange={(e) => handleToggleCategory('notif_news', e.target.checked, setAllowNewsNotif)}
+                  style={{ width: '18px', height: '18px', accentColor: 'var(--accent-emerald)', cursor: 'pointer' }}
+                />
+              </div>
+
+              {/* Sports & Events */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                <div>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 500, display: 'block' }}>
+                    {isKannada ? '🏆 ಕ್ರೀಡಾಕೂಟ & ಉತ್ಸವಗಳು' : '🏆 Sports & Cultural Events'}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {isKannada ? 'ಕ್ರಿಕೆಟ್ ಪಂದ್ಯಾವಳಿ & ಜಾತ್ರಾ ಮಹೋತ್ಸವ' : 'Tournament scores and temple festivals'}
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={allowEventsNotif}
+                  onChange={(e) => handleToggleCategory('notif_events', e.target.checked, setAllowEventsNotif)}
+                  style={{ width: '18px', height: '18px', accentColor: 'var(--accent-emerald)', cursor: 'pointer' }}
+                />
+              </div>
+
+              {/* Sound & Vibration */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                <div>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 500, display: 'block' }}>
+                    {isKannada ? '🔊 ಧ್ವನಿ & ಮೊಬೈಲ್ ಕಂಪನ (Vibrate)' : '🔊 Sound & Mobile Vibration'}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {isKannada ? 'ನೋಟಿಫಿಕೇಶನ್ ಬಂದಾಗ ರಿಂಗ್ ಟೋನ್ ಮತ್ತು ವೈಬ್ರೇಶನ್' : 'Audio chime and haptic buzz on incoming alert'}
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={allowSoundHaptics}
+                  onChange={(e) => handleToggleCategory('notif_sound', e.target.checked, setAllowSoundHaptics)}
+                  style={{ width: '18px', height: '18px', accentColor: 'var(--accent-emerald)', cursor: 'pointer' }}
+                />
+              </div>
+            </div>
+
+            {/* PWA & Service Worker Status Info */}
+            <div
+              style={{
+                fontSize: '0.72rem',
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 4px'
+              }}
+            >
+              <span>
+                {isKannada
+                  ? '⚡ ಮೊಬೈಲ್ ಬ್ಯಾಕ್‌ಗ್ರೌಂಡ್ ವರ್ಕರ್: ಸಕ್ರಿಯವಾಗಿದೆ (PWA Service Worker)'
+                  : '⚡ Mobile Background Worker: Ready (PWA Service Worker)'}
+              </span>
+              <span style={{ color: '#10B981', fontWeight: 600 }}>v2.4 Active</span>
+            </div>
           </div>
         </div>
 

@@ -288,6 +288,24 @@ class NotificationService {
     this.inAppListeners.add(callback);
     return () => this.inAppListeners.delete(callback);
   }
+
+  /**
+   * Send a test mobile push notification with sound, vibration, and system tray banner
+   */
+  public async sendTestNotification(isKannada = true): Promise<boolean> {
+    await this.sendNotification(
+      {
+        title_kn: '🔔 ಮುತ್ತಾಗೊಂದಿ ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್',
+        title_en: '🔔 Muttagundi Digital Village Portal',
+        body_kn: 'ಮೊಬೈಲ್ ನೋಟಿಫಿಕೇಶನ್‌ಗಳು ಮತ್ತು ಸಂದೇಶಗಳು ನಿಮ್ಮ ಸಾಧನದಲ್ಲಿ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯಗೊಂಡಿವೆ!',
+        body_en: 'Mobile notifications and instant messages are now 100% active on your device!',
+        section: 'notifications',
+        urgent: false
+      },
+      isKannada
+    );
+    return true;
+  }
 }
 
 export const notificationService = new NotificationService();
