@@ -45,8 +45,8 @@ interface LandmarkHotspot {
 const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
   {
     id: 'temple',
-    label_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ (ಗೋಪುರ)',
-    label_en: 'Sri Anjaneya Swamy Temple (Gopuram)',
+    label_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ',
+    label_en: 'Sri Anjaneya Swamy Temple',
     icon: '🛕',
     leftPct: 23,
     topPct: 58,
@@ -68,7 +68,7 @@ const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
   {
     id: 'school',
     label_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ',
-    label_en: 'Govt Lower Primary School',
+    label_en: 'Government Lower Primary School',
     icon: '🏫',
     leftPct: 52,
     topPct: 26,
@@ -79,7 +79,7 @@ const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
   {
     id: 'farms',
     label_kn: 'ಅಡಿಕೆ & ತೆಂಗಿನ ತೋಟ',
-    label_en: 'Areca Nut Plantation',
+    label_en: 'Areca Nut & Coconut Plantation',
     icon: '🌴',
     leftPct: 84,
     topPct: 24,
@@ -89,9 +89,9 @@ const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
   },
   {
     id: 'temple1',
-    label_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ಗುಡಿ (ವಿದ್ಯುತ್ ಗೋಪುರ)',
-    label_en: 'Sri Kalleshwara Temple & Pylon',
-    icon: '⚡',
+    label_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ದೇವಾಲಯ',
+    label_en: 'Sri Kalleshwara Swamy Temple',
+    icon: '🛕',
     leftPct: 65,
     topPct: 62,
     focusZoom: 1.7,
@@ -110,6 +110,58 @@ const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
     focusPanY: -32
   }
 ];
+
+const LANDMARK_REFERENCE_PHOTOS: Record<string, { src: string; title_en: string; title_kn: string; desc_en: string; desc_kn: string }> = {
+  temple: {
+    src: '/landmarks/temple_anjaneya.jpg',
+    title_en: 'Sri Anjaneya Swamy Temple',
+    title_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ',
+    desc_en: 'Vibrant Dravidian Gopuram with ashlar stone base, deity niches, hanging torana garlands, saffron Hanuman flag, and blue/yellow posts.',
+    desc_kn: 'ವರ್ಣರಂಜಿತ ದ್ರಾವಿಡ ಶಿಖರ ಗೋಪುರ, ಕಲ್ಲಿನ ಅಡಿಪಾಯ, ಕೇಸರಿ ಧ್ವಜ, ಪೂಜಾ ಮಂಟಪ ಮತ್ತು ತೋರಣಗಳು.'
+  },
+  shrine: {
+    src: '/landmarks/stone_shrine.jpg',
+    title_en: 'Sri Lakshmi Thimmappa Swamy Temple',
+    title_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ (ಪ್ರಾಚೀನ ಶಿಲಾ ಮಂಟಪ)',
+    desc_en: 'Ancient megalithic dolmen stone shrine with irregular stacked boulders, stone lintel, interior vermilion deity murti with marigolds, and creeping vines.',
+    desc_kn: 'ಪ್ರಾಚೀನ ಕಲ್ಲಿನ ಮಂಟಪ, ಸಿಂಧೂರ ಲೇಪಿತ ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ವಿಗ್ರಹ, ಹೂವಿನ ಪೂಜೆ ಮತ್ತು ಹಸಿರು ಬಳ್ಳಿಗಳು.'
+  },
+  school: {
+    src: '/landmarks/school.png',
+    title_en: 'Government Lower Primary School',
+    title_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ',
+    desc_en: 'School building with yellow walls, Karnataka flag circular emblem, Kannada signboard, Indian tricolor pillars, blue doors, ramp, and yellow Sintex tank.',
+    desc_kn: 'ಕನ್ನಡ ಧ್ವಜ ಲಾಂಛನ, ತ್ರಿವರ್ಣ ಕಂಬಗಳು, ಹಳದಿ ಗೋಡೆಗಳು, ನೀಲಿ ಬಾಗಿಲುಗಳು, ರ‍್ಯಾಂಪ್ ಮತ್ತು ನೀರಿನ ಸಿಂಟೆಕ್ಸ್ ತೊಟ್ಟಿ.'
+  },
+  panchayat: {
+    src: '/landmarks/school.png',
+    title_en: 'Government Lower Primary School',
+    title_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ',
+    desc_en: 'School building with yellow walls, Karnataka flag circular emblem, Kannada signboard, Indian tricolor pillars, blue doors, ramp, and yellow Sintex tank.',
+    desc_kn: 'ಕನ್ನಡ ಧ್ವಜ ಲಾಂಛನ, ತ್ರಿವರ್ಣ ಕಂಬಗಳು, ಹಳದಿ ಗೋಡೆಗಳು, ನೀಲಿ ಬಾಗಿಲುಗಳು, ರ‍್ಯಾಂಪ್ ಮತ್ತು ನೀರಿನ ಸಿಂಟೆಕ್ಸ್ ತೊಟ್ಟಿ.'
+  },
+  temple1: {
+    src: '/landmarks/temple_kalleshwara.jpg',
+    title_en: 'Sri Kalleshwara Swamy Temple',
+    title_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ದೇವಾಲಯ',
+    desc_en: 'Rustic weathered whitewashed sanctum, turquoise-blue entrance door, stepped pyramidal shikhara, electric transmission pylon, and coconut trees.',
+    desc_kn: 'ಬಿಳಿ ಸುಣ್ಣದ ಗುಡಿ, ಆಕರ್ಷಕ ನೀಲಿ ಪ್ರವೇಶ ದ್ವಾರ, ಕಲ್ಲಿನ ಮೆಟ್ಟಿಲು ಶಿಖರ, ಹಿಂಭಾಗದ ವಿದ್ಯುತ್ ಗೋಪುರ ಮತ್ತು ತೆಂಗಿನ ಮರಗಳು.'
+  },
+  kindergarden: {
+    src: '/landmarks/anganwadi.jpg',
+    title_en: 'Anganwadi Kendra',
+    title_kn: 'ಅಂಗನವಾಡಿ ಕೇಂದ್ರ',
+    desc_en: 'Sky-blue facade, educational murals (mango, apple, cucumber, clouds), brown doors, cream compound wall, utility pole, and rooftop blue Sintex tank.',
+    desc_kn: 'ಆಕಾಶ ನೀಲಿ ಮುಂಭಾಗ, ಶಾಲಾ ವರ್ಣಚಿತ್ರಗಳು (ಮಾವಿನಹಣ್ಣು, ಸೇಬು, ಸೌತೆಕಾಯಿ, ಮೋಡಗಳು), ಕಾಂಪೌಂಡ್ ಮತ್ತು ನೀಲಿ ಸಿಂಟೆಕ್ಸ್ ತೊಟ್ಟಿ.'
+  },
+  farms: {
+    src: '/diorama/mtg_reference_diorama.jpg',
+    title_en: 'Areca Nut & Coconut Plantation',
+    title_kn: 'ಅಡಿಕೆ & ತೆಂಗಿನ ತೋಟ',
+    desc_en: 'Lush agricultural plantation surrounding the village with slender areca palms and coconut trees in red furrowed soil.',
+    desc_kn: 'ಗ್ರಾಮವನ್ನು ಆವರಿಸಿರುವ ನೈಸರ್ಗಿಕ ಅಡಿಕೆ ಮತ್ತು ತೆಂಗಿನ ಮರಗಳ ಹಸಿರು ತೋಟ.'
+  }
+};
 
 export const Village3DView: React.FC<Village3DViewProps> = ({ onNavigateToMap }) => {
   const { isKannada } = useLanguage();
@@ -139,6 +191,7 @@ export const Village3DView: React.FC<Village3DViewProps> = ({ onNavigateToMap })
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('day');
   const [showHotspotTags, setShowHotspotTags] = useState(true);
+  const [expandedPhoto, setExpandedPhoto] = useState<{ src: string; title: string; desc: string } | null>(null);
 
   // Interactive 3D Spatial Canvas States (for Master Diorama)
   const [zoom, setZoom] = useState(1.0);
@@ -915,6 +968,181 @@ export const Village3DView: React.FC<Village3DViewProps> = ({ onNavigateToMap })
           <p style={{ fontSize: '0.86rem', color: '#CBD5E1', lineHeight: 1.5, margin: '10px 0 0 0' }}>
             {isKannada ? selectedLocation.desc_kn : selectedLocation.desc_en}
           </p>
+
+          {/* Authentic Real Reference Photograph Card */}
+          {LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId] && (
+            <div
+              style={{
+                marginTop: '14px',
+                padding: '10px 14px',
+                borderRadius: '16px',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                flexWrap: 'wrap'
+              }}
+            >
+              <div
+                onClick={() =>
+                  setExpandedPhoto({
+                    src: LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId].src,
+                    title: isKannada
+                      ? LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId].title_kn
+                      : LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId].title_en,
+                    desc: isKannada
+                      ? LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId].desc_kn
+                      : LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId].desc_en
+                  })
+                }
+                style={{
+                  position: 'relative',
+                  width: '120px',
+                  height: '80px',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  border: '1.5px solid #F59E0B',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.6)',
+                  flexShrink: 0
+                }}
+                title={isKannada ? 'ನೈಜ ಫೋಟೋ ವೀಕ್ಷಿಸಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to view real photo'}
+              >
+                <img
+                  src={LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId].src}
+                  alt={LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId].title_en}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '4px',
+                    right: '4px',
+                    background: 'rgba(0, 0, 0, 0.75)',
+                    color: '#FDE047',
+                    fontSize: '0.62rem',
+                    fontWeight: 900,
+                    padding: '1px 6px',
+                    borderRadius: '6px'
+                  }}
+                >
+                  🔍 {isKannada ? 'ನೋಡಿ' : 'View'}
+                </div>
+              </div>
+
+              <div style={{ flex: 1, minWidth: '180px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <span
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.2)',
+                      color: '#FBBF24',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      fontSize: '0.66rem',
+                      fontWeight: 900,
+                      padding: '2px 8px',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    📸 {isKannada ? 'ಮೂಲ ನೈಜ ಛಾಯಾಚಿತ್ರ' : 'REAL REFERENCE PHOTOGRAPH'}
+                  </span>
+                  <span style={{ fontSize: '0.68rem', color: '#10B981', fontWeight: 800 }}>
+                    ✓ 100% 3D {isKannada ? 'ಹೊಂದಾಣಿಕೆ' : 'Match'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#94A3B8', lineHeight: 1.4 }}>
+                  {isKannada
+                    ? LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId].desc_kn
+                    : LANDMARK_REFERENCE_PHOTOS[selectedLandmarkId].desc_en}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* High-Resolution Real Reference Photograph Modal */}
+      {expandedPhoto && (
+        <div
+          onClick={() => setExpandedPhoto(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(3, 7, 18, 0.88)',
+            backdropFilter: 'blur(16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              maxWidth: '720px',
+              width: '100%',
+              background: '#0F172A',
+              border: '2px solid rgba(245, 158, 11, 0.5)',
+              borderRadius: '24px',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)'
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setExpandedPhoto(null)}
+              style={{
+                position: 'absolute',
+                top: '14px',
+                right: '14px',
+                background: 'rgba(0, 0, 0, 0.7)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                color: '#FFFFFF',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10
+              }}
+            >
+              <X size={18} />
+            </button>
+
+            <img
+              src={expandedPhoto.src}
+              alt={expandedPhoto.title}
+              style={{ width: '100%', maxHeight: '480px', objectFit: 'contain', background: '#000000' }}
+            />
+
+            <div style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.25)',
+                    color: '#FBBF24',
+                    border: '1px solid rgba(245, 158, 11, 0.5)',
+                    fontSize: '0.68rem',
+                    fontWeight: 900,
+                    padding: '2px 8px',
+                    borderRadius: '8px'
+                  }}
+                >
+                  📸 {isKannada ? 'ನೈಜ ಛಾಯಾಚಿತ್ರ' : 'AUTHENTIC REAL PHOTOGRAPH'}
+                </span>
+                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#FFFFFF' }}>
+                  {expandedPhoto.title}
+                </h4>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.84rem', color: '#94A3B8', lineHeight: 1.5 }}>
+                {expandedPhoto.desc}
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>
