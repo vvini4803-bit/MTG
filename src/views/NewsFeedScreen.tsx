@@ -6,6 +6,7 @@ import { NewsItem, NewsCategory, VerificationStatus } from '../types';
 import { notificationService } from '../services/notificationService';
 import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
 import { ImageLightboxModal } from '../components/common/ImageLightboxModal';
+import { EditNewsModal } from './EditNewsModal';
 import {
   Plus,
   Search,
@@ -22,7 +23,9 @@ import {
   Flag,
   Calendar,
   Maximize2,
-  ChevronRight
+  ChevronRight,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 
 interface NewsFeedScreenProps {
@@ -39,14 +42,15 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
   onOpenReportModal
 }) => {
   const { language, isKannada } = useLanguage();
-  const { currentUser, isModerator, isAdmin } = useAuth();
+  const { currentUser, isModerator, isAdmin, role } = useAuth();
 
   const [newsList, setNewsList] = useState<NewsItem[]>(() => dbService.getNews());
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [timeFilter, setTimeFilter] = useState<'WEEK' | 'ALL'>('ALL');
+  const [timeFilter, setTimeFilter] = useState<'WEEK' | 'ALL'>('WEEK');
   const [searchQuery, setSearchQuery] = useState('');
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
+  const [newsToEdit, setNewsToEdit] = useState<NewsItem | null>(null);
 
   useEffect(() => {
     return dbService.subscribeNews((items) => {
@@ -646,6 +650,67 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
                       <span>{isKannada ? 'ವಿವರ ನೋಡಿ' : 'View Details'}</span>
                       <ChevronRight size={13} />
                     </button>
+
+                    {/* Admin Action Buttons (Edit / Add Correction & Delete) */}
+                    {(isAdmin || isModerator) && (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setNewsToEdit(item);
+                          }}
+                          style={{
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            borderRadius: 'var(--radius-full)',
+                            padding: '4px 10px',
+                            color: '#34D399',
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            minHeight: '32px'
+                          }}
+                          title={isKannada ? 'ತಿದ್ದುಪಡಿ / ಅಧಿಕೃತ ಸ್ಪಷ್ಟನೆ' : 'Admin Edit / Add Correction'}
+                        >
+                          <Edit3 size={13} />
+                          <span>{isKannada ? 'ತಿದ್ದುಪಡಿ' : 'Edit'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const confirmPrompt = isKannada
+                              ? 'ಈ ಪೋಸ್ಟ್ ಅನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವೇ?'
+                              : 'Are you sure you want to delete this post?';
+                            if (!window.confirm(confirmPrompt)) return;
+                            await dbService.deleteNews(item.id, currentUser?.uid || '', role);
+                            triggerHapticFeedback();
+                          }}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.35)',
+                            borderRadius: 'var(--radius-full)',
+                            padding: '4px 8px',
+                            color: '#EF4444',
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            minHeight: '32px'
+                          }}
+                          title={isKannada ? 'ಅಳಿಸಿ' : 'Delete'}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </article>
@@ -653,6 +718,13 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
           })
         )}
       </div>
+
+      {/* Admin Edit News / Post Modal */}
+      <EditNewsModal
+        news={newsToEdit}
+        isOpen={Boolean(newsToEdit)}
+        onClose={() => setNewsToEdit(null)}
+      />
 
       {/* Fullscreen Image Lightbox Modal */}
       <ImageLightboxModal

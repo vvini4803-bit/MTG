@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from './context/LanguageContext';
 import { useAuth } from './context/AuthContext';
-import { dbService } from './services/dbService';
+import { dbService, isWithinOneWeek } from './services/dbService';
 import { NewsItem, EventItem, Tournament, MatchItem, CropItem, TempleItem, GalleryItem, EmergencyAlert } from './types';
 
 // Layout & Hero
@@ -21,6 +21,14 @@ import { Village3DView } from './views/Village3DView';
 import { VoiceAssistantScreen } from './views/VoiceAssistantScreen';
 import { UserProfileScreen } from './views/UserProfileScreen';
 import { AdminDashboardScreen } from './views/AdminDashboardScreen';
+import { AdminContentManagerScreen } from './views/AdminContentManagerScreen';
+import { NewsVerificationScreen } from './views/NewsVerificationScreen';
+import { UserManagementScreen } from './views/UserManagementScreen';
+import { ContentModerationScreen } from './views/ContentModerationScreen';
+import { EventManagementScreen } from './views/EventManagementScreen';
+import { TournamentManagementScreen } from './views/TournamentManagementScreen';
+import { VillageDataManagementScreen } from './views/VillageDataManagementScreen';
+import { AnalyticsScreen } from './views/AnalyticsScreen';
 import { SearchScreen } from './views/SearchScreen';
 import { NotificationsScreen } from './views/NotificationsScreen';
 import { SettingsScreen } from './views/SettingsScreen';
@@ -42,6 +50,7 @@ import { CommunityPeopleView } from './views/CommunityPeopleView';
 import { ConversationsListView } from './views/ConversationsListView';
 import { ChatModal } from './components/chat/ChatModal';
 import { AuthModal } from './components/auth/AuthModal';
+import { EditNewsModal } from './views/EditNewsModal';
 
 // Icons
 import {
@@ -74,7 +83,8 @@ import {
   MessageSquare,
   Heart,
   Share2,
-  Settings
+  Settings,
+  Edit3
 } from 'lucide-react';
 import { getEffectiveUserId, triggerHapticFeedback } from './services/deviceIdentity';
 import { backNavigation } from './services/backNavigation';
@@ -107,12 +117,20 @@ export const App: React.FC = () => {
 
   // Real-time collections for previews and tickers
   const [emergencyAlert, setEmergencyAlert] = useState<EmergencyAlert | null>(null);
-  const [latestNews, setLatestNews] = useState<NewsItem[]>(() => dbService.getNews().slice(0, 5));
+  const [latestNews, setLatestNews] = useState<NewsItem[]>(() => {
+    const all = dbService.getNews();
+    const recent = all.filter((it) => isWithinOneWeek(it.created_at));
+    return recent.length > 0 ? recent.slice(0, 3) : all.slice(0, 1);
+  });
   const [upcomingEvents, setUpcomingEvents] = useState<EventItem[]>([]);
   const [activeTournaments, setActiveTournaments] = useState<Tournament[]>([]);
   const [villageStats, setVillageStats] = useState(dbService['villageStats']);
   const [liveNewsIndex, setLiveNewsIndex] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+  // Admin sub-screens state
+  const [adminSubtab, setAdminSubtab] = useState<string | null>(null);
+  const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
 
   // Modals state
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -264,8 +282,26 @@ export const App: React.FC = () => {
   }, [openHeritageTab]);
 
   useEffect(() => {
+    if (adminSubtab) {
+      const dismiss = backNavigation.pushModal('adminSubtab', () => setAdminSubtab(null));
+      return () => dismiss();
+    }
+  }, [adminSubtab]);
+
+  useEffect(() => {
+    if (editingNews) {
+      const dismiss = backNavigation.pushModal('editNewsModal', () => setEditingNews(null));
+      return () => dismiss();
+    }
+  }, [editingNews]);
+
+  useEffect(() => {
     const unsubEmergency = dbService.subscribeEmergencyAlert(setEmergencyAlert);
-    const unsubNews = dbService.subscribeNews((items) => setLatestNews(items.slice(0, 5)));
+    const unsubNews = dbService.subscribeNews((items) => {
+      // Strictly show only recent updates (within 7 days)
+      const recent = items.filter((it) => isWithinOneWeek(it.created_at));
+      setLatestNews(recent.length > 0 ? recent.slice(0, 3) : items.slice(0, 1));
+    });
     const unsubEvents = dbService.subscribeEvents((items) => setUpcomingEvents(items.slice(0, 2)));
     const unsubTournaments = dbService.subscribeTournaments((items) => setActiveTournaments(items));
     return () => {
@@ -898,7 +934,7 @@ export const App: React.FC = () => {
                             boxShadow: '0 0 8px #EF4444'
                           }}
                         />
-                        <span>{isKannada ? '🔴 ಲೈವ್ ಅಪ್‌ಡೇಟ್' : '🔴 LIVE UPDATE'}</span>
+                        <span>{isKannada ? '🔴 ಇತ್ತೀಚಿನ ಲೈವ್ ಅಪ್‌ಡೇಟ್' : '🔴 RECENT LIVE UPDATE'}</span>
                         {latestNews.length > 1 && (
                           <span
                             style={{
@@ -1061,6 +1097,34 @@ export const App: React.FC = () => {
                               <Share2 size={13} />
                               <span>{isKannada ? 'ಹಂಚಿ' : 'Share'}</span>
                             </button>
+
+                            {/* Admin / Moderator Edit Post & Correction */}
+                            {(isAdmin || isModerator) && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingNews(liveItem);
+                                }}
+                                style={{
+                                  background: 'rgba(245, 158, 11, 0.18)',
+                                  border: '1px solid rgba(245, 158, 11, 0.5)',
+                                  borderRadius: '16px',
+                                  padding: '5px 10px',
+                                  color: '#F59E0B',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                title={isKannada ? 'ತಿದ್ದುಪಡಿ / ಅಳಿಸಿ' : 'Edit / Correct / Delete'}
+                              >
+                                <Edit3 size={13} />
+                                <span>{isKannada ? 'ತಿದ್ದುಪಡಿ' : 'Edit'}</span>
+                              </button>
+                            )}
                           </div>
                         );
                       })()}
@@ -1739,30 +1803,84 @@ export const App: React.FC = () => {
         {/* ============================================================ */}
         {currentSection === 'admin' && (
           <div>
-            <div style={{ marginBottom: '14px' }}>
+            <div style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
               <button
-                onClick={() => navigateTo('home')}
+                onClick={() => {
+                  if (adminSubtab) {
+                    setAdminSubtab(null);
+                  } else {
+                    navigateTo('home');
+                  }
+                }}
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: 'none',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
                   color: '#FFFFFF',
                   borderRadius: '10px',
                   padding: '6px 14px',
                   fontSize: '0.8rem',
                   fontWeight: 700,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                ← {isKannada ? 'ಮುಖಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ' : 'Back to Home'}
+                ← {adminSubtab
+                  ? (isKannada ? 'ಅಡ್ಮಿನ್ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಹಿಂತಿರುಗಿ' : 'Back to Admin Dashboard')
+                  : (isKannada ? 'ಮುಖಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ' : 'Back to Home')}
               </button>
+
+              {adminSubtab && (
+                <button
+                  onClick={() => navigateTo('home')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94A3B8',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isKannada ? 'ಮುಖಪುಟ' : 'Home'}
+                </button>
+              )}
             </div>
-            <AdminDashboardScreen
-              onSelectAdminSubtab={() => {}}
-              onNavigateTab={(tab) => {
-                if (tab === 'news') navigateTo('news');
-                else navigateTo('home');
-              }}
-            />
+
+            {adminSubtab === 'content_manager' && (
+              <AdminContentManagerScreen onBackToDashboard={() => setAdminSubtab(null)} />
+            )}
+            {adminSubtab === 'news_verify' && (
+              <NewsVerificationScreen onBack={() => setAdminSubtab(null)} />
+            )}
+            {adminSubtab === 'users' && (
+              <UserManagementScreen onBack={() => setAdminSubtab(null)} />
+            )}
+            {adminSubtab === 'moderation' && (
+              <ContentModerationScreen onBack={() => setAdminSubtab(null)} />
+            )}
+            {adminSubtab === 'events' && (
+              <EventManagementScreen onBack={() => setAdminSubtab(null)} />
+            )}
+            {adminSubtab === 'tournaments' && (
+              <TournamentManagementScreen onBack={() => setAdminSubtab(null)} />
+            )}
+            {adminSubtab === 'village_data' && (
+              <VillageDataManagementScreen onBack={() => setAdminSubtab(null)} />
+            )}
+            {adminSubtab === 'analytics' && (
+              <AnalyticsScreen onBack={() => setAdminSubtab(null)} />
+            )}
+
+            {!adminSubtab && (
+              <AdminDashboardScreen
+                onSelectAdminSubtab={(sub) => setAdminSubtab(sub)}
+                onNavigateTab={(tab) => {
+                  if (tab === 'news') navigateTo('news');
+                  else navigateTo('home');
+                }}
+              />
+            )}
           </div>
         )}
 
@@ -2160,6 +2278,15 @@ export const App: React.FC = () => {
         crop={selectedCrop}
         isOpen={!!selectedCrop}
         onClose={() => setSelectedCrop(null)}
+      />
+
+      {/* ✏️ Admin Edit / Correction / Delete News Modal */}
+      <EditNewsModal
+        news={editingNews}
+        isOpen={!!editingNews}
+        onClose={() => setEditingNews(null)}
+        onSaved={() => setEditingNews(null)}
+        onDeleted={() => setEditingNews(null)}
       />
 
       {/* Temple Detail Modal */}

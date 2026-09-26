@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { dbService } from '../services/dbService';
 import { realtimeSync } from '../services/realtimeSync';
+import { backNavigation } from '../services/backNavigation';
+import { EditMapLocationModal } from './EditMapLocationModal';
 import {
   MapPin,
   Navigation,
@@ -17,7 +21,9 @@ import {
   Layers,
   Sparkles,
   Map as MapIcon,
-  ChevronRight
+  ChevronRight,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 
 export interface MapLocationItem {
@@ -299,6 +305,10 @@ export const VillageMapView: React.FC<VillageMapViewProps> = ({ onNavigateTo3D }
     return VERIFIED_VILLAGE_LOCATIONS;
   });
 
+  const { isAdmin, isModerator, currentUser, role } = useAuth();
+  const [editingLocation, setEditingLocation] = useState<MapLocationItem | null>(null);
+  const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
+
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedLocation, setSelectedLocation] = useState<MapLocationItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -325,18 +335,25 @@ export const VillageMapView: React.FC<VillageMapViewProps> = ({ onNavigateTo3D }
   const [suggestLng, setSuggestLng] = useState('');
   const [suggestSubmitted, setSuggestSubmitted] = useState(false);
 
-  // Listen for realtime added map locations
+  // Back navigation modal hooks
   useEffect(() => {
-    const unsub = realtimeSync.subscribe((envelope) => {
-      if (envelope.type === ('MAP_LOCATION_ADDED' as any)) {
-        const newLoc = envelope.payload as MapLocationItem;
-        if (newLoc && newLoc.id) {
-          setLocations((prev) => {
-            if (prev.some((p) => p.id === newLoc.id)) return prev;
-            return [newLoc, ...prev];
-          });
-        }
-      }
+    if (editingLocation) {
+      const dismiss = backNavigation.pushModal('editLocationModal', () => setEditingLocation(null));
+      return () => dismiss();
+    }
+  }, [editingLocation]);
+
+  useEffect(() => {
+    if (isAddLocationModalOpen) {
+      const dismiss = backNavigation.pushModal('isAddLocationModalOpen', () => setIsAddLocationModalOpen(false));
+      return () => dismiss();
+    }
+  }, [isAddLocationModalOpen]);
+
+  // Subscribe to real-time synchronized map locations from dbService & Firestore
+  useEffect(() => {
+    const unsub = dbService.subscribeMapLocations((items) => {
+      setLocations(items);
     });
     return unsub;
   }, []);
@@ -621,7 +638,11 @@ export const VillageMapView: React.FC<VillageMapViewProps> = ({ onNavigateTo3D }
                 setSuggestLat(userCoords.lat.toFixed(6));
                 setSuggestLng(userCoords.lng.toFixed(6));
               }
-              setShowSuggestModal(true);
+              if (isAdmin || isModerator) {
+                setIsAddLocationModalOpen(true);
+              } else {
+                setShowSuggestModal(true);
+              }
             }}
             style={{
               background: 'rgba(16, 185, 129, 0.15)',
@@ -638,7 +659,11 @@ export const VillageMapView: React.FC<VillageMapViewProps> = ({ onNavigateTo3D }
             }}
           >
             <Plus size={16} />
-            <span>{isKannada ? 'ಹೊಸ ಸ್ಥಳ ಸೇರಿಸಿ' : '+ Add Place'}</span>
+            <span>
+              {isKannada
+                ? (isAdmin || isModerator ? 'ಹೊಸ ಸ್ಥಳ ಸೇರಿಸಿ (Admin)' : 'ಹೊಸ ಸ್ಥಳ ಸೂಚಿಸಿ')
+                : (isAdmin || isModerator ? '+ Add Landmark' : '+ Add Place')}
+            </span>
           </button>
         </div>
       </div>
@@ -1150,6 +1175,65 @@ export const VillageMapView: React.FC<VillageMapViewProps> = ({ onNavigateTo3D }
                   <span>{isKannada ? '3D ಗ್ರಾಮದಲ್ಲಿ ನೋಡಿ' : 'View in 3D'}</span>
                 </button>
               )}
+
+              {/* Admin Actions: Edit & Delete */}
+              {(isAdmin || isModerator) && (
+                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingLocation(selectedLocation);
+                    }}
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.16)',
+                      border: '1px solid rgba(245, 158, 11, 0.45)',
+                      color: '#F59E0B',
+                      borderRadius: '24px',
+                      padding: '8px 14px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Edit3 size={14} />
+                    <span>{isKannada ? 'ತಿದ್ದುಪಡಿ' : 'Edit'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const confirmMsg = isKannada
+                        ? `ಈ ಸ್ಥಳವನ್ನು (${selectedLocation.name_kn || selectedLocation.name_en}) ನಕ್ಷೆಯಿಂದ ಖಚಿತವಾಗಿ ಅಳಿಸಬೇಕೇ?`
+                        : `Are you sure you want to delete "${selectedLocation.name_en}" from the map?`;
+                      if (window.confirm(confirmMsg)) {
+                        await dbService.deleteMapLocation(selectedLocation.id, currentUser?.uid, role || 'ADMIN');
+                        setSelectedLocation(null);
+                      }
+                    }}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      color: '#EF4444',
+                      borderRadius: '24px',
+                      padding: '8px 14px',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    <span>{isKannada ? 'ಅಳಿಸಿ' : 'Delete'}</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1265,6 +1349,79 @@ export const VillageMapView: React.FC<VillageMapViewProps> = ({ onNavigateTo3D }
                     <span>{isKannada ? 'ದಾರಿ' : 'Directions'}</span>
                   </a>
                 </div>
+
+                {/* Admin Actions: Edit & Delete */}
+                {(isAdmin || isModerator) && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '8px',
+                      marginTop: '8px',
+                      paddingTop: '8px',
+                      borderTop: '1px dashed rgba(245, 158, 11, 0.3)'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingLocation(loc);
+                      }}
+                      style={{
+                        flex: 1,
+                        background: 'rgba(245, 158, 11, 0.16)',
+                        border: '1px solid rgba(245, 158, 11, 0.45)',
+                        color: '#F59E0B',
+                        borderRadius: '8px',
+                        padding: '5px 8px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Edit3 size={12} />
+                      <span>{isKannada ? 'ತಿದ್ದುಪಡಿ' : 'Edit'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const confirmMsg = isKannada
+                          ? `ಈ ಸ್ಥಳವನ್ನು (${loc.name_kn || loc.name_en}) ನಕ್ಷೆಯಿಂದ ಖಚಿತವಾಗಿ ಅಳಿಸಬೇಕೇ?`
+                          : `Are you sure you want to delete "${loc.name_en}" from map?`;
+                        if (window.confirm(confirmMsg)) {
+                          await dbService.deleteMapLocation(loc.id, currentUser?.uid, role || 'ADMIN');
+                          if (selectedLocation?.id === loc.id) {
+                            setSelectedLocation(null);
+                          }
+                        }
+                      }}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#EF4444',
+                        borderRadius: '8px',
+                        padding: '5px 8px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      title={isKannada ? 'ಅಳಿಸಿ' : 'Delete'}
+                    >
+                      <Trash2 size={12} />
+                      <span>{isKannada ? 'ಅಳಿಸಿ' : 'Delete'}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -1502,6 +1659,32 @@ export const VillageMapView: React.FC<VillageMapViewProps> = ({ onNavigateTo3D }
           </div>
         </div>
       )}
+
+      {/* 🗺️ Admin Edit & Add Map Location Modals */}
+      <EditMapLocationModal
+        location={editingLocation}
+        mode="edit"
+        isOpen={!!editingLocation}
+        onClose={() => setEditingLocation(null)}
+        onSaved={() => setEditingLocation(null)}
+        onDeleted={() => {
+          if (selectedLocation?.id === editingLocation?.id) {
+            setSelectedLocation(null);
+          }
+          setEditingLocation(null);
+        }}
+      />
+
+      <EditMapLocationModal
+        location={null}
+        mode="add"
+        isOpen={isAddLocationModalOpen}
+        onClose={() => setIsAddLocationModalOpen(false)}
+        onSaved={(newLoc) => {
+          setSelectedLocation(newLoc);
+          setIsAddLocationModalOpen(false);
+        }}
+      />
     </div>
   );
 };

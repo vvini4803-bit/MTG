@@ -228,6 +228,42 @@ export interface TempleItem {
   is_demo?: boolean;
 }
 
+export type MapLocationCategory =
+  | 'TEMPLE'
+  | 'SCHOOL'
+  | 'HEALTH'
+  | 'SPORTS'
+  | 'HALL'
+  | 'BUS'
+  | 'SHOP'
+  | 'BANK'
+  | 'WATER'
+  | 'EMERGENCY'
+  | 'FARM';
+
+export interface MapLocationItem {
+  id: string;
+  name_en: string;
+  name_kn: string;
+  category: MapLocationCategory;
+  icon: string;
+  color: string;
+  desc_en: string;
+  desc_kn: string;
+  distance_en: string;
+  distance_kn: string;
+  timings_en?: string;
+  timings_kn?: string;
+  phone?: string;
+  coords: { lat: number; lng: number };
+  verified: boolean;
+  map_url?: string;
+  anime_image?: string;
+  anime_title_en?: string;
+  anime_title_kn?: string;
+  is_demo?: boolean;
+}
+
 export type HistorySourceType =
   | 'HISTORICAL_FACT'
   | 'COMMUNITY_STORY'

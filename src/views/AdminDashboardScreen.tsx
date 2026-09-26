@@ -151,6 +151,14 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
 
   const adminModules = [
     {
+      id: 'content_manager',
+      title_en: 'Unified Content Manager (Posts, News, Temples, Map)',
+      title_kn: 'ಪೋಸ್ಟ್, ಸುದ್ದಿ, ದೇವಾಲಯ & ನಕ್ಷೆ ನಿರ್ವಹಣೆ',
+      desc_en: 'Add, edit, correct, or delete any post, news announcement, temple record, or map landmark',
+      icon: Sparkles,
+      color: '#10B981'
+    },
+    {
       id: 'news_verify',
       title_en: 'News Verification Desk',
       title_kn: 'ಸುದ್ದಿ ಪರಿಶೀಲನಾ ಡೆಸ್ಕ್',

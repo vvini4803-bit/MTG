@@ -20,7 +20,8 @@ import {
   VerificationStatus,
   Conversation,
   ChatMessage,
-  UserBlock
+  UserBlock,
+  MapLocationItem
 } from '../types';
 import {
   SEED_NEWS,
@@ -40,6 +41,7 @@ import {
   SEED_MESSAGES,
   isSuperAdminEmail
 } from './seedData';
+import { VERIFIED_VILLAGE_LOCATIONS } from './defaultMapLocations';
 import { isFirebaseConfigured, db } from './firebaseConfig';
 import { realtimeSync } from './realtimeSync';
 import { notificationService } from './notificationService';
@@ -146,6 +148,7 @@ class DatabaseService {
   private villageStats: VillageStats = SEED_VILLAGE_STATS;
   private achievements: AchievementItem[] = [];
   private gallery: GalleryItem[] = [];
+  private mapLocations: MapLocationItem[] = [];
   private socialLinks: SocialLink[] = [];
   private emergencyAlert: EmergencyAlert | null = SEED_EMERGENCY_ALERT;
   private comments: CommentItem[] = [];
@@ -291,6 +294,7 @@ class DatabaseService {
     });
     this.achievements = this.loadCollection('achievements', this.isDemoMode ? SEED_ACHIEVEMENTS : []);
     this.gallery = this.loadCollection('gallery', this.isDemoMode ? SEED_GALLERY : []);
+    this.mapLocations = this.loadCollection('map_locations', VERIFIED_VILLAGE_LOCATIONS);
     this.socialLinks = this.loadCollection('social_links', this.isDemoMode ? SEED_SOCIAL_LINKS : []);
     this.emergencyAlert = this.loadCollection('emergency_alert', this.isDemoMode ? SEED_EMERGENCY_ALERT : null);
 
@@ -1411,6 +1415,42 @@ class DatabaseService {
     return true;
   }
 
+  public async updateNews(
+    newsId: string,
+    updates: Partial<NewsItem>,
+    uid?: string,
+    role?: string
+  ): Promise<boolean> {
+    const item = this.news.find((n) => n.id === newsId);
+    if (!item) return false;
+
+    // RBAC: Author or Admin/Moderator
+    if (uid && role && item.author_id !== uid && !['SUPER_ADMIN', 'ADMIN', 'MODERATOR'].includes(role)) {
+      throw new Error('Unauthorized update attempt.');
+    }
+
+    const updatedItem: NewsItem = {
+      ...item,
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    this.news = this.news.map((n) => (n.id === newsId ? updatedItem : n));
+    this.saveCollection('news', this.news);
+    this.emit('news', this.news);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'news', newsId), cleanFirestoreData(updates));
+      } catch (e) {
+        console.warn('Firestore updateNews error:', e);
+      }
+    }
+
+    realtimeSync.broadcast('NEWS_UPDATED' as any, updatedItem);
+    return true;
+  }
+
   // --- COMMENTS ---
   public subscribeComments(postId: string, callback: (comments: CommentItem[]) => void): () => void {
     if (isFirebaseConfigured && db) {
@@ -1724,8 +1764,71 @@ class DatabaseService {
     };
     this.temples = [newTemple, ...this.temples];
     this.saveCollection('temples', this.temples);
+    this.emit('temples', this.temples);
     realtimeSync.broadcast('TEMPLE_ADDED', newTemple);
     return newTemple;
+  }
+
+  public async updateTemple(
+    templeId: string,
+    updates: Partial<TempleItem>,
+    _uid?: string,
+    role?: string
+  ): Promise<boolean> {
+    const temple = this.temples.find((t) => t.id === templeId);
+    if (!temple) return false;
+
+    if (role && !['SUPER_ADMIN', 'ADMIN', 'MODERATOR'].includes(role)) {
+      throw new Error('Unauthorized temple update attempt.');
+    }
+
+    const updatedTemple: TempleItem = {
+      ...temple,
+      ...updates
+    };
+
+    this.temples = this.temples.map((t) => (t.id === templeId ? updatedTemple : t));
+    this.saveCollection('temples', this.temples);
+    this.emit('temples', this.temples);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'temples', templeId), cleanFirestoreData(updates));
+      } catch (e) {
+        console.warn('Firestore updateTemple error:', e);
+      }
+    }
+
+    realtimeSync.broadcast('TEMPLE_UPDATED' as any, updatedTemple);
+    return true;
+  }
+
+  public async deleteTemple(
+    templeId: string,
+    _uid?: string,
+    role?: string
+  ): Promise<boolean> {
+    const temple = this.temples.find((t) => t.id === templeId);
+    if (!temple) return false;
+
+    if (role && !['SUPER_ADMIN', 'ADMIN', 'MODERATOR'].includes(role)) {
+      throw new Error('Unauthorized temple deletion attempt.');
+    }
+
+    this.temples = this.temples.filter((t) => t.id !== templeId);
+    this.saveCollection('temples', this.temples);
+    this.emit('temples', this.temples);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await deleteDoc(doc(db, 'temples', templeId));
+      } catch (e) {
+        console.warn('Firestore deleteTemple error:', e);
+      }
+    }
+
+    realtimeSync.broadcast('TEMPLE_DELETED' as any, { templeId });
+    return true;
   }
 
   // --- HISTORY & STORIES ---
@@ -2050,6 +2153,128 @@ class DatabaseService {
         }
       }
     }
+  }
+
+  // --- MAP LOCATIONS & LANDMARKS ---
+  public subscribeMapLocations(callback: (locs: MapLocationItem[]) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = collection(db, 'map_locations');
+        return onSnapshot(
+          q,
+          (snapshot) => {
+            const remote = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as MapLocationItem));
+            if (remote.length > 0) {
+              const remoteIds = new Set(remote.map((r) => r.id));
+              const merged = [...remote];
+              for (const loc of this.mapLocations) {
+                if (!remoteIds.has(loc.id)) {
+                  merged.push(loc);
+                }
+              }
+              this.mapLocations = merged;
+              this.saveCollection('map_locations', this.mapLocations);
+              callback(this.mapLocations);
+            } else {
+              callback(this.mapLocations);
+            }
+          },
+          (err) => {
+            console.warn('Map locations listener fallback:', err);
+            callback(this.mapLocations);
+          }
+        );
+      } catch (e) {
+        console.warn('Map locations query fallback:', e);
+      }
+    }
+    return this.subscribe('map_locations', this.mapLocations, callback);
+  }
+
+  public async addMapLocation(item: Omit<MapLocationItem, 'id'>): Promise<MapLocationItem> {
+    const newLoc: MapLocationItem = {
+      ...item,
+      id: 'loc_' + Date.now(),
+      verified: item.verified ?? true,
+      is_demo: false
+    };
+
+    this.mapLocations = [newLoc, ...this.mapLocations];
+    this.saveCollection('map_locations', this.mapLocations);
+    this.emit('map_locations', this.mapLocations);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'map_locations', newLoc.id), cleanFirestoreData(newLoc));
+      } catch (e) {
+        console.warn('Firestore setDoc failed for map location:', e);
+      }
+    }
+
+    realtimeSync.broadcast('MAP_LOCATION_ADDED' as any, newLoc);
+    return newLoc;
+  }
+
+  public async updateMapLocation(
+    locationId: string,
+    updates: Partial<MapLocationItem>,
+    _uid?: string,
+    role?: string
+  ): Promise<boolean> {
+    const loc = this.mapLocations.find((l) => l.id === locationId);
+    if (!loc) return false;
+
+    if (role && !['SUPER_ADMIN', 'ADMIN', 'MODERATOR'].includes(role)) {
+      throw new Error('Unauthorized map location update attempt.');
+    }
+
+    const updatedLoc: MapLocationItem = {
+      ...loc,
+      ...updates
+    };
+
+    this.mapLocations = this.mapLocations.map((l) => (l.id === locationId ? updatedLoc : l));
+    this.saveCollection('map_locations', this.mapLocations);
+    this.emit('map_locations', this.mapLocations);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'map_locations', locationId), cleanFirestoreData(updates));
+      } catch (e) {
+        console.warn('Firestore updateDoc failed for map location:', e);
+      }
+    }
+
+    realtimeSync.broadcast('MAP_LOCATION_UPDATED' as any, updatedLoc);
+    return true;
+  }
+
+  public async deleteMapLocation(
+    locationId: string,
+    _uid?: string,
+    role?: string
+  ): Promise<boolean> {
+    const loc = this.mapLocations.find((l) => l.id === locationId);
+    if (!loc) return false;
+
+    if (role && !['SUPER_ADMIN', 'ADMIN', 'MODERATOR'].includes(role)) {
+      throw new Error('Unauthorized map location deletion attempt.');
+    }
+
+    this.mapLocations = this.mapLocations.filter((l) => l.id !== locationId);
+    this.saveCollection('map_locations', this.mapLocations);
+    this.emit('map_locations', this.mapLocations);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await deleteDoc(doc(db, 'map_locations', locationId));
+      } catch (e) {
+        console.warn('Firestore deleteDoc failed for map location:', e);
+      }
+    }
+
+    realtimeSync.broadcast('MAP_LOCATION_DELETED' as any, { locationId });
+    return true;
   }
 
   // --- NOTIFICATIONS ---

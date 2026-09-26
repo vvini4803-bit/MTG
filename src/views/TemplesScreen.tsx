@@ -16,8 +16,11 @@ import {
   X,
   Upload,
   Image as ImageIcon,
-  Check
+  Check,
+  Edit3,
+  Trash2
 } from 'lucide-react';
+import { EditTempleModal } from './EditTempleModal';
 
 interface TemplesScreenProps {
   onOpenTempleDetail: (temple: TempleItem) => void;
@@ -89,8 +92,10 @@ export const TemplesScreen: React.FC<TemplesScreenProps> = ({
   onOpenCreateTemple
 }) => {
   const { language, isKannada } = useLanguage();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isModerator, currentUser, role } = useAuth();
   const [temples, setTemples] = useState<TempleItem[]>([]);
+  const [editingTemple, setEditingTemple] = useState<TempleItem | null>(null);
+  const [isAddTempleModalOpen, setIsAddTempleModalOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [nameEn, setNameEn] = useState('');
   const [nameKn, setNameKn] = useState('');
@@ -108,6 +113,20 @@ export const TemplesScreen: React.FC<TemplesScreenProps> = ({
   }, []);
 
   // Back button handling: when modal is open, back closes the modal
+  useEffect(() => {
+    if (editingTemple) {
+      const dismiss = backNavigation.pushModal('editTempleModal', () => setEditingTemple(null));
+      return () => dismiss();
+    }
+  }, [editingTemple]);
+
+  useEffect(() => {
+    if (isAddTempleModalOpen) {
+      const dismiss = backNavigation.pushModal('isAddTempleModalOpen', () => setIsAddTempleModalOpen(false));
+      return () => dismiss();
+    }
+  }, [isAddTempleModalOpen]);
+
   useEffect(() => {
     if (showAddModal) {
       const dismiss = backNavigation.pushModal('addTempleModal', () => {
@@ -195,7 +214,7 @@ export const TemplesScreen: React.FC<TemplesScreenProps> = ({
           </p>
         </div>
 
-        <button onClick={() => setShowAddModal(true)} className="btn-primary">
+        <button onClick={() => setIsAddTempleModalOpen(true)} className="btn-primary">
           <Plus size={18} />
           <span>{isKannada ? 'ದೇಗುಲ ಸೇರಿಸಿ' : 'Add Temple Record'}</span>
         </button>
@@ -213,7 +232,7 @@ export const TemplesScreen: React.FC<TemplesScreenProps> = ({
               ? 'ಮುಟ್ಟಗುಂಡಿ ಗ್ರಾಮದ ಶ್ರೀ ರಂಗನಾಥ ಸ್ವಾಮಿ, ವೀರಭದ್ರೇಶ್ವರ ಅಥವಾ ಗ್ರಾಮ ದೇವತೆ ಸನ್ನಿಧಿಯ ಇತಿಹಾಸ ಮತ್ತು ಪೂಜಾ ವಿವರಗಳನ್ನು ಸೇರಿಸಿ.'
               : 'Add temple history, daily darshan pooja timings, and annual jaatre dates for Muttagundi.'}
           </p>
-          <button onClick={() => setShowAddModal(true)} className="btn-primary" style={{ display: 'inline-flex' }}>
+          <button onClick={() => setIsAddTempleModalOpen(true)} className="btn-primary" style={{ display: 'inline-flex' }}>
             <Plus size={16} />
             <span>{isKannada ? 'ಮೊದಲ ದೇಗುಲ ಸೇರಿಸಿ' : 'Add First Temple'}</span>
           </button>
@@ -294,6 +313,76 @@ export const TemplesScreen: React.FC<TemplesScreenProps> = ({
                       {isKannada ? 'ವಿವರ ನೋಡಿ' : 'Explore'} →
                     </span>
                   </div>
+
+                  {/* Admin / Moderator Edit & Delete Actions */}
+                  {(isAdmin || isModerator) && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '8px',
+                        marginTop: '10px',
+                        paddingTop: '10px',
+                        borderTop: '1px dashed rgba(245, 158, 11, 0.3)'
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingTemple(temple);
+                        }}
+                        style={{
+                          flex: 1,
+                          background: 'rgba(245, 158, 11, 0.16)',
+                          border: '1px solid rgba(245, 158, 11, 0.45)',
+                          color: '#F59E0B',
+                          borderRadius: '8px',
+                          padding: '6px 10px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <Edit3 size={13} />
+                        <span>{isKannada ? 'ತಿದ್ದುಪಡಿ' : 'Edit Temple'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const confirmMsg = isKannada
+                            ? `ಈ ದೇವಾಲಯವನ್ನು (${temple.name_kn || temple.name_en}) ಖಚಿತವಾಗಿ ಅಳಿಸಬೇಕೇ?`
+                            : `Are you sure you want to delete "${temple.name_en}"?`;
+                          if (window.confirm(confirmMsg)) {
+                            await dbService.deleteTemple(temple.id, currentUser?.uid, role || 'ADMIN');
+                          }
+                        }}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                          color: '#EF4444',
+                          borderRadius: '8px',
+                          padding: '6px 10px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                        title={isKannada ? 'ಅಳಿಸಿ' : 'Delete'}
+                      >
+                        <Trash2 size={13} />
+                        <span>{isKannada ? 'ಅಳಿಸಿ' : 'Delete'}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -559,6 +648,24 @@ export const TemplesScreen: React.FC<TemplesScreenProps> = ({
           </div>
         </div>
       )}
+
+      {/* 🛕 Admin Edit & Add Temple Modals */}
+      <EditTempleModal
+        temple={editingTemple}
+        mode="edit"
+        isOpen={!!editingTemple}
+        onClose={() => setEditingTemple(null)}
+        onSaved={() => setEditingTemple(null)}
+        onDeleted={() => setEditingTemple(null)}
+      />
+
+      <EditTempleModal
+        temple={null}
+        mode="add"
+        isOpen={isAddTempleModalOpen}
+        onClose={() => setIsAddTempleModalOpen(false)}
+        onSaved={() => setIsAddTempleModalOpen(false)}
+      />
     </div>
   );
 };

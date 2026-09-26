@@ -73,7 +73,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   useEffect(() => {
     const unsubStats = dbService.subscribeVillageStats(setStats);
     const unsubNews = dbService.subscribeNews((items) => {
-      setNewsList(items.slice(0, 3));
+      const recent = items.filter((it) => isWithinOneWeek(it.created_at));
+      setNewsList(recent.length > 0 ? recent.slice(0, 3) : items.slice(0, 1));
     });
     const unsubEvents = dbService.subscribeEvents((items) => setEventsList(items.slice(0, 2)));
     const unsubTourn = dbService.subscribeTournaments(setTournaments);
