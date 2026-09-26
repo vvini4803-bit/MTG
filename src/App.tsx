@@ -17,6 +17,7 @@ import { AgricultureScreen } from './views/AgricultureScreen';
 import { TemplesScreen } from './views/TemplesScreen';
 import { GalleryScreen } from './views/GalleryScreen';
 import { VillageMapView } from './views/VillageMapView';
+import { Village3DView } from './views/Village3DView';
 import { VoiceAssistantScreen } from './views/VoiceAssistantScreen';
 import { UserProfileScreen } from './views/UserProfileScreen';
 import { AdminDashboardScreen } from './views/AdminDashboardScreen';
@@ -81,6 +82,7 @@ export type MainSection =
   | 'temples'
   | 'photos'
   | 'map'
+  | 'village_3d'
   | 'ask'
   | 'people'
   | 'messages'
@@ -359,11 +361,21 @@ export const App: React.FC = () => {
       id: 'map' as MainSection,
       title_en: 'VILLAGE MAP',
       title_kn: 'ನಮ್ಮ ಊರಿನ ನಕ್ಷೆ',
-      subtitle_en: '3D Village model, landmarks & live GPS navigation',
-      subtitle_kn: '3D ಗ್ರಾಮ ಮಾದರಿ, ಪ್ರಮುಖ ಸ್ಥಳಗಳು & ಜಿಪಿಎಸ್ ದಾರಿ',
+      subtitle_en: 'Google Maps, landmarks & live GPS navigation',
+      subtitle_kn: 'ಗೂಗಲ್ ನಕ್ಷೆ, ಪ್ರಮುಖ ಸ್ಥಳಗಳು & ಜಿಪಿಎಸ್ ದಾರಿ',
       icon: '🗺️',
       color: '#3B82F6',
       bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(29, 78, 216, 0.08) 100%)'
+    },
+    {
+      id: 'village_3d' as MainSection,
+      title_en: '3D VILLAGE VIEW',
+      title_kn: '3D ಗ್ರಾಮ ದರ್ಶನ',
+      subtitle_en: 'Interactive 3D model & anime visual tour',
+      subtitle_kn: 'ಇಂಟರ್ಯಾಕ್ಟಿವ್ 3D ಮಾದರಿ & ಅನಿಮೆ ಕಲಾ ನೋಟ',
+      icon: '🌐',
+      color: '#8B5CF6',
+      bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(109, 40, 217, 0.08) 100%)'
     },
     {
       id: 'ask' as MainSection,
@@ -1429,14 +1441,21 @@ export const App: React.FC = () => {
         )}
 
         {/* ============================================================ */}
-        {/* 🗺️ SECTION 8: VILLAGE MAP                                    */}
+        {/* 🗺️ SECTION 8: VILLAGE MAP & GPS                               */}
         {/* ============================================================ */}
         {currentSection === 'map' && (
-          <VillageMapView />
+          <VillageMapView onNavigateTo3D={() => navigateTo('village_3d')} />
         )}
 
         {/* ============================================================ */}
-        {/* 🤖🎙️ SECTION 9: ASK VILLAGE AI                               */}
+        {/* 🌐 SECTION 9: 3D VILLAGE EXPERIENCE                           */}
+        {/* ============================================================ */}
+        {currentSection === 'village_3d' && (
+          <Village3DView onNavigateToMap={() => navigateTo('map')} />
+        )}
+
+        {/* ============================================================ */}
+        {/* 🤖🎙️ SECTION 10: ASK VILLAGE AI                              */}
         {/* ============================================================ */}
         {currentSection === 'ask' && (
           <VoiceAssistantScreen
@@ -1446,6 +1465,8 @@ export const App: React.FC = () => {
               else if (tab === 'sports') navigateTo('sports');
               else if (tab === 'agriculture') navigateTo('agriculture');
               else if (tab === 'temples') navigateTo('temples');
+              else if (tab === 'map') navigateTo('map');
+              else if (tab === 'village_3d') navigateTo('village_3d');
               else navigateTo('home');
             }}
           />

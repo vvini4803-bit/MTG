@@ -128,6 +128,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             { id: 'sports', label: isKannada ? 'ಕ್ರೀಡೆ' : 'Sports' },
             { id: 'agriculture', label: isKannada ? 'ಕೃಷಿ' : 'Agriculture' },
             { id: 'temples', label: isKannada ? 'ದೇವಸ್ಥಾನ' : 'Temples' },
+            { id: 'map', label: isKannada ? 'ನಕ್ಷೆ' : 'Map' },
+            { id: 'village_3d', label: isKannada ? '3D ಗ್ರಾಮ' : '3D Village' },
             { id: 'stats', label: isKannada ? 'ಅಂಕಿಅಂಶ' : 'Data' }
           ].map((item) => (
             <button

@@ -8,6 +8,7 @@ export type MainSection =
   | 'temples'
   | 'photos'
   | 'map'
+  | 'village_3d'
   | 'ask'
   | 'people'
   | 'messages'

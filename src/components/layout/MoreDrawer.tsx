@@ -17,7 +17,9 @@ import {
   ShieldAlert,
   Flame,
   FileText,
-  UserCheck
+  UserCheck,
+  Map as MapIcon,
+  Globe
 } from 'lucide-react';
 
 interface MoreDrawerProps {
@@ -49,6 +51,8 @@ export const MoreDrawer: React.FC<MoreDrawerProps> = ({
       items: [
         { id: 'agriculture', label: isKannada ? 'ಕೃಷಿ ಮಾಹಿತಿ ಕೇಂದ್ರ' : 'Agriculture Hub', icon: Wheat, color: '#10B981' },
         { id: 'temples', label: isKannada ? 'ದೇವಸ್ಥಾನ & ಸಂಸ್ಕೃತಿ' : 'Temples & Culture', icon: Landmark, color: '#F59E0B' },
+        { id: 'map', label: isKannada ? 'ಗ್ರಾಮ ನಕ್ಷೆ & ಜಿಪಿಎಸ್' : 'Village Map & GPS', icon: MapIcon, color: '#3B82F6' },
+        { id: 'village_3d', label: isKannada ? '3D ಗ್ರಾಮ ದರ್ಶನ & ಅನಿಮೆ' : '3D Village Tour & Anime', icon: Globe, color: '#8B5CF6' },
         { id: 'history', label: isKannada ? 'ಇತಿಹಾಸ & ಪರಂಪರೆ' : 'History & Timeline', icon: BookOpen, color: '#0284C7' },
         { id: 'stories', label: isKannada ? 'ಗ್ರಾಮದ ಕಥೆಗಳು' : 'Village Stories & Lore', icon: Flame, color: '#EA580C' },
         { id: 'stats', label: isKannada ? 'ಅಧಿಕೃತ ಅಂಕಿಅಂಶ' : 'Verified Village Data', icon: BarChart3, color: '#8B5CF6' },

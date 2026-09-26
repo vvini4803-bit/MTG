@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { realtimeSync } from '../services/realtimeSync';
-import { Village3DScene, LandmarkId } from '../components/3d/Village3DScene';
 import {
   MapPin,
   Navigation,
   PhoneCall,
   Search,
-  CheckCircle2,
   ExternalLink,
   Clock,
   Compass,
@@ -17,9 +15,9 @@ import {
   X,
   Send,
   Layers,
-  Share2,
-  Maximize2,
-  RefreshCw
+  Sparkles,
+  Map as MapIcon,
+  ChevronRight
 } from 'lucide-react';
 
 export interface MapLocationItem {
@@ -58,22 +56,24 @@ export interface MapLocationItem {
 // Authentic Verified Landmarks for Muttagundi, Hosadurga Taluk, Chitradurga District
 export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
   {
-    id: 'mtg_panchayat',
-    name_en: 'Muttagondi Community Hall & Shops',
-    name_kn: 'ಮುತ್ತಾಗೊಂದಿ ಸಮುದಾಯ ಭವನ & ಅಂಗಡಿಗಳು',
-    category: 'HALL',
-    icon: '🏛️',
-    color: '#10B981',
-    desc_en: 'Village community hall, public meetings, gathering space, and local shops.',
-    desc_kn: 'ಗ್ರಾಮ ಸಮುದಾಯ ಭವನ, ಸಾರ್ವಜನಿಕ ಸಭೆಗಳು, ಶುಭ ಸಮಾರಂಭ ಹಾಗೂ ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳು.',
-    distance_en: 'Village Center',
-    distance_kn: 'ಗ್ರಾಮ ಕೇಂದ್ರ',
-    timings_en: '8:00 AM - 9:00 PM',
-    timings_kn: 'ಬೆಳಗ್ಗೆ ೮:೦೦ - ರಾತ್ರಿ ೯:೦೦',
-    phone: '+91 7483254968',
-    coords: { lat: 13.7562, lng: 76.3335 },
-    map_url: 'https://maps.app.goo.gl/sAMg2991XNuzLqNt6?g_st=ac',
-    verified: true
+    id: 'mtg_temple_thimmappa',
+    name_en: 'Sri Lakshmi Thimmappa Swamy Temple',
+    name_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ',
+    category: 'TEMPLE',
+    icon: '🛕',
+    color: '#059669',
+    desc_en: 'Sacred historic shrine of Lord Sri Lakshmi Thimmappa Swamy in Muttagundi, revered village deity and holy pilgrimage site.',
+    desc_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಪವಿತ್ರ ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ, ಗ್ರಾಮಸ್ಥರ ಆರಾಧ್ಯ ದೈವ ಹಾಗೂ ಭಕ್ತರ ಶ್ರದ್ಧಾ ಕೇಂದ್ರ.',
+    distance_en: 'North-East Side',
+    distance_kn: 'ಈಶಾನ್ಯ ಭಾಗ',
+    timings_en: 'Open all day for darshan',
+    timings_kn: 'ದಿನವಿಡೀ ದರ್ಶನ ಲಭ್ಯ',
+    coords: { lat: 13.7572, lng: 76.3342 },
+    map_url: 'https://maps.app.goo.gl/aekVSfTPkpzUh2hj9?g_st=aw',
+    verified: true,
+    anime_image: '/anime/stone_shrine.jpg',
+    anime_title_en: 'Sri Lakshmi Thimmappa Swamy Temple (Anime 3D)',
+    anime_title_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ (ಅನಿಮೆ 3D)'
   },
   {
     id: 'mtg_temple_anjaneya',
@@ -116,26 +116,6 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     anime_title_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ಗುಡಿ & ಗೋಪುರ (ಅನಿಮೆ 3D)'
   },
   {
-    id: 'mtg_temple_thimmappa',
-    name_en: 'Sri Lakshmi Thimmappa Swamy Temple',
-    name_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ',
-    category: 'TEMPLE',
-    icon: '🛕',
-    color: '#059669',
-    desc_en: 'Sacred historic shrine of Lord Sri Lakshmi Thimmappa Swamy in Muttagundi, revered village deity and holy pilgrimage site.',
-    desc_kn: 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮದ ಪವಿತ್ರ ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ, ಗ್ರಾಮಸ್ಥರ ಆರಾಧ್ಯ ದೈವ ಹಾಗೂ ಭಕ್ತರ ಶ್ರದ್ಧಾ ಕೇಂದ್ರ.',
-    distance_en: 'North-East Side',
-    distance_kn: 'ಈಶಾನ್ಯ ಭಾಗ',
-    timings_en: 'Open all day for darshan',
-    timings_kn: 'ದಿನವಿಡೀ ದರ್ಶನ ಲಭ್ಯ',
-    coords: { lat: 13.7572, lng: 76.3342 },
-    map_url: 'https://maps.app.goo.gl/aekVSfTPkpzUh2hj9?g_st=aw',
-    verified: true,
-    anime_image: '/anime/stone_shrine.jpg',
-    anime_title_en: 'Sri Lakshmi Thimmappa Swamy Temple (Anime 3D)',
-    anime_title_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ (ಅನಿಮೆ 3D)'
-  },
-  {
     id: 'mtg_school',
     name_en: 'Govt Lower Primary School Muttagondi',
     name_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ಮುತ್ತಾಗೊಂದಿ',
@@ -175,6 +155,24 @@ export const VERIFIED_VILLAGE_LOCATIONS: MapLocationItem[] = [
     anime_image: '/anime/anganwadi.jpg',
     anime_title_en: 'Anganwadi Children Center (Anime 3D)',
     anime_title_kn: 'ಅಂಗನವಾಡಿ ಕೇಂದ್ರ ಮುತ್ತಾಗೊಂದಿ (ಅನಿಮೆ 3D)'
+  },
+  {
+    id: 'mtg_panchayat',
+    name_en: 'Muttagondi Community Hall & Shops',
+    name_kn: 'ಮುತ್ತಾಗೊಂದಿ ಸಮುದಾಯ ಭವನ & ಅಂಗಡಿಗಳು',
+    category: 'HALL',
+    icon: '🏛️',
+    color: '#10B981',
+    desc_en: 'Village community hall, public meetings, gathering space, and local shops.',
+    desc_kn: 'ಗ್ರಾಮ ಸಮುದಾಯ ಭವನ, ಸಾರ್ವಜನಿಕ ಸಭೆಗಳು, ಶುಭ ಸಮಾರಂಭ ಹಾಗೂ ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳು.',
+    distance_en: 'Village Center',
+    distance_kn: 'ಗ್ರಾಮ ಕೇಂದ್ರ',
+    timings_en: '8:00 AM - 9:00 PM',
+    timings_kn: 'ಬೆಳಗ್ಗೆ ೮:೦೦ - ರಾತ್ರಿ ೯:೦೦',
+    phone: '+91 7483254968',
+    coords: { lat: 13.7562, lng: 76.3335 },
+    map_url: 'https://maps.app.goo.gl/sAMg2991XNuzLqNt6?g_st=ac',
+    verified: true
   },
   {
     id: 'mtg_water_plant',
@@ -265,7 +263,7 @@ function calculateHaversineDistanceKm(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -278,7 +276,11 @@ function calculateHaversineDistanceKm(
   return R * c;
 }
 
-export const VillageMapView: React.FC = () => {
+interface VillageMapViewProps {
+  onNavigateTo3D?: () => void;
+}
+
+export const VillageMapView: React.FC<VillageMapViewProps> = ({ onNavigateTo3D }) => {
   const { isKannada } = useLanguage();
 
   const [locations, setLocations] = useState<MapLocationItem[]>(() => {
@@ -287,7 +289,6 @@ export const VillageMapView: React.FC = () => {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Keep user-added custom places and ensure latest verified locations are always up-to-date
           const customPlaces = parsed.filter(
             (p: MapLocationItem) => p.id !== 'mtg_stone_shrine' && (!p.verified || !VERIFIED_VILLAGE_LOCATIONS.some((v) => v.id === p.id))
           );
@@ -302,7 +303,7 @@ export const VillageMapView: React.FC = () => {
   const [selectedLocation, setSelectedLocation] = useState<MapLocationItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Device Exact Location State
+  // Device GPS State
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [isWatchingLocation, setIsWatchingLocation] = useState(false);
@@ -310,194 +311,135 @@ export const VillageMapView: React.FC = () => {
   const [sortByNearest, setSortByNearest] = useState(false);
   const [showSuggestModal, setShowSuggestModal] = useState(false);
 
-  // Map view mode: '3d', 'roadmap', or 'satellite'
-  const [viewMode, setViewMode] = useState<'3d' | 'roadmap' | 'satellite'>('3d');
+  // Map view mode: 'roadmap' or 'satellite' (simple 2D toggle)
+  const [viewMode, setViewMode] = useState<'roadmap' | 'satellite'>('roadmap');
   const [isFocusedOnUser, setIsFocusedOnUser] = useState(false);
-  const [isAnimeMode, setIsAnimeMode] = useState(true);
-  const [activeAnimeModal, setActiveAnimeModal] = useState<MapLocationItem | null>(null);
 
-  // Sync selection from 3D Village model to locations list
-  const handle3DLandmarkSelect = (landmarkId: LandmarkId) => {
-    let match: MapLocationItem | undefined;
-    if (landmarkId === 'shrine') {
-      match = locations.find((l) => l.id.includes('thimmappa') || l.id.includes('stone') || l.id.includes('shrine') || l.name_kn.includes('ತಿಮ್ಮಪ್ಪ'));
-    } else if (landmarkId === 'temple') {
-      match = locations.find((l) => l.id.includes('anjaneya') || (l.category === 'TEMPLE' && !l.id.includes('kalle') && !l.id.includes('stone') && !l.id.includes('thimmappa')));
-    } else if (landmarkId === 'temple1') {
-      match = locations.find((l) => l.id.includes('kalle') || l.category === 'TEMPLE');
-    } else if (landmarkId === 'panchayat') {
-      match = locations.find((l) => l.category === 'HALL' || l.id.includes('panchayat') || l.id.includes('community'));
-    } else if (landmarkId === 'school') {
-      match = locations.find((l) => l.category === 'SCHOOL' || l.id.includes('school'));
-    } else if (landmarkId === 'kindergarden' || landmarkId === 'clinic') {
-      match = locations.find((l) => l.category === 'HEALTH' || l.id.includes('anganwadi') || l.id.includes('health'));
-    } else if (landmarkId === 'farms') {
-      match = locations.find((l) => l.category === 'FARM' || l.id.includes('farm'));
-    } else if (landmarkId === 'water') {
-      match = locations.find((l) => l.category === 'WATER' || l.id.includes('water'));
-    } else if (landmarkId === 'sports') {
-      match = locations.find((l) => l.category === 'SPORTS' || l.id.includes('sports'));
-    }
-
-    if (match) {
-      setSelectedLocation(match);
-      setIsFocusedOnUser(false);
-    }
-  };
-
-  // Suggest Location Form
+  // Suggest Modal Form
   const [suggestName, setSuggestName] = useState('');
-  const [suggestCategory, setSuggestCategory] = useState('TEMPLE');
+  const [suggestCategory, setSuggestCategory] = useState('SHOP');
   const [suggestDesc, setSuggestDesc] = useState('');
   const [suggestPhone, setSuggestPhone] = useState('');
   const [suggestTimings, setSuggestTimings] = useState('');
-  const [suggestLat, setSuggestLat] = useState<string>('');
-  const [suggestLng, setSuggestLng] = useState<string>('');
+  const [suggestLat, setSuggestLat] = useState('');
+  const [suggestLng, setSuggestLng] = useState('');
   const [suggestSubmitted, setSuggestSubmitted] = useState(false);
 
-  const watchIdRef = useRef<number | null>(null);
-
-  // Save locations locally and setup initial selected location
-  useEffect(() => {
-    if (locations.length > 0 && !selectedLocation) {
-      setSelectedLocation(locations[0]);
-    }
-  }, [locations]);
-
-  // Listen for realtime cloud updates if another villager adds a place
+  // Listen for realtime added map locations
   useEffect(() => {
     const unsub = realtimeSync.subscribe((envelope) => {
       if (envelope.type === ('MAP_LOCATION_ADDED' as any)) {
-        const newPlace: MapLocationItem = envelope.payload;
-        if (newPlace && newPlace.id) {
+        const newLoc = envelope.payload as MapLocationItem;
+        if (newLoc && newLoc.id) {
           setLocations((prev) => {
-            if (prev.some((p) => p.id === newPlace.id)) return prev;
-            const next = [newPlace, ...prev];
-            localStorage.setItem('muttagundi_map_locations', JSON.stringify(next));
-            return next;
+            if (prev.some((p) => p.id === newLoc.id)) return prev;
+            return [newLoc, ...prev];
           });
         }
       }
     });
-    return () => unsub();
+    return unsub;
   }, []);
 
-  // Detect user's current live location with high accuracy GPS
+  // One-time GPS detection
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
-      setLocError(
-        isKannada
-          ? 'ನಿಮ್ಮ ಸಾಧನ ಅಥವಾ ಬ್ರೌಸರ್ ಜಿಪಿಎಸ್ ಬೆಂಬಲಿಸುವುದಿಲ್ಲ.'
-          : 'Geolocation is not supported on this browser.'
-      );
+      setLocError(isKannada ? 'ನಿಮ್ಮ ಬ್ರೌಸರ್ ಜಿಪಿಎಸ್ ಬೆಂಬಲಿಸುವುದಿಲ್ಲ' : 'Geolocation is not supported by your browser');
       return;
     }
-
     setIsLocating(true);
     setLocError(null);
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: Math.round(pos.coords.accuracy)
-        };
-        setUserCoords(coords);
+      (position) => {
+        setUserCoords({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: Math.round(position.coords.accuracy)
+        });
         setIsLocating(false);
         setSortByNearest(true);
       },
-      (err) => {
-        console.warn('Geolocation error:', err);
+      (error) => {
         setIsLocating(false);
-        setLocError(
-          isKannada
-            ? 'ನಿಖರ ಸ್ಥಳ ಪತ್ತೆಹಚ್ಚಲು ದಯವಿಟ್ಟು ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಜಿಪಿಎಸ್ (Location) ಅನುಮತಿ ನೀಡಿ.'
-            : 'Please allow Location/GPS permission in your browser to detect your exact position.'
-        );
+        let msg = isKannada ? 'ಸ್ಥಳ ಪತ್ತೆಹಚ್ಚಲು ವಿಫಲವಾಗಿದೆ' : 'Unable to retrieve location';
+        if (error.code === error.PERMISSION_DENIED) {
+          msg = isKannada ? 'ದಯವಿಟ್ಟು ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಸ್ಥಳಾವಕಾಶ (Location) ಅನುಮತಿ ನೀಡಿ' : 'Please allow Location permission in your browser/device settings';
+        } else if (error.code === error.TIMEOUT) {
+          msg = isKannada ? 'ಸ್ಥಳ ಪತ್ತೆಹಚ್ಚುವ ಸಮಯ ಮೀರಿದೆ. ಮರುಪ್ರಯತ್ನಿಸಿ.' : 'Location request timed out. Please retry.';
+        }
+        setLocError(msg);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 }
     );
   };
 
-  // Toggle Continuous Live GPS Tracking
+  // Toggle Continuous Watch
   const toggleLiveTracking = () => {
     if (isWatchingLocation) {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
       setIsWatchingLocation(false);
-    } else {
-      if (!navigator.geolocation) return;
-      setIsWatchingLocation(true);
-      setLocError(null);
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (pos) => {
-          setUserCoords({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            accuracy: Math.round(pos.coords.accuracy)
-          });
-        },
-        (err) => {
-          console.warn('Watch location error:', err);
-          setIsWatchingLocation(false);
-        },
-        { enableHighAccuracy: true, maximumAge: 3000 }
-      );
+      return;
     }
-  };
+    if (!navigator.geolocation) return;
 
-  // Clean up watch on unmount
-  useEffect(() => {
+    setIsWatchingLocation(true);
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setUserCoords({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: Math.round(pos.coords.accuracy)
+        });
+      },
+      () => {
+        setIsWatchingLocation(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 2000 }
+    );
+
     return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
+      navigator.geolocation.clearWatch(watchId);
     };
-  }, []);
-
-  // Request location on first view
-  useEffect(() => {
-    handleDetectLocation();
-  }, []);
+  };
 
   const categories = [
     { id: 'ALL', label_en: 'All Places', label_kn: 'ಎಲ್ಲಾ ಸ್ಥಳಗಳು', icon: '📍' },
     { id: 'TEMPLE', label_en: 'Temples', label_kn: 'ದೇವಸ್ಥಾನಗಳು', icon: '🛕' },
-    { id: 'HEALTH', label_en: 'Health Center', label_kn: 'ಆಸ್ಪತ್ರೆ', icon: '🏥' },
     { id: 'SCHOOL', label_en: 'Schools', label_kn: 'ಶಾಲೆಗಳು', icon: '🏫' },
-    { id: 'WATER', label_en: 'Water Points', label_kn: 'ನೀರಿನ ಘಟಕ', icon: '💧' },
+    { id: 'HEALTH', label_en: 'Health & Anganwadi', label_kn: 'ಆರೋಗ್ಯ & ಅಂಗನವಾಡಿ', icon: '👶' },
+    { id: 'WATER', label_en: 'Water Plants', label_kn: 'ಕುಡಿಯುವ ನೀರು', icon: '💧' },
+    { id: 'HALL', label_en: 'Community Hall', label_kn: 'ಭವನ & ಅಂಗಡಿ', icon: '🏛️' },
     { id: 'BUS', label_en: 'Bus Stops', label_kn: 'ಬಸ್ ನಿಲ್ದಾಣ', icon: '🚌' },
-    { id: 'HALL', label_en: 'Panchayat & Halls', label_kn: 'ಪಂಚಾಯತಿ / ಭವನ', icon: '🏛️' },
-    { id: 'SPORTS', label_en: 'Sports Ground', label_kn: 'ಕ್ರೀಡಾಂಗಣ', icon: '🏏' }
+    { id: 'FARM', label_en: 'Agriculture', label_kn: 'ಕೃಷಿ & ತೋಟ', icon: '🌴' }
   ];
 
-  // Calculate live distance for each location
-  const locationsWithExactDistance = locations.map((loc) => {
-    if (!userCoords) return { ...loc, exactKm: null, formattedDistance: null };
-    const km = calculateHaversineDistanceKm(userCoords.lat, userCoords.lng, loc.coords.lat, loc.coords.lng);
-    let formatted = '';
-    if (km < 1) {
-      const meters = Math.round(km * 1000);
-      formatted = isKannada ? `${meters} ಮೀಟರ್` : `${meters} m`;
-    } else {
-      formatted = isKannada ? `${km.toFixed(1)} ಕಿ.ಮೀ` : `${km.toFixed(1)} km`;
-    }
-    return { ...loc, exactKm: km, formattedDistance: formatted };
-  });
-
-  // Filter & Sort
-  let filtered = locationsWithExactDistance.filter((loc) => {
-    const matchesCategory = selectedCategory === 'ALL' || loc.category === selectedCategory;
-    const matchesSearch =
-      loc.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loc.name_kn.includes(searchQuery) ||
-      loc.desc_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loc.desc_kn.includes(searchQuery);
-    return matchesCategory && matchesSearch;
-  });
+  // Filter and sort locations
+  const filtered = locations
+    .filter((loc) => {
+      const matchCat = selectedCategory === 'ALL' || loc.category === selectedCategory;
+      const matchSearch =
+        loc.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        loc.name_kn.includes(searchQuery) ||
+        loc.desc_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        loc.desc_kn.includes(searchQuery);
+      return matchCat && matchSearch;
+    })
+    .map((loc) => {
+      if (userCoords) {
+        const km = calculateHaversineDistanceKm(
+          userCoords.lat,
+          userCoords.lng,
+          loc.coords.lat,
+          loc.coords.lng
+        );
+        let distText = `${km.toFixed(2)} km`;
+        if (km < 1) {
+          distText = `${Math.round(km * 1000)} meters`;
+        }
+        return { ...loc, exactKm: km, formattedDistance: distText };
+      }
+      return { ...loc, exactKm: 999, formattedDistance: loc.distance_en };
+    });
 
   if (sortByNearest && userCoords) {
     filtered.sort((a, b) => (a.exactKm || 999) - (b.exactKm || 999));
@@ -516,12 +458,6 @@ export const VillageMapView: React.FC = () => {
       return loc.map_url;
     }
     return `https://www.google.com/maps/search/?api=1&query=${loc.coords.lat},${loc.coords.lng}`;
-  };
-
-  // Google Maps Native App launcher (deep link for mobile)
-  const getGoogleMapsAppUrl = (lat: number, lng: number, label: string, directUrl?: string) => {
-    if (directUrl) return directUrl;
-    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${encodeURIComponent(label)}`;
   };
 
   const handleSuggestSubmit = (e: React.FormEvent) => {
@@ -554,7 +490,6 @@ export const VillageMapView: React.FC = () => {
     setSelectedLocation(newLoc);
     localStorage.setItem('muttagundi_map_locations', JSON.stringify(updated));
 
-    // Broadcast in real-time so other villagers see it immediately
     realtimeSync.broadcast('MAP_LOCATION_ADDED' as any, newLoc);
 
     setSuggestSubmitted(true);
@@ -571,25 +506,115 @@ export const VillageMapView: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1040px', margin: '0 auto', paddingBottom: '32px' }}>
-      {/* Title Header */}
+    <div style={{ maxWidth: '1080px', margin: '0 auto', paddingBottom: '36px' }}>
+      {/* 1. TOP SEGMENTED SWITCHER BAR: VILLAGE MAP vs 3D VILLAGE */}
+      <div
+        style={{
+          background: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '24px',
+          padding: '6px',
+          marginBottom: '20px',
+          display: 'flex',
+          gap: '6px',
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)'
+        }}
+      >
+        <button
+          style={{
+            flex: 1,
+            padding: '12px 18px',
+            borderRadius: '18px',
+            border: '1px solid rgba(59, 130, 246, 0.5)',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.28) 0%, rgba(37, 99, 235, 0.2) 100%)',
+            color: '#FFFFFF',
+            fontSize: '0.92rem',
+            fontWeight: 900,
+            cursor: 'default',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            boxShadow: '0 4px 16px rgba(59, 130, 246, 0.3)'
+          }}
+        >
+          <MapIcon size={18} color="#60A5FA" />
+          <span>{isKannada ? '🗺️ ಗ್ರಾಮ ನಕ್ಷೆ & ಜಿಪಿಎಸ್ (ಸಕ್ರಿಯ)' : '🗺️ Village Map & GPS (Active)'}</span>
+        </button>
+
+        <button
+          onClick={onNavigateTo3D}
+          style={{
+            flex: 1,
+            padding: '12px 18px',
+            borderRadius: '18px',
+            border: 'none',
+            background: 'transparent',
+            color: '#94A3B8',
+            fontSize: '0.92rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+            e.currentTarget.style.color = '#FFFFFF';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = '#94A3B8';
+          }}
+        >
+          <Sparkles size={18} color="#FBBF24" />
+          <span>{isKannada ? '🌐 3D ಗ್ರಾಮ ದರ್ಶನಕ್ಕೆ ಹೋಗಿ' : '🌐 Switch to 3D Village View'}</span>
+        </button>
+      </div>
+
+      {/* 2. SECTION TITLE & DESCRIPTION */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <span style={{ fontSize: '1.6rem' }}>🗺️</span>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
-              {isKannada ? 'ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮ ನಕ್ಷೆ & ಜಿಪಿಎಸ್' : 'Muttagundi Village Map & GPS'}
+              {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ನಕ್ಷೆ & ಜಿಪಿಎಸ್' : 'Muttagundi Village Map & GPS'}
             </h2>
           </div>
           <p style={{ fontSize: '0.84rem', color: '#94A3B8', margin: 0 }}>
             {isKannada
-              ? 'ನಿಮ್ಮ ಪ್ರಸ್ತುತ ಸ್ಥಳ, ಗ್ರಾಮದ ದೇವಸ್ಥಾನಗಳು, ಶಾಲೆ, ಆಸ್ಪತ್ರೆ ಹಾಗೂ ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್ ದಾರಿ'
+              ? 'ನಿಮ್ಮ ಪ್ರಸ್ತುತ ಜಿಪಿಎಸ್ ಸ್ಥಳ, ಗ್ರಾಮದ ಪ್ರಮುಖ ಸ್ಥಳಗಳು, ನಿಖರ ದೂರ ಮತ್ತು ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್ ದಾರಿ'
               : 'Live device GPS tracking, local village landmarks, and turn-by-turn Google Maps navigation'}
           </p>
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {onNavigateTo3D && (
+            <button
+              onClick={onNavigateTo3D}
+              style={{
+                background: 'rgba(139, 92, 246, 0.15)',
+                color: '#A78BFA',
+                border: '1px solid rgba(139, 92, 246, 0.4)',
+                borderRadius: '20px',
+                padding: '8px 16px',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>🌐</span>
+              <span>{isKannada ? '3D ಗ್ರಾಮ ದರ್ಶನ' : '3D Village View'}</span>
+            </button>
+          )}
+
           <button
             onClick={() => {
               if (userCoords) {
@@ -618,14 +643,14 @@ export const VillageMapView: React.FC = () => {
         </div>
       </div>
 
-      {/* Live GPS Device Location Status Bar */}
+      {/* 3. LIVE GPS DEVICE LOCATION STATUS BAR */}
       <div
         style={{
           background: userCoords ? 'rgba(16, 185, 129, 0.12)' : 'rgba(59, 130, 246, 0.1)',
           border: `1px solid ${userCoords ? '#10B981' : 'rgba(59, 130, 246, 0.3)'}`,
-          borderRadius: '16px',
+          borderRadius: '18px',
           padding: '14px 18px',
-          marginBottom: '16px',
+          marginBottom: '18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -707,7 +732,6 @@ export const VillageMapView: React.FC = () => {
 
           {userCoords && (
             <>
-              {/* Show My Location on Map button */}
               <button
                 onClick={() => setIsFocusedOnUser(true)}
                 style={{
@@ -724,30 +748,6 @@ export const VillageMapView: React.FC = () => {
                 {isKannada ? '🎯 ನಕ್ಷೆಯಲ್ಲಿ ನನ್ನ ಸ್ಥಾನ' : '🎯 Show Me on Map'}
               </button>
 
-              {/* Direct Open in Google Maps */}
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${userCoords.lat},${userCoords.lng}`}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  background: 'rgba(59, 130, 246, 0.2)',
-                  color: '#60A5FA',
-                  border: '1px solid rgba(59, 130, 246, 0.4)',
-                  borderRadius: '20px',
-                  padding: '7px 14px',
-                  fontSize: '0.8rem',
-                  fontWeight: 800,
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <ExternalLink size={14} />
-                <span>{isKannada ? 'ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್‌ನಲ್ಲಿ ನನ್ನ ಸ್ಥಾನ' : 'Google Maps'}</span>
-              </a>
-
-              {/* Toggle Live Tracking */}
               <button
                 onClick={toggleLiveTracking}
                 style={{
@@ -777,22 +777,22 @@ export const VillageMapView: React.FC = () => {
         </div>
       )}
 
-      {/* 🗺️ INTERACTIVE EMBEDDED GOOGLE MAP VIEWER */}
+      {/* 4. 🗺️ CLEAN EMBEDDED GOOGLE MAP VIEWER */}
       <div
         className="glass-card"
         style={{
           borderRadius: '20px',
           overflow: 'hidden',
-          marginBottom: '24px',
+          marginBottom: '20px',
           border: '1px solid rgba(255, 255, 255, 0.15)',
           background: '#0B1528'
         }}
       >
-        {/* Map Controls Top Bar */}
+        {/* Map Header Controls */}
         <div
           style={{
             padding: '12px 18px',
-            background: 'rgba(7, 15, 30, 0.9)',
+            background: 'rgba(7, 15, 30, 0.92)',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             alignItems: 'center',
@@ -818,36 +818,17 @@ export const VillageMapView: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* View Mode Toggle: 3D Village vs Roadmap vs Satellite */}
+            {/* View Mode Toggle: Roadmap vs Satellite */}
             <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '14px', padding: '2px' }}>
-              <button
-                onClick={() => setViewMode('3d')}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  background: viewMode === '3d' ? '#10B981' : 'transparent',
-                  color: '#FFFFFF',
-                  fontSize: '0.76rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <span>🌐</span>
-                <span>{isKannada ? '3D ಗ್ರಾಮ' : '3D Village'}</span>
-              </button>
               <button
                 onClick={() => setViewMode('roadmap')}
                 style={{
-                  padding: '5px 12px',
+                  padding: '6px 14px',
                   borderRadius: '12px',
                   border: 'none',
                   background: viewMode === 'roadmap' ? '#10B981' : 'transparent',
                   color: '#FFFFFF',
-                  fontSize: '0.76rem',
+                  fontSize: '0.78rem',
                   fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
@@ -861,12 +842,12 @@ export const VillageMapView: React.FC = () => {
               <button
                 onClick={() => setViewMode('satellite')}
                 style={{
-                  padding: '5px 12px',
+                  padding: '6px 14px',
                   borderRadius: '12px',
                   border: 'none',
                   background: viewMode === 'satellite' ? '#10B981' : 'transparent',
                   color: '#FFFFFF',
-                  fontSize: '0.76rem',
+                  fontSize: '0.78rem',
                   fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
@@ -875,7 +856,7 @@ export const VillageMapView: React.FC = () => {
                 }}
               >
                 <span>🛰️</span>
-                <span>{isKannada ? 'ಉಪಗ್ರಹ' : 'Satellite'}</span>
+                <span>{isKannada ? 'ಉಪಗ್ರಹ ನೋಟ' : 'Satellite'}</span>
               </button>
             </div>
 
@@ -884,7 +865,7 @@ export const VillageMapView: React.FC = () => {
               href={
                 isFocusedOnUser && userCoords
                   ? `https://www.google.com/maps/search/?api=1&query=${userCoords.lat},${userCoords.lng}`
-                  : (selectedLocation?.map_url || getGoogleMapsAppUrl(activeLat, activeLng, selectedLocation?.name_en || 'Muttagundi'))
+                  : (selectedLocation?.map_url || `https://www.google.com/maps/search/?api=1&query=${activeLat},${activeLng}`)
               }
               target="_blank"
               rel="noreferrer"
@@ -908,142 +889,21 @@ export const VillageMapView: React.FC = () => {
           </div>
         </div>
 
-        {/* View Mode Display: 3D Scene OR Embedded Google Map Iframe */}
-        {viewMode === '3d' ? (
-          <div style={{ width: '100%', position: 'relative' }}>
-            <Village3DScene
-              selectedId={selectedLocation?.id}
-              onSelect={handle3DLandmarkSelect}
-              isKannada={isKannada}
-              isAnimeMode={isAnimeMode}
-              onToggleAnimeMode={setIsAnimeMode}
-              onOpenAnimeShowcase={(id) => {
-                const match = locations.find((l) => l.anime_image && (
-                  (id === 'temple' && l.id.includes('anjaneya')) ||
-                  (id === 'temple1' && l.id.includes('kalle')) ||
-                  (id === 'school' && l.id.includes('school')) ||
-                  (id === 'kindergarden' && l.id.includes('anganwadi')) ||
-                  (id === 'shrine' && (l.id.includes('thimmappa') || l.id.includes('stone')))
-                ));
-                if (match) {
-                  setSelectedLocation(match);
-                  setActiveAnimeModal(match);
-                }
-              }}
-            />
-          </div>
-        ) : (
-          <div style={{ width: '100%', height: '380px', position: 'relative', background: '#0F1D36' }}>
-            <iframe
-              title="Google Maps Village Viewer"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              loading="lazy"
-              allowFullScreen
-              src={`https://maps.google.com/maps?q=${activeLat},${activeLng}&t=${viewMode === 'satellite' ? 'k' : 'm'}&z=16&ie=UTF8&iwloc=&output=embed`}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* ✨ Anime 3D Village Visuals Showcase Strip */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)',
-          border: '1px solid rgba(251, 191, 36, 0.35)',
-          borderRadius: '20px',
-          padding: '16px',
-          marginBottom: '20px',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.4), 0 0 20px rgba(245, 158, 11, 0.12)'
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.3rem' }}>✨</span>
-            <div>
-              <h3 style={{ fontSize: '1.02rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
-                {isKannada ? 'ಮುತ್ತಗುಂಡಿ 3D ಅನಿಮೆ ಕಲಾವೈಭವಗಳು (5 ಪವಿತ್ರ ಸ್ಥಳಗಳು)' : 'Muttagundi 3D Anime Visuals (5 Heritage Landmarks)'}
-              </h3>
-              <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
-                {isKannada
-                  ? 'ಮಕೋತೋ ಶಿಂಕೈ & ಘಿಬ್ಲಿ ಪ್ರೇರಿತ ಆಧುನಿಕ ಕಲಾತ್ಮಕ ನೋಟಗಳು'
-                  : 'Makoto Shinkai & Ghibli inspired modern 3D anime scenes'}
-              </span>
-            </div>
-          </div>
-          <span
-            style={{
-              background: 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)',
-              color: '#FFFFFF',
-              fontWeight: 900,
-              fontSize: '0.68rem',
-              padding: '3px 10px',
-              borderRadius: '12px'
-            }}
-          >
-            {isKannada ? 'ಕ್ಲಿಕ್ ಮಾಡಿ ವೀಕ್ಷಿಸಿ' : 'TAP TO VIEW 3D ART'}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px' }}>
-          {locations.filter((l) => !!l.anime_image).map((item) => (
-            <div
-              key={item.id}
-              onClick={() => {
-                setSelectedLocation(item);
-                setActiveAnimeModal(item);
-              }}
-              style={{
-                minWidth: '170px',
-                maxWidth: '170px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '14px',
-                overflow: 'hidden',
-                border: selectedLocation?.id === item.id ? '2px solid #F59E0B' : '1px solid rgba(255, 255, 255, 0.12)',
-                cursor: 'pointer',
-                flexShrink: 0,
-                transition: 'all 0.22s ease',
-                boxShadow: selectedLocation?.id === item.id ? '0 0 16px rgba(245, 158, 11, 0.4)' : 'none'
-              }}
-            >
-              <div style={{ width: '100%', height: '96px', position: 'relative' }}>
-                <img
-                  src={item.anime_image}
-                  alt={item.name_en}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-                <span
-                  style={{
-                    position: 'absolute',
-                    bottom: '5px',
-                    right: '5px',
-                    background: 'rgba(7, 15, 30, 0.85)',
-                    color: '#FDE047',
-                    fontSize: '0.62rem',
-                    fontWeight: 900,
-                    padding: '2px 6px',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(253, 224, 71, 0.3)'
-                  }}
-                >
-                  ✨ 3D ANIME
-                </span>
-              </div>
-              <div style={{ padding: '8px 10px' }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {isKannada ? item.name_kn : item.name_en}
-                </div>
-                <div style={{ fontSize: '0.66rem', color: '#94A3B8', marginTop: '2px' }}>
-                  {item.distance_en}
-                </div>
-              </div>
-            </div>
-          ))}
+        {/* Embedded Google Map Iframe */}
+        <div style={{ width: '100%', height: '420px', position: 'relative', background: '#0F1D36' }}>
+          <iframe
+            title="Google Maps Village Viewer"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            loading="lazy"
+            allowFullScreen
+            src={`https://maps.google.com/maps?q=${activeLat},${activeLng}&t=${viewMode === 'satellite' ? 'k' : 'm'}&z=16&ie=UTF8&iwloc=&output=embed`}
+          />
         </div>
       </div>
 
-      {/* Search Input */}
+      {/* 5. SEARCH & CATEGORY PILLS */}
       <div style={{ position: 'relative', marginBottom: '14px' }}>
         <Search
           size={18}
@@ -1106,11 +966,11 @@ export const VillageMapView: React.FC = () => {
         })}
       </div>
 
-      {/* Selected Location Card (Full Directions & Actions) */}
+      {/* 6. SELECTED LOCATION CARD */}
       {selectedLocation && (
         <div
           style={{
-            background: 'rgba(15, 23, 42, 0.9)',
+            background: 'rgba(15, 23, 42, 0.92)',
             backdropFilter: 'blur(16px)',
             border: `2px solid ${selectedLocation.color}`,
             borderRadius: '20px',
@@ -1173,7 +1033,7 @@ export const VillageMapView: React.FC = () => {
               </div>
             </div>
 
-            {/* Google Maps Actions */}
+            {/* Google Maps Actions & 3D Jump */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {selectedLocation.phone && (
                 <a
@@ -1241,7 +1101,7 @@ export const VillageMapView: React.FC = () => {
                 }}
               >
                 <Compass size={16} />
-                <span>{isKannada ? 'ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್ ವಾಹನ ದಾರಿ' : 'Drive Directions'}</span>
+                <span>{isKannada ? 'ವಾಹನ ದಾರಿ' : 'Drive Directions'}</span>
               </a>
 
               {/* Walking Directions */}
@@ -1266,93 +1126,32 @@ export const VillageMapView: React.FC = () => {
                 <Navigation size={14} />
                 <span>{isKannada ? 'ಕಾಲುದಾರಿ' : 'Walk'}</span>
               </a>
-            </div>
-          </div>
 
-          {/* ✨ Interactive Anime 3D Visual Hero Banner */}
-          {selectedLocation.anime_image && (
-            <div
-              onClick={() => setActiveAnimeModal(selectedLocation)}
-              style={{
-                position: 'relative',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                marginBottom: '16px',
-                cursor: 'pointer',
-                border: '1px solid rgba(251, 191, 36, 0.45)',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(245, 158, 11, 0.2)',
-                aspectRatio: '16/9',
-                maxHeight: '280px'
-              }}
-            >
-              <img
-                src={selectedLocation.anime_image}
-                alt={selectedLocation.name_en}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  background: 'linear-gradient(to top, rgba(7, 15, 30, 0.95) 0%, rgba(7, 15, 30, 0.5) 60%, transparent 100%)',
-                  padding: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-end',
-                  flexWrap: 'wrap',
-                  gap: '10px'
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      background: 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)',
-                      color: '#FFFFFF',
-                      fontSize: '0.68rem',
-                      fontWeight: 900,
-                      padding: '3px 8px',
-                      borderRadius: '10px',
-                      marginBottom: '4px'
-                    }}
-                  >
-                    <span>✨</span>
-                    <span>{isKannada ? 'ಅನಿಮೆ 3D ಕಲಾ ನೋಟ' : 'Anime 3D Mode Visual'}</span>
-                  </div>
-                  <div style={{ color: '#FFFFFF', fontSize: '1rem', fontWeight: 800 }}>
-                    {isKannada ? selectedLocation.anime_title_kn : selectedLocation.anime_title_en}
-                  </div>
-                </div>
+              {/* View in 3D Village Button */}
+              {onNavigateTo3D && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveAnimeModal(selectedLocation);
-                  }}
+                  onClick={onNavigateTo3D}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(255, 255, 255, 0.35)',
+                    background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
                     color: '#FFFFFF',
-                    borderRadius: '20px',
-                    padding: '6px 14px',
-                    fontSize: '0.76rem',
+                    borderRadius: '24px',
+                    border: 'none',
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
                     fontWeight: 800,
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '5px',
-                    cursor: 'pointer'
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)'
                   }}
                 >
-                  <Maximize2 size={13} />
-                  <span>{isKannada ? 'ಪೂರ್ಣ ನೋಟ (Full HD)' : 'Full HD View'}</span>
+                  <span>🌐</span>
+                  <span>{isKannada ? '3D ಗ್ರಾಮದಲ್ಲಿ ನೋಡಿ' : 'View in 3D'}</span>
                 </button>
-              </div>
+              )}
             </div>
-          )}
+          </div>
 
           <p style={{ fontSize: '0.88rem', color: '#CBD5E1', lineHeight: 1.5, margin: '0 0 12px 0' }}>
             {isKannada ? selectedLocation.desc_kn : selectedLocation.desc_en}
@@ -1367,7 +1166,7 @@ export const VillageMapView: React.FC = () => {
         </div>
       )}
 
-      {/* Locations Cards Grid */}
+      {/* 7. LOCATIONS DIRECTORY CARDS GRID */}
       {filtered.length === 0 ? (
         <div className="glass-card" style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
           <MapPin size={42} color="#10B981" style={{ margin: '0 auto 14px', opacity: 0.8 }} />
@@ -1407,42 +1206,7 @@ export const VillageMapView: React.FC = () => {
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {loc.anime_image ? (
-                      <div
-                        style={{
-                          width: '64px',
-                          height: '48px',
-                          borderRadius: '10px',
-                          overflow: 'hidden',
-                          flexShrink: 0,
-                          border: '1px solid rgba(251, 191, 36, 0.4)',
-                          position: 'relative'
-                        }}
-                      >
-                        <img
-                          src={loc.anime_image}
-                          alt={loc.name_en}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                        <span
-                          style={{
-                            position: 'absolute',
-                            top: '2px',
-                            right: '2px',
-                            fontSize: '0.52rem',
-                            background: 'rgba(0,0,0,0.75)',
-                            color: '#FDE047',
-                            padding: '1px 3px',
-                            borderRadius: '3px',
-                            fontWeight: 900
-                          }}
-                        >
-                          3D
-                        </span>
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: '1.8rem' }}>{loc.icon}</span>
-                    )}
+                    <span style={{ fontSize: '1.8rem' }}>{loc.icon}</span>
                     <div>
                       <h4 style={{ fontSize: '0.98rem', fontWeight: 800, margin: '0 0 2px 0', color: '#FFFFFF' }}>
                         {isKannada ? loc.name_kn : loc.name_en}
@@ -1450,33 +1214,55 @@ export const VillageMapView: React.FC = () => {
                       <span style={{ fontSize: '0.78rem', color: userCoords ? '#34D399' : '#94A3B8', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
                         <MapPin size={13} color={loc.color} />
                         {userCoords
-                          ? `${loc.formattedDistance || loc.distance_en} ${isKannada ? 'ನಿಮ್ಮಿಂದ' : 'from you'}`
+                          ? `${(loc as any).formattedDistance} ${isKannada ? 'ದೂರ' : 'away'}`
                           : (isKannada ? loc.distance_kn : loc.distance_en)}
                       </span>
                     </div>
                   </div>
+                  <span
+                    style={{
+                      background: `${loc.color}22`,
+                      color: loc.color,
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      border: `1px solid ${loc.color}44`
+                    }}
+                  >
+                    {loc.category}
+                  </span>
+                </div>
 
-                  {/* Quick Google Maps Button */}
+                <p style={{ fontSize: '0.82rem', color: '#CBD5E1', margin: '10px 0 12px', lineHeight: 1.4 }}>
+                  {isKannada ? loc.desc_kn : loc.desc_en}
+                </p>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                    {loc.timings_en || (isKannada ? 'ಯಾವಾಗಲೂ ಲಭ್ಯ' : 'Always open')}
+                  </span>
                   <a
-                    href={loc.map_url || getGoogleMapsDirectionsUrl(loc, 'driving')}
+                    href={getGoogleMapsDirectionsUrl(loc, 'driving')}
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     style={{
-                      background: 'rgba(59, 130, 246, 0.2)',
+                      background: 'rgba(59, 130, 246, 0.15)',
                       color: '#60A5FA',
-                      borderRadius: '50%',
-                      width: '36px',
-                      height: '36px',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      borderRadius: '12px',
+                      padding: '4px 10px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      textDecoration: 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      textDecoration: 'none',
-                      flexShrink: 0
+                      gap: '4px'
                     }}
-                    title={isKannada ? 'ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್ ದಾರಿ' : 'Google Maps Directions'}
                   >
-                    <Navigation size={16} />
+                    <Compass size={12} />
+                    <span>{isKannada ? 'ದಾರಿ' : 'Directions'}</span>
                   </a>
                 </div>
               </div>
@@ -1485,42 +1271,63 @@ export const VillageMapView: React.FC = () => {
         </div>
       )}
 
-      {/* Suggest / Add Place Modal */}
+      {/* 8. ADD NEW PLACE MODAL */}
       {showSuggestModal && (
-        <div className="modal-overlay" onClick={() => setShowSuggestModal(false)}>
+        <div
+          onClick={() => setShowSuggestModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99,
+            background: 'rgba(7, 15, 30, 0.85)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
           <div
-            className="modal-content"
-            style={{ maxWidth: '480px', padding: '24px' }}
             onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              background: '#0B132B',
+              borderRadius: '24px',
+              padding: '24px',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
+            }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
-                {isKannada ? '📍 ಹೊಸ ಸಾರ್ವಜನಿಕ ಸ್ಥಳ ಸೇರಿಸಿ' : '📍 Add Landmark with GPS'}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.4rem' }}>📍</span>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
+                  {isKannada ? 'ಗ್ರಾಮ ನಕ್ಷೆಗೆ ಹೊಸ ಸ್ಥಳ ಸೇರಿಸಿ' : 'Add Landmark to Village Map'}
+                </h3>
+              </div>
               <button
                 onClick={() => setShowSuggestModal(false)}
-                style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}
               >
                 <X size={20} />
               </button>
             </div>
 
             {suggestSubmitted ? (
-              <div style={{ textAlign: 'center', padding: '24px' }}>
-                <CheckCircle2 size={40} color="#10B981" style={{ margin: '0 auto 12px' }} />
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 800 }}>
-                  {isKannada ? 'ಸ್ಥಳ ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ!' : 'Landmark Successfully Added!'}
+              <div style={{ textAlign: 'center', padding: '30px 0' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>✅</div>
+                <h4 style={{ color: '#10B981', fontSize: '1.1rem', fontWeight: 800, margin: '0 0 6px 0' }}>
+                  {isKannada ? 'ಸ್ಥಳ ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ!' : 'Landmark Added Successfully!'}
                 </h4>
-                <p style={{ fontSize: '0.84rem', color: '#94A3B8' }}>
-                  {isKannada
-                    ? 'ಸ್ಥಳವು ಮುತ್ತಗುಂಡಿ ಗ್ರಾಮ ನಕ್ಷೆಯಲ್ಲಿ ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್ ಲಿಂಕ್‌ನೊಂದಿಗೆ ಪ್ರಕಟವಾಗಿದೆ.'
-                    : 'This place is now published with Google Maps navigation for all villagers.'}
+                <p style={{ color: '#94A3B8', fontSize: '0.84rem' }}>
+                  {isKannada ? 'ಗ್ರಾಮಸ್ಥರಿಗೆ ಈಗ ನಕ್ಷೆಯಲ್ಲಿ ಕಾಣಿಸುತ್ತದೆ.' : 'It is now visible on the village map.'}
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSuggestSubmit}>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: '4px' }}>
+              <form onSubmit={handleSuggestSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: '#94A3B8', display: 'block', marginBottom: '4px' }}>
                     {isKannada ? 'ಸ್ಥಳದ ಹೆಸರು *' : 'Place Name *'}
                   </label>
                   <input
@@ -1528,278 +1335,170 @@ export const VillageMapView: React.FC = () => {
                     required
                     value={suggestName}
                     onChange={(e) => setSuggestName(e.target.value)}
-                    placeholder={isKannada ? 'ಉದಾ: ಶ್ರೀ ರಂಗನಾಥ ದೇವಾಲಯ, ಶಾಲೆ, ಆಸ್ಪತ್ರೆ...' : 'e.g., Primary Health Center, Sri Temple...'}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px 12px', color: '#FFFFFF' }}
+                    placeholder={isKannada ? 'ಉದಾ: ಶ್ರೀ ಬಸವೇಶ್ವರ ದೇವಸ್ಥಾನ, ಮುತ್ತು ಮೆಡಿಕಲ್ಸ್...' : 'e.g. Sri Basaveshwara Temple, Muthu Medicals...'}
+                    style={{
+                      width: '100%',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      color: '#FFFFFF',
+                      fontSize: '0.9rem'
+                    }}
                   />
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: '4px' }}>
-                    {isKannada ? 'ವಿಭಾಗ' : 'Category'}
-                  </label>
-                  <select
-                    value={suggestCategory}
-                    onChange={(e) => setSuggestCategory(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px 12px', color: '#FFFFFF' }}
-                  >
-                    <option value="TEMPLE">Temple / ದೇವಸ್ಥಾನ</option>
-                    <option value="SCHOOL">School / ಶಾಲೆ</option>
-                    <option value="HEALTH">Health Center / ಆಸ್ಪತ್ರೆ</option>
-                    <option value="WATER">Water Point / ನೀರಿನ ಘಟಕ</option>
-                    <option value="BUS">Bus Stop / ಬಸ್ ನಿಲ್ದಾಣ</option>
-                    <option value="HALL">Panchayat / Community Hall</option>
-                    <option value="SPORTS">Sports Ground / ಮೈದಾನ</option>
-                    <option value="EMERGENCY">Emergency / ತುರ್ತು</option>
-                  </select>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: '#94A3B8', display: 'block', marginBottom: '4px' }}>
+                      {isKannada ? 'ವರ್ಗ *' : 'Category *'}
+                    </label>
+                    <select
+                      value={suggestCategory}
+                      onChange={(e) => setSuggestCategory(e.target.value)}
+                      style={{
+                        width: '100%',
+                        background: '#0F172A',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '12px',
+                        padding: '10px 14px',
+                        color: '#FFFFFF',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      <option value="TEMPLE">{isKannada ? '🛕 ದೇವಸ್ಥಾನ' : '🛕 Temple'}</option>
+                      <option value="SCHOOL">{isKannada ? '🏫 ಶಾಲೆ / ಕಾಲೇಜು' : '🏫 School'}</option>
+                      <option value="HEALTH">{isKannada ? '🏥 ಆಸ್ಪತ್ರೆ / ಕ್ಲಿನಿಕ್' : '🏥 Health'}</option>
+                      <option value="SHOP">{isKannada ? '🛒 ಅಂಗಡಿ / ಮಾರುಕಟ್ಟೆ' : '🛒 Shop'}</option>
+                      <option value="WATER">{isKannada ? '💧 ನೀರಿನ ಘಟಕ' : '💧 Water'}</option>
+                      <option value="BUS">{isKannada ? '🚌 ಬಸ್ ನಿಲ್ದಾಣ' : '🚌 Bus Stop'}</option>
+                      <option value="HALL">{isKannada ? '🏛️ ಭವನ / ಸಮುದಾಯ' : '🏛️ Community Hall'}</option>
+                      <option value="FARM">{isKannada ? '🌴 ಕೃಷಿ ಕ್ಷೇತ್ರ' : '🌴 Farm'}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: '#94A3B8', display: 'block', marginBottom: '4px' }}>
+                      {isKannada ? 'ಸಂಪರ್ಕ ಫೋನ್ (ಐಚ್ಛಿಕ)' : 'Phone (Optional)'}
+                    </label>
+                    <input
+                      type="tel"
+                      value={suggestPhone}
+                      onChange={(e) => setSuggestPhone(e.target.value)}
+                      placeholder="+91..."
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '12px',
+                        padding: '10px 14px',
+                        color: '#FFFFFF',
+                        fontSize: '0.9rem'
+                      }}
+                    />
+                  </div>
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#CBD5E1', display: 'block', marginBottom: '4px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: '#94A3B8', display: 'block', marginBottom: '4px' }}>
                     {isKannada ? 'ವಿವರಣೆ' : 'Description'}
                   </label>
                   <textarea
                     rows={2}
                     value={suggestDesc}
                     onChange={(e) => setSuggestDesc(e.target.value)}
-                    placeholder={isKannada ? 'ಸ್ಥಳದ ಬಗ್ಗೆ ಮಾಹಿತಿ...' : 'Details about this village place...'}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px 12px', color: '#FFFFFF' }}
+                    placeholder={isKannada ? 'ಈ ಸ್ಥಳದ ಬಗ್ಗೆ ಹೆಚ್ಚಿನ ಮಾಹಿತಿ...' : 'Brief details about this location...'}
+                    style={{
+                      width: '100%',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      color: '#FFFFFF',
+                      fontSize: '0.88rem',
+                      resize: 'none'
+                    }}
                   />
                 </div>
 
-                {/* GPS Coordinates Auto-Capture */}
-                <div style={{ marginBottom: '14px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '12px 14px', borderRadius: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#34D399' }}>
-                      {userCoords
-                        ? (isKannada ? '✓ ಲೈವ್ ಜಿಪಿಎಸ್ ಪತ್ತೆಯಾಗಿದೆ' : '✓ Live Device GPS Ready')
-                        : (isKannada ? 'ಜಿಪಿಎಸ್ ನಿರ್ದೇಶಾಂಕಗಳು' : 'GPS Coordinates')}
-                    </span>
-                    {userCoords && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSuggestLat(userCoords.lat.toFixed(6));
-                          setSuggestLng(userCoords.lng.toFixed(6));
-                        }}
-                        style={{
-                          background: '#10B981',
-                          color: '#070F1E',
-                          border: 'none',
-                          borderRadius: '12px',
-                          padding: '3px 8px',
-                          fontSize: '0.72rem',
-                          fontWeight: 800,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {isKannada ? 'ನನ್ನ ಜಿಪಿಎಸ್ ಬಳಸಿ' : 'Use My GPS'}
-                      </button>
-                    )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', color: '#94A3B8', display: 'block', marginBottom: '4px' }}>
+                      Latitude (ಅಕ್ಷಾಂಶ)
+                    </label>
+                    <input
+                      type="text"
+                      value={suggestLat}
+                      onChange={(e) => setSuggestLat(e.target.value)}
+                      placeholder="13.7562"
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '12px',
+                        padding: '8px 12px',
+                        color: '#FFFFFF',
+                        fontSize: '0.84rem'
+                      }}
+                    />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <div>
-                      <label style={{ fontSize: '0.72rem', color: '#94A3B8', display: 'block' }}>Latitude</label>
-                      <input
-                        type="text"
-                        value={suggestLat}
-                        onChange={(e) => setSuggestLat(e.target.value)}
-                        placeholder="e.g. 13.8052"
-                        style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px 8px', color: '#FFFFFF', fontSize: '0.8rem' }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.72rem', color: '#94A3B8', display: 'block' }}>Longitude</label>
-                      <input
-                        type="text"
-                        value={suggestLng}
-                        onChange={(e) => setSuggestLng(e.target.value)}
-                        placeholder="e.g. 76.2915"
-                        style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px 8px', color: '#FFFFFF', fontSize: '0.8rem' }}
-                      />
-                    </div>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', color: '#94A3B8', display: 'block', marginBottom: '4px' }}>
+                      Longitude (ರೇಖಾಂಶ)
+                    </label>
+                    <input
+                      type="text"
+                      value={suggestLng}
+                      onChange={(e) => setSuggestLng(e.target.value)}
+                      placeholder="76.3335"
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '12px',
+                        padding: '8px 12px',
+                        color: '#FFFFFF',
+                        fontSize: '0.84rem'
+                      }}
+                    />
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  style={{ width: '100%', padding: '12px', fontWeight: 800, fontSize: '0.92rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                >
-                  <Send size={16} />
-                  <span>{isKannada ? 'ಸ್ಥಳ ಪ್ರಕಟಿಸಿ (SAVE & SHARE)' : 'SAVE LANDMARK TO MAP'}</span>
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowSuggestModal(false)}
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '10px 18px',
+                      fontSize: '0.86rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {isKannada ? 'ರದ್ದುಮಾಡಿ' : 'Cancel'}
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    style={{
+                      padding: '10px 22px',
+                      fontSize: '0.86rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Send size={15} />
+                    <span>{isKannada ? 'ಸ್ಥಳ ಸೇರಿಸಿ' : 'Save Landmark'}</span>
+                  </button>
+                </div>
               </form>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* ✨ Fullscreen Anime 3D Landmark Showcase Modal */}
-      {activeAnimeModal && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(3, 7, 18, 0.88)',
-            backdropFilter: 'blur(16px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '16px'
-          }}
-          onClick={() => setActiveAnimeModal(null)}
-        >
-          <div
-            style={{
-              background: '#0B132B',
-              border: '2px solid rgba(251, 191, 36, 0.55)',
-              borderRadius: '24px',
-              maxWidth: '840px',
-              width: '100%',
-              maxHeight: '92vh',
-              overflowY: 'auto',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.85), 0 0 45px rgba(245, 158, 11, 0.3)',
-              position: 'relative'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Top Modal Header */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '16px 20px',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(10, 18, 36, 0.8)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '1.5rem' }}>{activeAnimeModal.icon}</span>
-                <div>
-                  <h3 style={{ fontSize: '1.18rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
-                    {isKannada ? activeAnimeModal.name_kn : activeAnimeModal.name_en}
-                  </h3>
-                  <span style={{ fontSize: '0.74rem', color: '#FCD34D', fontWeight: 700 }}>
-                    {isKannada ? 'ಮಕೋತೋ ಶಿಂಕೈ & ಘಿಬ್ಲಿ ಶೈಲಿಯ 3D ಅನಿಮೆ ಕಲಾ ನೋಟ' : 'Makoto Shinkai & Ghibli Inspired 3D Anime Visual'}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveAnimeModal(null)}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '36px',
-                  height: '36px',
-                  color: '#FFFFFF',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'background 0.2s'
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* High-Res Hero Image */}
-            <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden' }}>
-              <img
-                src={activeAnimeModal.anime_image}
-                alt={activeAnimeModal.name_en}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '12px',
-                  left: '12px',
-                  background: 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)',
-                  color: '#FFFFFF',
-                  fontSize: '0.72rem',
-                  fontWeight: 900,
-                  padding: '4px 12px',
-                  borderRadius: '14px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                  letterSpacing: '0.5px'
-                }}
-              >
-                ✨ 3D ANIME MASTERPIECE
-              </div>
-            </div>
-
-            {/* Content & Navigation Actions */}
-            <div style={{ padding: '20px' }}>
-              <p style={{ fontSize: '0.94rem', color: '#E2E8F0', lineHeight: 1.6, margin: '0 0 16px 0' }}>
-                {isKannada ? activeAnimeModal.desc_kn : activeAnimeModal.desc_en}
-              </p>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
-                  📍 {activeAnimeModal.coords.lat.toFixed(5)}° N, {activeAnimeModal.coords.lng.toFixed(5)}° E • {isKannada ? 'ಮುತ್ತಗುಂಡಿ, ಹೊಸದುರ್ಗ' : 'Muttagundi, Hosadurga Taluk'}
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => {
-                      const target = activeAnimeModal;
-                      setActiveAnimeModal(null);
-                      setSelectedLocation(target);
-                      setViewMode('3d');
-                      setIsAnimeMode(true);
-                    }}
-                    style={{
-                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                      color: '#FFFFFF',
-                      borderRadius: '20px',
-                      border: 'none',
-                      padding: '8px 18px',
-                      fontSize: '0.82rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
-                    }}
-                  >
-                    <span>🌐</span>
-                    <span>{isKannada ? '3D ಗ್ರಾಮದಲ್ಲಿ ನೋಡಿ' : 'Inspect in 3D Village'}</span>
-                  </button>
-
-                  <a
-                    href={activeAnimeModal.map_url || getGoogleMapsDirectionsUrl(activeAnimeModal, 'driving')}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
-                      color: '#FFFFFF',
-                      borderRadius: '20px',
-                      padding: '8px 18px',
-                      fontSize: '0.82rem',
-                      fontWeight: 800,
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)'
-                    }}
-                  >
-                    <Navigation size={14} />
-                    <span>{isKannada ? 'ಗೂಗಲ್ ಮ್ಯಾಪ್ಸ್ ದಾರಿ' : 'Google Maps Directions'}</span>
-                  </a>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
