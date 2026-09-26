@@ -1,9 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Sparkles, MapPin } from 'lucide-react';
+import {
+  Sparkles,
+  MapPin,
+  Wind,
+  Droplets,
+  CloudRain,
+  RefreshCw,
+  Compass,
+  Thermometer
+} from 'lucide-react';
+import {
+  subscribeMuttagundiWeather,
+  fetchMuttagundiLiveWeather,
+  MuttagundiWeather,
+  MUTTAGUNDI_COORDS
+} from '../../services/weatherService';
 
 export const VillageHero: React.FC = () => {
   const { isKannada } = useLanguage();
+  const [weather, setWeather] = useState<MuttagundiWeather | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    const unsub = subscribeMuttagundiWeather((w) => {
+      setWeather(w);
+    });
+    return unsub;
+  }, []);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    const fresh = await fetchMuttagundiLiveWeather();
+    setWeather(fresh);
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   const villageName = isKannada
     ? (import.meta.env.VITE_VILLAGE_NAME_KN || 'ಮುತ್ತಾಗೊಂದಿ')
@@ -84,107 +115,391 @@ export const VillageHero: React.FC = () => {
         </g>
       </svg>
 
-      {/* Hero Foreground Content */}
+      {/* Hero Foreground Content with Two Responsive Columns */}
       <div
         style={{
           position: 'relative',
           zIndex: 2,
-          padding: '36px 24px 28px',
-          maxWidth: '750px'
+          padding: '30px 22px 26px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '24px'
         }}
       >
-        {/* District & Location Badge */}
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(0, 0, 0, 0.35)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.16)',
-            borderRadius: '20px',
-            padding: '4px 12px',
-            fontSize: '0.78rem',
-            fontWeight: 700,
-            color: '#FBBF24',
-            marginBottom: '14px'
-          }}
-        >
-          <MapPin size={14} color="#FBBF24" />
-          <span>{districtName}</span>
-        </div>
-
-        {/* Village Name Title & Logo Emblem */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '0 0 10px 0', flexWrap: 'wrap' }}>
-          <img
-            src="/logo.png"
-            alt="Muttagundi Village MTG Emblem"
+        {/* LEFT COLUMN: Village Emblem, Title & Welcome */}
+        <div style={{ flex: '1 1 340px', maxWidth: '620px' }}>
+          {/* District & Location Badge */}
+          <div
             style={{
-              width: '74px',
-              height: '74px',
-              borderRadius: '50%',
-              objectFit: 'cover',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
-              border: '2.5px solid rgba(245, 158, 11, 0.65)',
-              background: '#070F1E',
-              flexShrink: 0
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.16)',
+              borderRadius: '20px',
+              padding: '4px 12px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              color: '#FBBF24',
+              marginBottom: '14px'
             }}
-          />
-          <div>
-            <h1
+          >
+            <MapPin size={14} color="#FBBF24" />
+            <span>{districtName}</span>
+          </div>
+
+          {/* Village Name Title & Logo Emblem */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '0 0 10px 0', flexWrap: 'wrap' }}>
+            <img
+              src="/logo.png"
+              alt="Muttagundi Village MTG Emblem"
               style={{
-                fontSize: 'clamp(2rem, 5vw, 2.8rem)',
-                fontWeight: 900,
-                lineHeight: 1.15,
-                margin: 0,
-                letterSpacing: '-0.02em',
-                textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+                width: '74px',
+                height: '74px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+                border: '2.5px solid rgba(245, 158, 11, 0.65)',
+                background: '#070F1E',
+                flexShrink: 0
               }}
-            >
-              {villageName}
-            </h1>
+            />
+            <div>
+              <h1
+                style={{
+                  fontSize: 'clamp(2rem, 5vw, 2.8rem)',
+                  fontWeight: 900,
+                  lineHeight: 1.15,
+                  margin: 0,
+                  letterSpacing: '-0.02em',
+                  textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+                }}
+              >
+                {villageName}
+              </h1>
+            </div>
+          </div>
+
+          {/* Soulful Tagline */}
+          <p
+            style={{
+              fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+              color: '#E2E8F0',
+              margin: '0 0 16px 0',
+              fontWeight: 600,
+              lineHeight: 1.4,
+              textShadow: '0 1px 4px rgba(0,0,0,0.6)'
+            }}
+          >
+            {isKannada
+              ? 'ನಮ್ಮ ಗ್ರಾಮ • ನಮ್ಮ ಜನ • ನಮ್ಮ ಕಥೆಗಳು'
+              : 'Our Village • Our People • Our Stories'}
+          </p>
+
+          {/* Warm Welcome Indicator */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(16, 185, 129, 0.22)',
+              border: '1px solid rgba(52, 211, 153, 0.4)',
+              borderRadius: '12px',
+              padding: '6px 14px',
+              fontSize: '0.82rem',
+              color: '#A7F3D0',
+              fontWeight: 700
+            }}
+          >
+            <Sparkles size={16} color="#34D399" />
+            <span>
+              {isKannada
+                ? 'ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಮಾಹಿತಿ & ಸೇವಾ ಕೇಂದ್ರಕ್ಕೆ ಸುಸ್ವಾಗತ'
+                : 'Welcome to the Digital Village Hub & Information Center'}
+            </span>
           </div>
         </div>
 
-        {/* Soulful Tagline */}
-        <p
-          style={{
-            fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-            color: '#E2E8F0',
-            margin: '0 0 20px 0',
-            fontWeight: 600,
-            lineHeight: 1.4,
-            textShadow: '0 1px 4px rgba(0,0,0,0.6)'
-          }}
-        >
-          {isKannada
-            ? 'ನಮ್ಮ ಗ್ರಾಮ • ನಮ್ಮ ಜನ • ನಮ್ಮ ಕಥೆಗಳು'
-            : 'Our Village • Our People • Our Stories'}
-        </p>
-
-        {/* Warm Welcome Indicator */}
+        {/* RIGHT COLUMN: MUTTAGUNDI-ONLY LIVE WEATHER CARD */}
         <div
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'rgba(16, 185, 129, 0.25)',
-            border: '1px solid rgba(52, 211, 153, 0.4)',
-            borderRadius: '12px',
-            padding: '6px 14px',
-            fontSize: '0.82rem',
-            color: '#A7F3D0',
-            fontWeight: 700
+            flex: '1 1 310px',
+            maxWidth: '380px',
+            background: 'rgba(6, 30, 22, 0.78)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1.5px solid rgba(52, 211, 153, 0.35)',
+            borderRadius: '20px',
+            padding: '16px 18px',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            minWidth: '280px'
           }}
         >
-          <Sparkles size={16} color="#34D399" />
-          <span>
-            {isKannada
-              ? 'ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಮಾಹಿತಿ & ಸೇವಾ ಕೇಂದ್ರಕ್ಕೆ ಸುಸ್ವಾಗತ'
-              : 'Welcome to the Digital Village Hub & Information Center'}
-          </span>
+          {/* Card Header: Title & Live Indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '1.1rem' }}>📍</span>
+              <div>
+                <span
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 900,
+                    color: '#FFFFFF',
+                    display: 'block',
+                    lineHeight: 1.2
+                  }}
+                >
+                  {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಹವಾಮಾನ' : 'Muttagundi Weather'}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#6EE7B7', fontWeight: 600 }}>
+                  {isKannada ? 'ಹೊಸದುರ್ಗ ತಾಲೂಕು (ಕೇವಲ ಮುತ್ತಾಗೊಂದಿ)' : 'Hosadurga Taluk (Muttagundi Only)'}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'rgba(16, 185, 129, 0.25)',
+                  border: '1px solid rgba(52, 211, 153, 0.45)',
+                  borderRadius: '12px',
+                  padding: '3px 8px',
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  color: '#34D399'
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#10B981',
+                    boxShadow: '0 0 6px #10B981'
+                  }}
+                />
+                <span>{isKannada ? 'ಲೈವ್' : 'LIVE'}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleManualRefresh}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '50%',
+                  width: '26px',
+                  height: '26px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#CBD5E1',
+                  cursor: 'pointer',
+                  padding: 0,
+                  transition: 'all 0.2s ease'
+                }}
+                title={isKannada ? 'ಹವಾಮಾನ ನವೀಕರಿಸಿ' : 'Refresh Muttagundi Weather'}
+              >
+                <RefreshCw
+                  size={13}
+                  style={{
+                    animation: isRefreshing ? 'spin 0.6s linear infinite' : 'none'
+                  }}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Main Temperature & Condition Row */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'rgba(0, 0, 0, 0.25)',
+              borderRadius: '14px',
+              padding: '10px 14px',
+              border: '1px solid rgba(255, 255, 255, 0.06)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span
+                style={{
+                  fontSize: '2.5rem',
+                  lineHeight: 1,
+                  filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))'
+                }}
+              >
+                {weather?.iconEmoji || '⛅'}
+              </span>
+              <div>
+                <div style={{ fontSize: '2.1rem', fontWeight: 900, lineHeight: 1, color: '#FFFFFF' }}>
+                  {weather ? weather.temperature : 24}
+                  <span style={{ fontSize: '1.2rem', color: '#FBBF24', fontWeight: 700 }}>°C</span>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: '#94A3B8', marginTop: '3px' }}>
+                  {isKannada ? 'ಅನಿಸಿಕೆ:' : 'Feels like:'}{' '}
+                  <strong style={{ color: '#F1F5F9' }}>
+                    {weather ? weather.apparentTemperature : 25}°C
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'right' }}>
+              <span
+                style={{
+                  fontSize: '0.88rem',
+                  fontWeight: 800,
+                  color: '#FBBF24',
+                  display: 'block'
+                }}
+              >
+                {isKannada ? weather?.conditionKn || 'ಭಾಗಶಃ ಮೋಡ' : weather?.conditionEn || 'Partly Cloudy'}
+              </span>
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  color: '#A7F3D0',
+                  fontWeight: 600,
+                  display: 'inline-block',
+                  marginTop: '2px'
+                }}
+              >
+                {weather?.isDay
+                  ? (isKannada ? '☀️ ಹಗಲು ವಾತಾವರಣ' : '☀️ Daytime')
+                  : (isKannada ? '🌙 ರಾತ್ರಿ ವಾತಾವರಣ' : '🌙 Nighttime')}
+              </span>
+            </div>
+          </div>
+
+          {/* 4-Pill Metric Grid for Muttagundi */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+            {/* Humidity */}
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '10px',
+                padding: '7px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <Droplets size={16} color="#38BDF8" />
+              <div>
+                <span style={{ fontSize: '0.66rem', color: '#94A3B8', display: 'block' }}>
+                  {isKannada ? 'ಆರ್ದ್ರತೆ' : 'Humidity'}
+                </span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#FFFFFF' }}>
+                  {weather?.humidity ?? 76}%
+                </span>
+              </div>
+            </div>
+
+            {/* Wind Speed */}
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '10px',
+                padding: '7px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <Wind size={16} color="#34D399" />
+              <div>
+                <span style={{ fontSize: '0.66rem', color: '#94A3B8', display: 'block' }}>
+                  {isKannada ? 'ಗಾಳಿಯ ವೇಗ' : 'Wind Speed'}
+                </span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#FFFFFF' }}>
+                  {weather?.windSpeed ?? 15} km/h
+                </span>
+              </div>
+            </div>
+
+            {/* Precipitation / Rain */}
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '10px',
+                padding: '7px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <CloudRain size={16} color="#60A5FA" />
+              <div>
+                <span style={{ fontSize: '0.66rem', color: '#94A3B8', display: 'block' }}>
+                  {isKannada ? 'ಮಳೆ ಸಂಭವ' : 'Precipitation'}
+                </span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#FFFFFF' }}>
+                  {weather?.precipitation ?? 0} mm
+                </span>
+              </div>
+            </div>
+
+            {/* Elevation / Coords */}
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '10px',
+                padding: '7px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <Compass size={16} color="#FBBF24" />
+              <div>
+                <span style={{ fontSize: '0.66rem', color: '#94A3B8', display: 'block' }}>
+                  {isKannada ? 'ಎತ್ತರ (MSL)' : 'Elevation'}
+                </span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#FFFFFF' }}>
+                  742 ಮೀಟರ್
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Micro-footer: Exclusively for Muttagundi */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.68rem',
+              color: '#94A3B8',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              paddingTop: '6px'
+            }}
+          >
+            <span style={{ color: '#34D399', fontWeight: 700 }}>
+              ✓ {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ನಿಖರ GPS ವರದಿ' : 'Muttagundi GPS Only'}
+            </span>
+            <span>
+              {isKannada ? 'ಅಪ್‌ಡೇಟ್: ' : 'Updated: '}{weather?.lastUpdated || 'ಈಗಷ್ಟೇ'}
+            </span>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+export default VillageHero;
