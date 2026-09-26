@@ -603,9 +603,45 @@ export const ChatModal: React.FC<ChatModalProps> = ({
                     display: 'flex',
                     justifyContent: isMine ? 'flex-end' : 'flex-start',
                     alignItems: 'flex-end',
-                    gap: '6px'
+                    gap: '8px'
                   }}
                 >
+                  {!isMine && (
+                    partnerUser.photoUrl ? (
+                      <img
+                        src={partnerUser.photoUrl}
+                        alt={partnerUser.name}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1.5px solid var(--accent-emerald)',
+                          flexShrink: 0,
+                          marginBottom: '2px'
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          background: partnerBadge.color,
+                          color: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          flexShrink: 0,
+                          marginBottom: '2px'
+                        }}
+                      >
+                        {partnerUser.name.charAt(0)}
+                      </div>
+                    )
+                  )}
                   <div
                     style={{
                       maxWidth: '82%',

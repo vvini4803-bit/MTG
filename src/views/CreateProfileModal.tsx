@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { compressImage } from '../services/imageOptimizer';
 import { UserRole, UserProfile } from '../types';
-import { X, Camera, ShieldCheck, Check } from 'lucide-react';
+import { X, Camera, ShieldCheck, Trash2, Sparkles, Upload } from 'lucide-react';
 
 interface CreateProfileModalProps {
   isOpen: boolean;
@@ -11,13 +11,24 @@ interface CreateProfileModalProps {
   onProfileCreated: () => void;
 }
 
+const AVATAR_PRESETS = [
+  { id: 'farmer', label_en: 'Farmer', label_kn: 'ರೈತರು', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=RameshFarmer&skinColor=edb98a,d08b5b,ae5d29' },
+  { id: 'elder', label_en: 'Village Elder', label_kn: 'ಹಿರಿಯರು', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=GramElder&facialHair=beardLight,moustacheMagnum' },
+  { id: 'woman', label_en: 'Leader', label_kn: 'ಮುಖಂಡರು', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=LakshmiGowda&top=longHairCurvy' },
+  { id: 'sports', label_en: 'Sports/Youth', label_kn: 'ಯುವಕರು', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=KiranSports&clothingGraphic=diamond' },
+  { id: 'student', label_en: 'Student', label_kn: 'ವಿದ್ಯಾರ್ಥಿ', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AnanyaStudent&accessories=round' },
+  { id: 'teacher', label_en: 'Teacher', label_kn: 'ಶಿಕ್ಷಕರು', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ManjunathTeacher&facialHair=moustacheFancy' },
+  { id: 'temple', label_en: 'Heritage', label_kn: 'ಸಂಪ್ರದಾಯ', url: '/anime/temple_gopuram.jpg' },
+  { id: 'school', label_en: 'Vidya', label_kn: 'ವಿದ್ಯಾ', url: '/anime/village_school.jpg' }
+];
+
 export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
   isOpen,
   onClose,
   onProfileCreated
 }) => {
   const { isKannada } = useLanguage();
-  const { updateProfile } = useAuth();
+  const { updateProfile, currentUser } = useAuth();
 
   const [name, setName] = useState('');
   const [nameKn, setNameKn] = useState('');
@@ -29,6 +40,30 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
   const [consent, setConsent] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (currentUser) {
+        setName(currentUser.name || '');
+        setNameKn(currentUser.name_kn || '');
+        setPhone(currentUser.phone || '');
+        setEmail(currentUser.email || '');
+        setBio(currentUser.bio || '');
+        setRequestedRole(currentUser.role || 'USER');
+        setPhotoDataUrl(currentUser.photoUrl || null);
+      } else {
+        setName('');
+        setNameKn('');
+        setPhone('');
+        setEmail('');
+        setBio('');
+        setRequestedRole('USER');
+        setPhotoDataUrl(null);
+      }
+      setErrorMsg(null);
+    }
+  }, [isOpen, currentUser]);
 
   if (!isOpen) return null;
 
@@ -38,6 +73,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
     try {
       const result = await compressImage(file, 400, 400, 0.85);
       setPhotoDataUrl(result.dataUrl);
+      setErrorMsg(null);
     } catch (err: any) {
       setErrorMsg(err.message || 'Error processing photo');
     }
@@ -55,24 +91,29 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
     }
 
     setIsSubmitting(true);
-    const newProfile: UserProfile = {
-      uid: 'user_' + Date.now(),
+    const updatedProfile: UserProfile = {
+      ...(currentUser || {}),
+      uid: currentUser?.uid || ('user_' + Date.now()),
       name: name.trim(),
       name_kn: nameKn.trim() || undefined,
-      phone: phone || '+91 7483254968',
-      email: email || undefined,
+      phone: phone.trim() || currentUser?.phone || '',
+      email: email.trim() || currentUser?.email || undefined,
       role: requestedRole,
       language: isKannada ? 'kn' : 'en',
-      photoUrl: photoDataUrl || undefined,
+      photoUrl: photoDataUrl || currentUser?.photoUrl || undefined,
       bio: bio.trim() || undefined,
-      account_status: 'ACTIVE',
-      created_at: new Date().toISOString(),
+      account_status: currentUser?.account_status || 'ACTIVE',
+      created_at: currentUser?.created_at || new Date().toISOString(),
       last_login: new Date().toISOString(),
-      is_phone_verified: !!phone
+      is_phone_verified: !!phone || !!currentUser?.is_phone_verified,
+      community_category: currentUser?.community_category || 'RESIDENT',
+      allow_find_me: currentUser?.allow_find_me !== false,
+      privacy_find: currentUser?.privacy_find || 'EVERYONE',
+      privacy_message: currentUser?.privacy_message || 'EVERYONE'
     };
 
     try {
-      await updateProfile(newProfile);
+      await updateProfile(updatedProfile);
       setIsSubmitting(false);
       onProfileCreated();
       onClose();
@@ -86,13 +127,20 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="modal-content"
-        style={{ maxWidth: '500px' }}
+        style={{ maxWidth: '540px', maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
-            {isKannada ? 'ನಾಗರಿಕ ಪ್ರೊಫೈಲ್ ರಚನೆ' : 'Create Resident Profile'}
-          </h3>
+          <div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
+              {currentUser
+                ? (isKannada ? 'ನಾಗರಿಕ ಪ್ರೊಫೈಲ್ ತಿದ್ದುಪಡಿ' : 'Edit Resident Profile')
+                : (isKannada ? 'ನಾಗರಿಕ ಪ್ರೊಫೈಲ್ ರಚನೆ' : 'Create Resident Profile')}
+            </h3>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {isKannada ? 'ನಿಮ್ಮ ಭಾವಚಿತ್ರ ಮತ್ತು ವಿವರಗಳನ್ನು ನವೀಕರಿಸಿ' : 'Upload your photo & update your resident identity'}
+            </span>
+          </div>
           <button
             onClick={onClose}
             style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
@@ -118,48 +166,159 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Avatar Upload */}
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <div
-              style={{
-                width: '84px',
-                height: '84px',
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.08)',
-                border: '2px dashed var(--accent-emerald)',
-                margin: '0 auto 8px',
-                position: 'relative',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer'
-              }}
-            >
-              {photoDataUrl ? (
-                <img
-                  src={photoDataUrl}
-                  alt="Avatar preview"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <Camera size={26} color="#10B981" />
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
+          {/* Avatar Upload Box */}
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '16px',
+              marginBottom: '20px',
+              textAlign: 'center'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              <div
+                onClick={() => fileInputRef.current?.click()}
                 style={{
-                  position: 'absolute',
-                  inset: 0,
-                  opacity: 0,
-                  cursor: 'pointer'
+                  width: '92px',
+                  height: '92px',
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '2.5px dashed var(--accent-emerald)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+                  flexShrink: 0
                 }}
-              />
+                title={isKannada ? 'ಫೋಟೋ ಬದಲಾಯಿಸಲು ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Click to change photo'}
+              >
+                {photoDataUrl ? (
+                  <img
+                    src={photoDataUrl}
+                    alt="Avatar preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                    <Camera size={28} color="#10B981" />
+                    <span style={{ fontSize: '0.62rem', color: '#10B981', fontWeight: 700 }}>Upload</span>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+
+              <div style={{ textAlign: 'left', flex: 1, minWidth: '180px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                  {isKannada ? 'ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಚಿತ್ರ' : 'Profile Photo'}
+                </span>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginBottom: '10px', lineHeight: 1.4 }}>
+                  {isKannada
+                    ? 'ಗ್ರಾಮಸ್ಥರಿಗೆ ನಿಮ್ಮನ್ನು ಗುರುತಿಸಲು ಸ್ಪಷ್ಟ ಚಿತ್ರವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.'
+                    : 'Upload a clear photo so fellow villagers can easily identify you.'}
+                </span>
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      border: '1px solid var(--accent-emerald)',
+                      color: '#10B981',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '6px 12px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                  >
+                    <Upload size={13} />
+                    <span>{isKannada ? 'ಫೋಟೋ ಆಯ್ಕೆಮಾಡಿ' : 'Choose Photo'}</span>
+                  </button>
+
+                  {photoDataUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setPhotoDataUrl(null)}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#EF4444',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '6px 10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Trash2 size={13} />
+                      <span>{isKannada ? 'ತೆಗೆದುಹಾಕಿ' : 'Remove'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              {isKannada ? 'ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಒತ್ತಿ' : 'Tap to upload profile photo'}
-            </span>
+
+            {/* Quick Avatar Presets */}
+            <div style={{ marginTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', justifyContent: 'center' }}>
+                <Sparkles size={12} color="#F59E0B" />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  {isKannada ? 'ಅಥವಾ ಸಿದ್ಧ ಗ್ರಾಮ ಅವತಾರ ಆಯ್ಕೆಮಾಡಿ:' : 'Or choose a village avatar preset:'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {AVATAR_PRESETS.map((preset) => {
+                  const isSelected = photoDataUrl === preset.url;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setPhotoDataUrl(preset.url)}
+                      style={{
+                        background: isSelected ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255,255,255,0.04)',
+                        border: isSelected ? '2px solid var(--accent-emerald)' : '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '8px',
+                        padding: '4px 6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '3px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={preset.label_en}
+                    >
+                      <img
+                        src={preset.url}
+                        alt={preset.label_en}
+                        style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                      <span style={{ fontSize: '0.62rem', color: isSelected ? '#10B981' : 'var(--text-muted)', fontWeight: isSelected ? 700 : 500 }}>
+                        {isKannada ? preset.label_kn : preset.label_en}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           <div className="form-group">
@@ -255,10 +414,16 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
             type="submit"
             className="btn-primary"
             disabled={isSubmitting}
-            style={{ width: '100%', height: '48px' }}
+            style={{ width: '100%', height: '48px', fontSize: '0.95rem' }}
           >
             <ShieldCheck size={18} />
-            <span>{isSubmitting ? 'Creating...' : isKannada ? 'ಪ್ರೊಫೈಲ್ ರಚಿಸಿ' : 'Complete Profile'}</span>
+            <span>
+              {isSubmitting
+                ? (isKannada ? 'ಉಳಿಸಲಾಗುತ್ತಿದೆ...' : 'Saving...')
+                : currentUser
+                  ? (isKannada ? 'ಪ್ರೊಫೈಲ್ ನವೀಕರಿಸಿ' : 'Save Changes')
+                  : (isKannada ? 'ಪ್ರೊಫೈಲ್ ರಚಿಸಿ' : 'Complete Profile')}
+            </span>
           </button>
         </form>
       </div>

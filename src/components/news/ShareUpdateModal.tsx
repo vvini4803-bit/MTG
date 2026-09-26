@@ -144,6 +144,7 @@ export const ShareUpdateModal: React.FC<ShareUpdateModalProps> = ({
     await dbService.addNews({
       author_id: authorId,
       author_name: authorName,
+      author_photo: currentUser?.photoUrl || undefined,
       author_role: authorRole,
       title_en: headline.trim(),
       title_kn: headline.trim(),

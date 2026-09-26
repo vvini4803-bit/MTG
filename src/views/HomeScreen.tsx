@@ -553,7 +553,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   gap: '8px',
                   flexWrap: 'wrap'
                 }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.76rem' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    {item.author_photo ? (
+                      <img
+                        src={item.author_photo}
+                        alt={item.author_name}
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1px solid var(--accent-emerald)'
+                        }}
+                      />
+                    ) : null}
                     By: {item.author_name}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

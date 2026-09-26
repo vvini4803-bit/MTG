@@ -197,22 +197,38 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: 'rgba(16, 185, 129, 0.2)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          color: '#10B981'
-                        }}
-                      >
-                        {c.author_name ? c.author_name.charAt(0).toUpperCase() : 'U'}
-                      </div>
+                      {c.author_photo ? (
+                        <img
+                          src={c.author_photo}
+                          alt={c.author_name}
+                          style={{
+                            width: '26px',
+                            height: '26px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '1.5px solid var(--accent-emerald)',
+                            flexShrink: 0
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '26px',
+                            height: '26px',
+                            borderRadius: '50%',
+                            background: 'rgba(16, 185, 129, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            color: '#10B981',
+                            flexShrink: 0
+                          }}
+                        >
+                          {c.author_name ? c.author_name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                      )}
                       <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                         {c.author_name}
                       </span>

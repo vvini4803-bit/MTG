@@ -1812,6 +1812,108 @@ class DatabaseService {
     return this.users.find((u) => u.uid === uid);
   }
 
+  /**
+   * Updates user's avatar image and propagates it throughout all historical and active items:
+   * users list, news posts authored, comments authored, gallery uploads, chat messages, and conversations.
+   */
+  public async syncUserPhoto(uid: string, photoUrl: string, name?: string): Promise<void> {
+    if (!uid) return;
+
+    // 1. Update in this.users
+    const userIndex = this.users.findIndex((u) => u.uid === uid);
+    if (userIndex >= 0) {
+      this.users[userIndex] = {
+        ...this.users[userIndex],
+        photoUrl,
+        ...(name ? { name } : {})
+      };
+      this.saveCollection('users', [...this.users]);
+    }
+
+    // 2. Cascade update into News authored by this user
+    let newsModified = false;
+    this.news = this.news.map((item) => {
+      if (item.author_id === uid && item.author_photo !== photoUrl) {
+        newsModified = true;
+        return { ...item, author_photo: photoUrl };
+      }
+      return item;
+    });
+    if (newsModified) {
+      this.saveCollection('news', [...this.news]);
+    }
+
+    // 3. Cascade update into Comments authored by this user
+    let commentsModified = false;
+    this.comments = this.comments.map((c) => {
+      if (c.author_id === uid && c.author_photo !== photoUrl) {
+        commentsModified = true;
+        return { ...c, author_photo: photoUrl };
+      }
+      return c;
+    });
+    if (commentsModified) {
+      this.saveCollection('comments', [...this.comments]);
+    }
+
+    // 4. Cascade update into Conversations participant photos
+    let convModified = false;
+    this.conversations = this.conversations.map((conv) => {
+      if (conv.participants.includes(uid)) {
+        convModified = true;
+        return {
+          ...conv,
+          participant_photos: {
+            ...(conv.participant_photos || {}),
+            [uid]: photoUrl
+          }
+        };
+      }
+      return conv;
+    });
+    if (convModified) {
+      this.saveCollection('conversations', [...this.conversations]);
+    }
+
+    // 5. Cascade update into Messages sent by this user
+    let msgsModified = false;
+    this.messages = this.messages.map((m) => {
+      if (m.sender_id === uid && m.sender_photo !== photoUrl) {
+        msgsModified = true;
+        return { ...m, sender_photo: photoUrl };
+      }
+      return m;
+    });
+    if (msgsModified) {
+      this.saveCollection('messages', [...this.messages]);
+    }
+
+    // 6. Cascade update into Gallery items authored by this user
+    let galleryModified = false;
+    this.gallery = this.gallery.map((g) => {
+      if (g.author_id === uid && g.author_photo !== photoUrl) {
+        galleryModified = true;
+        return { ...g, author_photo: photoUrl };
+      }
+      return g;
+    });
+    if (galleryModified) {
+      this.saveCollection('gallery', [...this.gallery]);
+    }
+
+    // 7. Firestore sync if available
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'users', uid), { photoUrl, ...(name ? { name } : {}) }, { merge: true });
+      } catch (e) {
+        console.warn('Firestore syncUserPhoto warning:', e);
+      }
+    }
+
+    // 8. Broadcast update
+    realtimeSync.broadcast('USER_UPDATED', { uid, photoUrl, name });
+  }
+
   public async updateUserPrivacy(
     uid: string,
     updates: {

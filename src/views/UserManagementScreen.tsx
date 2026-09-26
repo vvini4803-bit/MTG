@@ -268,21 +268,37 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({ onBa
                 >
                   <td style={{ padding: '14px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '50%',
-                          background: isRoot ? 'rgba(245, 158, 11, 0.25)' : 'rgba(16, 185, 129, 0.2)',
-                          color: isRoot ? '#FBBF24' : '#10B981',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 800
-                        }}
-                      >
-                        {isRoot ? '👑' : u.name.charAt(0)}
-                      </div>
+                      {u.photoUrl ? (
+                        <img
+                          src={u.photoUrl}
+                          alt={u.name}
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: isRoot ? '2px solid #F59E0B' : '2px solid var(--accent-emerald)',
+                            flexShrink: 0
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: isRoot ? 'rgba(245, 158, 11, 0.25)' : 'rgba(16, 185, 129, 0.2)',
+                            color: isRoot ? '#FBBF24' : '#10B981',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 800,
+                            flexShrink: 0
+                          }}
+                        >
+                          {isRoot ? '👑' : u.name.charAt(0)}
+                        </div>
+                      )}
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <strong style={{ display: 'block', color: 'var(--text-primary)' }}>{u.name}</strong>

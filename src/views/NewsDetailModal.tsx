@@ -279,7 +279,22 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
         </h1>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <span>Author: <strong>{news.author_name}</strong></span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            {news.author_photo ? (
+              <img
+                src={news.author_photo}
+                alt={news.author_name}
+                style={{
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '1.5px solid var(--accent-emerald)'
+                }}
+              />
+            ) : null}
+            Author: <strong>{news.author_name}</strong>
+          </span>
           <span>Category: <strong>{news.category}</strong></span>
           {news.location && <span>Location: <strong>{news.location}</strong></span>}
           <span>Date: {news.created_at.split('T')[0]}</span>

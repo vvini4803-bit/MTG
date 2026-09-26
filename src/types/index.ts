@@ -327,6 +327,7 @@ export interface GalleryItem {
   media_type: 'IMAGE' | 'VIDEO';
   author_id: string;
   author_name: string;
+  author_photo?: string;
   approved: boolean;
   likes_count: number;
   liked_by: string[];

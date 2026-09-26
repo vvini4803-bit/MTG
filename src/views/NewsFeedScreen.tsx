@@ -447,6 +447,38 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
                   fontSize: '0.78rem'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    {item.author_photo ? (
+                      <img
+                        src={item.author_photo}
+                        alt={item.author_name}
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1.5px solid var(--accent-emerald)',
+                          flexShrink: 0
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          background: 'rgba(16, 185, 129, 0.2)',
+                          color: '#10B981',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          flexShrink: 0
+                        }}
+                      >
+                        {item.author_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                       {item.author_name}
                     </span>

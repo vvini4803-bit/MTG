@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../types';
 import { SEED_USERS, isSuperAdminEmail } from '../services/seedData';
 import { realtimeSync } from '../services/realtimeSync';
+import { dbService } from '../services/dbService';
 import { auth, db, googleProvider } from '../services/firebaseConfig';
 import {
   createUserWithEmailAndPassword,
@@ -528,6 +529,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setCurrentUser(newProfile);
+    dbService.registerOrUpdateUser(newProfile).catch(() => {});
     return newProfile;
   };
 
@@ -535,6 +537,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentUser) return;
     const updated = { ...currentUser, ...data };
     setCurrentUser(updated);
+
+    if (data.photoUrl) {
+      dbService.syncUserPhoto(currentUser.uid, data.photoUrl, data.name || currentUser.name).catch(() => {});
+    } else {
+      dbService.registerOrUpdateUser(updated).catch(() => {});
+    }
 
     if (db && currentUser.uid) {
       try {
