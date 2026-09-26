@@ -437,7 +437,7 @@ export const Village3DView: React.FC<Village3DViewProps> = ({ onNavigateToMap })
             >
               {/* THE MASTER PHOTOGRAPH AS VISUAL SOURCE OF TRUTH */}
               <img
-                src="/diorama/mtg_reference_diorama.jpg"
+                src="/diorama/mtg_reference_diorama.jpg?v=2"
                 alt="MTG Village 3D Master Diorama"
                 draggable={false}
                 style={{
