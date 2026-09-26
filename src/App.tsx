@@ -439,49 +439,47 @@ export const App: React.FC = () => {
             maxWidth: '1080px',
             margin: '0 auto',
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start',
             alignItems: 'center',
-            gap: '12px'
+            gap: '8px'
           }}
         >
-          {/* Village Brand (Uploaded icon removed, tagline removed, text flush left for flexible mobile comfort) */}
-          <div
-            className="site-header-brand"
-            onClick={() => navigateTo('home')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              cursor: 'pointer',
-              flexShrink: 0,
-              userSelect: 'none'
-            }}
-          >
-            <h1
-              style={{
-                fontSize: '1.28rem',
-                fontWeight: 900,
-                margin: 0,
-                color: '#FFFFFF',
-                letterSpacing: '-0.02em',
-                lineHeight: 1.2
-              }}
-            >
-              {isKannada ? 'ನಮ್ಮ ಮುತ್ತಾಗೊಂದಿ' : 'Muttagundi'}
-            </h1>
-          </div>
-
-          {/* Quick Header Controls: Search + Messages + Voice + Language + Admin + User */}
+          {/* Header Controls: Home + Search + Messages + Notifications + Voice + Language + Admin + User (Shifted flush left for maximum viewing comfort) */}
           <div
             className="site-header-controls"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '7px',
-              flexShrink: 1,
-              justifyContent: 'flex-end',
-              flexWrap: 'nowrap'
+              gap: '8px',
+              justifyContent: 'flex-start',
+              flexWrap: 'nowrap',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              width: '100%',
+              padding: '2px 0'
             }}
           >
+            {/* Home Button on Far Left */}
+            <button
+              onClick={() => navigateTo('home')}
+              className="site-header-icon-btn"
+              style={{
+                background: currentSection === 'home' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                color: currentSection === 'home' ? '#34D399' : '#FFFFFF',
+                border: currentSection === 'home' ? '1.5px solid #10B981' : '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '50%',
+                width: '38px',
+                height: '38px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+              title={isKannada ? 'ಮುಖಪುಟ (Home)' : 'Home'}
+            >
+              <Home size={18} />
+            </button>
             {/* Search Button */}
             <button
               onClick={() => navigateTo('search')}

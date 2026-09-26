@@ -341,11 +341,6 @@ export const Village3DView: React.FC<Village3DViewProps> = ({ onNavigateToMap })
               {viewMode === 'diorama' ? 'MASTER DIORAMA' : '3D ORBIT MESH'}
             </span>
           </div>
-          <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
-            {isKannada
-              ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ, ಹೊಸದುರ್ಗ • ಡಿಜಿಟಲ್ ಟ್ವಿನ್ 3D ಮಾದರಿ'
-              : 'Muttagundi Village, Hosadurga • Digital Twin 3D Environment'}
-          </span>
         </div>
 
         {/* View Switchers */}

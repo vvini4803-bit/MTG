@@ -512,19 +512,13 @@ button, input, textarea, select {
   }
 
   .site-header-inner {
+    justify-content: flex-start !important;
     gap: 6px !important;
   }
 
-  .site-header-brand h1 {
-    font-size: 1.08rem !important;
-  }
-
-  .site-header-brand span {
-    font-size: 0.62rem !important;
-  }
-
   .site-header-controls {
-    gap: 4px !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
   }
 
   .site-header-icon-btn {
