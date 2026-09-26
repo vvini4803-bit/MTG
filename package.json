@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
     "@types/paho-mqtt": "^1.0.10",
     "@types/three": "^0.185.4",
     "canvas-confetti": "^1.9.4",
