@@ -15,7 +15,8 @@ export type MainSection =
   | 'profile'
   | 'admin'
   | 'search'
-  | 'notifications';
+  | 'notifications'
+  | 'settings';
 
 type ModalCloseHandler = () => void;
 

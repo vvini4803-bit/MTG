@@ -23,6 +23,7 @@ import { UserProfileScreen } from './views/UserProfileScreen';
 import { AdminDashboardScreen } from './views/AdminDashboardScreen';
 import { SearchScreen } from './views/SearchScreen';
 import { NotificationsScreen } from './views/NotificationsScreen';
+import { SettingsScreen } from './views/SettingsScreen';
 import { InAppNotificationToast } from './components/notifications/InAppNotificationToast';
 import { NotificationPermissionBanner } from './components/notifications/NotificationPermissionBanner';
 import { notificationService } from './services/notificationService';
@@ -72,7 +73,8 @@ import {
   ShieldAlert,
   MessageSquare,
   Heart,
-  Share2
+  Share2,
+  Settings
 } from 'lucide-react';
 import { getEffectiveUserId, triggerHapticFeedback } from './services/deviceIdentity';
 import { backNavigation } from './services/backNavigation';
@@ -93,7 +95,8 @@ export type MainSection =
   | 'profile'
   | 'admin'
   | 'search'
-  | 'notifications';
+  | 'notifications'
+  | 'settings';
 
 export const App: React.FC = () => {
   const { language, setLanguage, isKannada } = useLanguage();
@@ -291,8 +294,9 @@ export const App: React.FC = () => {
   }, [currentUser]);
 
   useEffect(() => {
+    const effectiveUid = currentUser?.uid || getEffectiveUserId();
     const unsubNotif = dbService.subscribeUnreadNotificationsCount(
-      currentUser?.uid || 'ALL',
+      effectiveUid,
       setUnreadNotifCount
     );
     return () => unsubNotif();
@@ -594,6 +598,29 @@ export const App: React.FC = () => {
               )}
             </button>
 
+            {/* ⚙️ Settings Button */}
+            <button
+              onClick={() => navigateTo('settings')}
+              className="site-header-icon-btn"
+              style={{
+                position: 'relative',
+                background: currentSection === 'settings' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                color: currentSection === 'settings' ? '#10B981' : '#CBD5E1',
+                border: currentSection === 'settings' ? '1px solid #10B981' : '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '50%',
+                width: '38px',
+                height: '38px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+              title={isKannada ? 'ಸೆಟ್ಟಿಂಗ್ಸ್ & ಗೌಪ್ಯತೆ (Settings)' : 'Settings & Privacy'}
+            >
+              <Settings size={18} />
+            </button>
+
             {/* Quick Ask Village Voice Button */}
             <button
               onClick={() => setIsVoiceModalOpen(true)}
@@ -728,6 +755,21 @@ export const App: React.FC = () => {
           if (section === 'news' && itemId) {
             const item = dbService.getNews().find((n) => n.id === itemId);
             if (item) setSelectedNews(item);
+          } else if (section === 'messages' && itemId) {
+            const conv = dbService.getConversationById(itemId);
+            if (conv) {
+              const currentUid = currentUser?.uid || getEffectiveUserId(currentUser);
+              const partnerId = conv.participants.find((p: string) => p !== currentUid) || conv.participants[0] || '';
+              const partner = {
+                uid: partnerId,
+                name: conv.participant_names?.[partnerId] || 'Resident',
+                photoUrl: conv.participant_photos?.[partnerId],
+                role: conv.participant_roles?.[partnerId]
+              };
+              setActiveChatConvId(conv.id);
+              setActiveChatPartner(partner);
+              setIsChatOpen(true);
+            }
           }
         }}
       />
@@ -1686,6 +1728,7 @@ export const App: React.FC = () => {
               onNavigateToPeople={() => navigateTo('people')}
               onNavigateToMessages={() => navigateTo('messages')}
               onNavigateToAdmin={() => navigateTo('admin')}
+              onNavigateToSettings={() => navigateTo('settings')}
             />
 
             {/* Discrete Admin Dashboard Entry for Authorized Roles */}
@@ -1802,13 +1845,73 @@ export const App: React.FC = () => {
               </button>
             </div>
             <NotificationsScreen
-              onNavigateTab={(tab) => {
-                if (tab === 'news') navigateTo('news');
+              onNavigateTab={(tab, itemId) => {
+                if (tab === 'news') {
+                  navigateTo('news');
+                  if (itemId) {
+                    const item = dbService.getNews().find((n) => n.id === itemId);
+                    if (item) setSelectedNews(item);
+                  }
+                }
                 else if (tab === 'events') navigateTo('events');
                 else if (tab === 'sports') navigateTo('sports');
                 else if (tab === 'agriculture') navigateTo('agriculture');
                 else if (tab === 'temples') navigateTo('temples');
+                else if (tab === 'messages') {
+                  navigateTo('messages');
+                  if (itemId) {
+                    const conv = dbService.getConversationById(itemId);
+                    if (conv) {
+                      const currentUid = currentUser?.uid || getEffectiveUserId(currentUser);
+                      const partnerId = conv.participants.find((p: string) => p !== currentUid) || conv.participants[0] || '';
+                      const partner = {
+                        uid: partnerId,
+                        name: conv.participant_names?.[partnerId] || 'Resident',
+                        photoUrl: conv.participant_photos?.[partnerId],
+                        role: conv.participant_roles?.[partnerId]
+                      };
+                      setActiveChatConvId(conv.id);
+                      setActiveChatPartner(partner);
+                      setIsChatOpen(true);
+                    }
+                  }
+                }
+                else if (tab === 'people') navigateTo('people');
+                else if (tab === 'settings') navigateTo('settings');
                 else navigateTo('home');
+              }}
+            />
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* ⚙️ SECTION 14: SETTINGS & PREFERENCES                       */}
+        {/* ============================================================ */}
+        {currentSection === 'settings' && (
+          <div>
+            <div style={{ marginBottom: '14px' }}>
+              <button
+                onClick={() => navigateTo('home')}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  borderRadius: '10px',
+                  padding: '6px 14px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                ← {isKannada ? 'ಮುಖಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ' : 'Back to Home'}
+              </button>
+            </div>
+            <SettingsScreen
+              onNavigateTab={(tab) => {
+                if (tab === 'messages') navigateTo('messages');
+                else if (tab === 'people') navigateTo('people');
+                else if (tab === 'notifications') navigateTo('notifications');
+                else navigateTo(tab as MainSection);
               }}
             />
           </div>

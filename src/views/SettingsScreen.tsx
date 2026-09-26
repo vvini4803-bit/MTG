@@ -1,13 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { Globe, Moon, Sun, Type, Wifi, WifiOff, Trash2, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { dbService } from '../services/dbService';
+import { notificationService } from '../services/notificationService';
+import { triggerHapticFeedback } from '../services/deviceIdentity';
+import {
+  Globe,
+  Moon,
+  Sun,
+  Type,
+  Wifi,
+  WifiOff,
+  Trash2,
+  CheckCircle2,
+  MessageSquare,
+  Users,
+  Bell,
+  Volume2,
+  ShieldCheck,
+  Check
+} from 'lucide-react';
 
-export const SettingsScreen: React.FC = () => {
+interface SettingsScreenProps {
+  onNavigateTab?: (tab: string) => void;
+}
+
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab }) => {
   const { language, setLanguage, isKannada } = useLanguage();
+  const { currentUser } = useAuth();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [fontSize, setFontSize] = useState('15');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [cacheCleared, setCacheCleared] = useState(false);
+  const [soundTested, setSoundTested] = useState(false);
+
+  // Messages & Privacy State
+  const [allowFindMe, setAllowFindMe] = useState(currentUser?.allow_find_me !== false);
+  const [privacyMessage, setPrivacyMessage] = useState(currentUser?.privacy_message || 'EVERYONE');
+  const [privacySaved, setPrivacySaved] = useState(false);
 
   useEffect(() => {
     const savedTheme = (localStorage.getItem('gramasiri_theme') as 'dark' | 'light') || 'dark';
@@ -187,6 +217,168 @@ export const SettingsScreen: React.FC = () => {
             <span>Standard (14px)</span>
             <span>Medium (16px)</span>
             <span>Large / Senior (19px)</span>
+          </div>
+        </div>
+
+        {/* 💬 Messages & Find People Settings */}
+        <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <MessageSquare size={18} color="#10B981" />
+              <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
+                {isKannada ? 'ಸಂದೇಶಗಳು & ಗ್ರಾಮಸ್ಥರ ಸಂಪರ್ಕ ಸೆಟ್ಟಿಂಗ್ಸ್' : 'Messages & Village Directory Settings'}
+              </strong>
+            </div>
+            <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '3px 8px', borderRadius: '12px', fontWeight: 700 }}>
+              {isKannada ? '⚡ ನೈಜ ಸಮಯದ ಲೈವ್ ಸಿಂಕ್' : '⚡ Realtime Live Sync'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Real-time Status */}
+            <div
+              style={{
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px'
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#34D399', display: 'block' }}>
+                  {isKannada ? '🟢 ವಾಟ್ಸಾಪ್ ಮಾದರಿಯ ಕ್ಷಣಾರ್ಧ ಸಂದೇಶ ವಿತರಣೆ ಸಕ್ರಿಯ' : '🟢 WhatsApp-grade Instant Message Sync Active'}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                  {isKannada
+                    ? 'ಸಂದೇಶ ಮತ್ತು ಫೋಟೋ ಕಳುಹಿಸಿದ ತಕ್ಷಣವೇ ಘಂಟೆ ಐಕಾನ್‌ನಲ್ಲಿ ಅಧಿಸೂಚನೆ ತಲುಪುತ್ತದೆ.'
+                    : 'Messages & photos are delivered instantly with immediate notification bell alerts.'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  notificationService.playMessageReceived();
+                  triggerHapticFeedback();
+                  setSoundTested(true);
+                  setTimeout(() => setSoundTested(false), 2000);
+                }}
+                className="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px' }}
+                title="Test notification sound & vibration"
+              >
+                <Volume2 size={14} color="#10B981" />
+                <span>{soundTested ? (isKannada ? 'ಶಬ್ದ ಪರೀಕ್ಷಿತ!' : 'Sound Tested!') : (isKannada ? 'ಶಬ್ದ ಪರೀಕ್ಷಿಸಿ' : 'Test Alert Sound')}</span>
+              </button>
+            </div>
+
+            {/* Find People Directory Shortcut */}
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '10px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Users size={20} color="#38BDF8" />
+                <div>
+                  <strong style={{ fontSize: '0.85rem', color: '#FFFFFF', display: 'block' }}>
+                    {isKannada ? 'ಗ್ರಾಮಸ್ಥರನ್ನು ಹುಡುಕಿ (Find People)' : 'Find People Directory'}
+                  </strong>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                    {isKannada ? 'ರೈತರು, ಕ್ರೀಡಾಪಟುಗಳು, ಶಿಕ್ಷಕರು ಮತ್ತು ಗ್ರಾಮಸ್ಥರ ಸಂಪರ್ಕ ಪಟ್ಟಿ' : 'Search and connect with verified village residents'}
+                  </span>
+                </div>
+              </div>
+              {onNavigateTab && (
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('people')}
+                  className="btn-primary"
+                  style={{ fontSize: '0.78rem', padding: '6px 14px' }}
+                >
+                  {isKannada ? 'ಡೈರೆಕ್ಟರಿ ತೆರೆಯಿರಿ' : 'Open Directory'} →
+                </button>
+              )}
+            </div>
+
+            {/* Privacy Controls (if logged in) */}
+            {currentUser && (
+              <div
+                style={{
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                    <ShieldCheck size={16} color="#10B981" />
+                    <span>{isKannada ? 'ಗ್ರಾಮಸ್ಥರ ಪಟ್ಟಿಯಲ್ಲಿ ನನ್ನನ್ನು ತೋರಿಸಿ' : 'Allow others to find me in directory'}</span>
+                  </label>
+                  <input
+                    type="checkbox"
+                    checked={allowFindMe}
+                    onChange={async (e) => {
+                      const val = e.target.checked;
+                      setAllowFindMe(val);
+                      await dbService.updateUserPrivacy(currentUser.uid, { allow_find_me: val });
+                      setPrivacySaved(true);
+                      setTimeout(() => setPrivacySaved(false), 2000);
+                    }}
+                    style={{ width: '18px', height: '18px', accentColor: '#10B981', cursor: 'pointer' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    {isKannada ? 'ಯಾರು ಸಂದೇಶ ಕಳುಹಿಸಬಹುದು:' : 'Who can message me:'}
+                  </span>
+                  <select
+                    value={privacyMessage}
+                    onChange={async (e) => {
+                      const val = e.target.value as 'EVERYONE' | 'VILLAGE_MEMBERS' | 'NOBODY';
+                      setPrivacyMessage(val);
+                      await dbService.updateUserPrivacy(currentUser.uid, { privacy_message: val });
+                      setPrivacySaved(true);
+                      setTimeout(() => setPrivacySaved(false), 2000);
+                    }}
+                    style={{
+                      background: 'var(--bg-card)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '4px 10px',
+                      fontSize: '0.78rem'
+                    }}
+                  >
+                    <option value="EVERYONE">{isKannada ? 'ಎಲ್ಲಾ ಗ್ರಾಮಸ್ಥರು (Everyone)' : 'Everyone in Village'}</option>
+                    <option value="VILLAGE_MEMBERS">{isKannada ? 'ದೃಢೀಕೃತ ಸದಸ್ಯರು ಮಾತ್ರ (Verified Only)' : 'Verified Only'}</option>
+                    <option value="NOBODY">{isKannada ? 'ಯಾರೂ ಬೇಡ (Nobody)' : 'Nobody'}</option>
+                  </select>
+                </div>
+                {privacySaved && (
+                  <span style={{ fontSize: '0.74rem', color: '#10B981', fontWeight: 600 }}>
+                    ✓ {isKannada ? 'ಸೆಟ್ಟಿಂಗ್ಸ್ ಉಳಿಸಲಾಗಿದೆ!' : 'Privacy settings saved!'}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

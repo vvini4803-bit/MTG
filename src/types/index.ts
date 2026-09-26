@@ -383,10 +383,13 @@ export interface NotificationItem {
   title_kn: string;
   message_en: string;
   message_kn: string;
-  type: 'EMERGENCY' | 'NEWS_VERIFIED' | 'EVENT' | 'SPORTS' | 'ADMIN' | 'SOCIAL';
+  type: 'EMERGENCY' | 'NEWS_VERIFIED' | 'EVENT' | 'SPORTS' | 'ADMIN' | 'SOCIAL' | 'MESSAGE';
   link_tab?: string;
   read: boolean;
   created_at: string;
+  sender_id?: string;
+  sender_name?: string;
+  conversation_id?: string;
 }
 
 export interface AuditLog {

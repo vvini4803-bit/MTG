@@ -313,6 +313,14 @@ class DatabaseService {
         this.users.unshift(defaultAdmin);
       }
     }
+
+    // Ensure all verified village residents from seed data exist in directory
+    SEED_USERS.forEach((su) => {
+      if (!this.users.some((u) => u.uid === su.uid)) {
+        this.users.push(su);
+      }
+    });
+
     this.saveCollection('users', this.users);
 
     this.conversations = this.loadCollection('conversations', SEED_CONVERSATIONS);
@@ -765,15 +773,21 @@ class DatabaseService {
         }
 
         case 'CHAT_MESSAGE': {
-          const msg: ChatMessage = envelope.payload;
+          const payload = envelope.payload;
+          const msg: ChatMessage = payload?.message || payload;
           if (!msg || !msg.id) return;
           if (!this.messages.some((m) => m.id === msg.id)) {
             this.messages = [...this.messages, msg];
             this.saveCollection('messages', this.messages);
 
             let conv = this.conversations.find((c) => c.id === msg.conversation_id);
+            if (!conv && payload?.conversation) {
+              const newConv = payload.conversation as Conversation;
+              conv = newConv;
+              this.conversations = [newConv, ...this.conversations];
+            }
             if (conv) {
-              conv.last_message_text = msg.text || (msg.media_url ? '📷 Photo' : '');
+              conv.last_message_text = msg.media_url && !msg.text ? '📷 Photo' : (msg.text || '');
               conv.last_message_at = msg.created_at;
               conv.last_sender_id = msg.sender_id;
               conv.updated_at = msg.created_at;
@@ -783,8 +797,72 @@ class DatabaseService {
                 conv.unread_counts[recipientId] = (conv.unread_counts[recipientId] || 0) + 1;
               }
               this.saveCollection('conversations', [...this.conversations]);
+              this.emit('conversations', this.conversations);
             }
+
             this.emit(`messages_${msg.conversation_id}`, this.messages.filter((m) => m.conversation_id === msg.conversation_id));
+            this.emit('unread_messages', this.messages);
+
+            // 🔔 Instant Notification Bell update at the exact time message/photo arrives!
+            const recipientId = conv?.participants.find((p) => p !== msg.sender_id);
+            const notifItem: NotificationItem = {
+              id: 'notif_msg_' + msg.id,
+              user_id: recipientId || 'ALL',
+              title_kn: `💬 ${msg.sender_name} ಅವರಿಂದ ಹೊಸ ಸಂದೇಶ`,
+              title_en: `💬 Message from ${msg.sender_name}`,
+              message_kn: msg.media_url && !msg.text
+                ? `📷 ${msg.sender_name} ನಿಮಗೆ ಒಂದು ಚಿತ್ರವನ್ನು ಕಳುಹಿಸಿದ್ದಾರೆ.`
+                : `${msg.sender_name}: ${msg.text || 'ಹೊಸ ಸಂದೇಶ'}`,
+              message_en: msg.media_url && !msg.text
+                ? `📷 ${msg.sender_name} sent you a photo.`
+                : `${msg.sender_name}: ${msg.text || 'New message'}`,
+              type: 'MESSAGE',
+              link_tab: 'messages',
+              read: false,
+              created_at: msg.created_at,
+              sender_id: msg.sender_id,
+              sender_name: msg.sender_name,
+              conversation_id: msg.conversation_id
+            };
+
+            if (!this.notifications.some((n) => n.id === notifItem.id)) {
+              this.notifications = [notifItem, ...this.notifications];
+              this.saveCollection('notifications', this.notifications);
+              this.emit('notifications', this.notifications);
+            }
+
+            // Immediately trigger sound chime, vibration, push notification, and in-app toast!
+            notificationService.playMessageReceived();
+            notificationService.sendNotification({
+              title_kn: notifItem.title_kn,
+              title_en: notifItem.title_en,
+              body_kn: notifItem.message_kn,
+              body_en: notifItem.message_en,
+              section: 'messages',
+              itemId: msg.conversation_id,
+              urgent: false
+            });
+          }
+          break;
+        }
+
+        case 'MESSAGE_READ': {
+          const { conversationId, readerId } = envelope.payload || {};
+          if (conversationId && readerId) {
+            let updated = false;
+            this.messages.forEach((m) => {
+              if (m.conversation_id === conversationId && m.sender_id !== readerId) {
+                if (m.status !== 'READ') {
+                  m.status = 'READ';
+                  if (!m.read_by.includes(readerId)) m.read_by.push(readerId);
+                  updated = true;
+                }
+              }
+            });
+            if (updated) {
+              this.saveCollection('messages', this.messages);
+              this.emit(`messages_${conversationId}`, this.messages.filter((m) => m.conversation_id === conversationId));
+            }
           }
           break;
         }
@@ -2337,10 +2415,57 @@ class DatabaseService {
       conv.unread_counts[recipientId] = (conv.unread_counts[recipientId] || 0) + 1;
     }
     this.saveCollection('conversations', [...this.conversations]);
-    realtimeSync.broadcast('CHAT_MESSAGE', newMsg, recipientId);
+    this.emit('conversations', this.conversations);
+
+    // 🔔 Create Notification for recipient in the Notification Bell Bar
+    if (recipientId) {
+      const notifItem: NotificationItem = {
+        id: 'notif_msg_' + newMsg.id,
+        user_id: recipientId,
+        title_kn: `💬 ${params.senderName} ಅವರಿಂದ ಹೊಸ ಸಂದೇಶ`,
+        title_en: `💬 Message from ${params.senderName}`,
+        message_kn: params.mediaUrl && !params.text
+          ? `📷 ${params.senderName} ನಿಮಗೆ ಒಂದು ಚಿತ್ರವನ್ನು ಕಳುಹಿಸಿದ್ದಾರೆ.`
+          : `${params.senderName}: ${params.text || 'ಹೊಸ ಸಂದೇಶ'}`,
+        message_en: params.mediaUrl && !params.text
+          ? `📷 ${params.senderName} sent you a photo.`
+          : `${params.senderName}: ${params.text || 'New message'}`,
+        type: 'MESSAGE',
+        link_tab: 'messages',
+        read: false,
+        created_at: newMsg.created_at,
+        sender_id: params.senderId,
+        sender_name: params.senderName,
+        conversation_id: params.conversationId
+      };
+
+      this.notifications = [notifItem, ...this.notifications];
+      this.saveCollection('notifications', this.notifications);
+      this.emit('notifications', this.notifications);
+
+      if (isFirebaseConfigured && db) {
+        try {
+          setDoc(doc(db, 'notifications', notifItem.id), cleanFirestoreData(notifItem)).catch(() => {});
+        } catch {}
+      }
+    }
+
+    if (isFirebaseConfigured && db) {
+      try {
+        setDoc(doc(db, 'messages', newMsg.id), cleanFirestoreData(newMsg)).catch(() => {});
+        setDoc(doc(db, 'conversations', conv.id), cleanFirestoreData(conv)).catch(() => {});
+      } catch {}
+    }
+
+    realtimeSync.broadcast('CHAT_MESSAGE', { message: newMsg, conversation: conv }, recipientId);
     this.emit(`messages_${params.conversationId}`, this.messages.filter((m) => m.conversation_id === params.conversationId));
+    this.emit('unread_messages', this.messages);
 
     return newMsg;
+  }
+
+  public getConversationById(conversationId: string): Conversation | undefined {
+    return this.conversations.find((c) => c.id === conversationId);
   }
 
   public async markConversationRead(conversationId: string, userId: string): Promise<void> {
@@ -2363,8 +2488,36 @@ class DatabaseService {
       }
     });
 
-    if (convUpdated) this.saveCollection('conversations', [...this.conversations]);
-    if (msgsUpdated) this.saveCollection('messages', [...this.messages]);
+    // Mark related message notifications as read too!
+    let notifsUpdated = false;
+    this.notifications.forEach((n) => {
+      if (n.type === 'MESSAGE' && n.conversation_id === conversationId && (n.user_id === userId || n.user_id === 'ALL')) {
+        if (!n.read) {
+          n.read = true;
+          notifsUpdated = true;
+        }
+      }
+    });
+
+    if (convUpdated) {
+      this.saveCollection('conversations', [...this.conversations]);
+      this.emit('conversations', this.conversations);
+    }
+    if (msgsUpdated) {
+      this.saveCollection('messages', [...this.messages]);
+      this.emit(`messages_${conversationId}`, this.messages.filter((m) => m.conversation_id === conversationId));
+      this.emit('unread_messages', this.messages);
+
+      // Broadcast read receipt to other participant
+      const partnerId = conv?.participants.find((p) => p !== userId);
+      if (partnerId) {
+        realtimeSync.broadcast('MESSAGE_READ', { conversationId, readerId: userId }, partnerId);
+      }
+    }
+    if (notifsUpdated) {
+      this.saveCollection('notifications', [...this.notifications]);
+      this.emit('notifications', this.notifications);
+    }
   }
 
   public async deleteMessage(messageId: string, conversationId: string, userId: string): Promise<boolean> {

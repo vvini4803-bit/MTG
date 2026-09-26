@@ -170,6 +170,67 @@ class NotificationService {
   }
 
   /**
+   * Crisp, soft pop when message or photo is successfully sent (like WhatsApp)
+   */
+  public playMessageSent() {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!this.audioCtx) this.audioCtx = new AudioCtx();
+      if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+
+      const now = this.audioCtx.currentTime;
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(1174, now + 0.06);
+
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      osc.start(now);
+      osc.stop(now + 0.08);
+      this.vibrate([40]);
+    } catch {}
+  }
+
+  /**
+   * Distinct, pleasant incoming message chime (like WhatsApp)
+   */
+  public playMessageReceived() {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!this.audioCtx) this.audioCtx = new AudioCtx();
+      if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+
+      const now = this.audioCtx.currentTime;
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(659.25, now); // E5
+      osc.frequency.setValueAtTime(880.0, now + 0.08); // A5
+      osc.frequency.setValueAtTime(1318.51, now + 0.16); // E6
+
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+      osc.start(now);
+      osc.stop(now + 0.4);
+      this.vibrate([80, 50, 80]);
+    } catch {}
+  }
+
+  /**
    * Trigger both a system/mobile push notification AND in-app floating banner
    */
   public async sendNotification(payload: PushNotificationPayload, isKannada = true): Promise<void> {

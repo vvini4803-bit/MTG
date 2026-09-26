@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { notificationService, PushNotificationPayload } from '../../services/notificationService';
-import { Bell, AlertTriangle, X, ChevronRight } from 'lucide-react';
+import { Bell, AlertTriangle, X, ChevronRight, MessageSquare } from 'lucide-react';
 
 interface InAppNotificationToastProps {
   onNavigate: (section: string, itemId?: string) => void;
@@ -51,7 +51,11 @@ export const InAppNotificationToast: React.FC<InAppNotificationToastProps> = ({ 
         maxWidth: '480px',
         background: activeToast.urgent ? 'rgba(239, 68, 68, 0.95)' : 'rgba(15, 23, 42, 0.95)',
         backdropFilter: 'blur(16px)',
-        border: activeToast.urgent ? '1.5px solid #FCA5A5' : '1.5px solid rgba(16, 185, 129, 0.45)',
+        border: activeToast.urgent
+          ? '1.5px solid #FCA5A5'
+          : activeToast.section === 'messages'
+          ? '1.5px solid #10B981'
+          : '1.5px solid rgba(16, 185, 129, 0.45)',
         borderRadius: '18px',
         padding: '12px 16px',
         boxShadow: activeToast.urgent
@@ -70,7 +74,11 @@ export const InAppNotificationToast: React.FC<InAppNotificationToastProps> = ({ 
           width: '38px',
           height: '38px',
           borderRadius: '12px',
-          background: activeToast.urgent ? 'rgba(255, 255, 255, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+          background: activeToast.urgent
+            ? 'rgba(255, 255, 255, 0.2)'
+            : activeToast.section === 'messages'
+            ? 'rgba(16, 185, 129, 0.25)'
+            : 'rgba(16, 185, 129, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -79,6 +87,8 @@ export const InAppNotificationToast: React.FC<InAppNotificationToastProps> = ({ 
       >
         {activeToast.urgent ? (
           <AlertTriangle size={20} color="#FFFFFF" />
+        ) : activeToast.section === 'messages' ? (
+          <MessageSquare size={20} color="#34D399" />
         ) : (
           <Bell size={20} color="#34D399" />
         )}
@@ -91,7 +101,11 @@ export const InAppNotificationToast: React.FC<InAppNotificationToastProps> = ({ 
               fontSize: '0.62rem',
               fontWeight: 900,
               textTransform: 'uppercase',
-              color: activeToast.urgent ? '#FEE2E2' : '#34D399',
+              color: activeToast.urgent
+                ? '#FEE2E2'
+                : activeToast.section === 'messages'
+                ? '#34D399'
+                : '#34D399',
               background: 'rgba(255, 255, 255, 0.1)',
               padding: '1px 6px',
               borderRadius: '6px'
@@ -99,6 +113,8 @@ export const InAppNotificationToast: React.FC<InAppNotificationToastProps> = ({ 
           >
             {activeToast.urgent
               ? (isKannada ? 'ತುರ್ತು ಎಚ್ಚರಿಕೆ' : 'EMERGENCY')
+              : activeToast.section === 'messages'
+              ? (isKannada ? '💬 ಹೊಸ ಸಂದೇಶ' : '💬 NEW MESSAGE')
               : (isKannada ? 'ಹೊಸ ಅಪ್‌ಡೇಟ್' : 'LIVE UPDATE')}
           </span>
         </div>

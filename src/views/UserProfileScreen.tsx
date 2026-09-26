@@ -24,7 +24,8 @@ import {
   Link,
   X,
   Loader2,
-  ArrowRight
+  ArrowRight,
+  Settings
 } from 'lucide-react';
 
 interface UserProfileScreenProps {
@@ -33,6 +34,7 @@ interface UserProfileScreenProps {
   onNavigateToPeople?: () => void;
   onNavigateToMessages?: () => void;
   onNavigateToAdmin?: () => void;
+  onNavigateToSettings?: () => void;
 }
 
 const VILLAGE_AVATARS = [
@@ -51,7 +53,8 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   onOpenCreateProfile,
   onNavigateToPeople,
   onNavigateToMessages,
-  onNavigateToAdmin
+  onNavigateToAdmin,
+  onNavigateToSettings
 }) => {
   const { isKannada } = useLanguage();
   const {
@@ -586,6 +589,27 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
               <MessageSquare size={16} color="var(--accent-emerald)" />
               <span>{isKannada ? '💬 ಸಂದೇಶಗಳು' : '💬 Messages'}</span>
             </button>
+
+            {onNavigateToSettings && (
+              <button
+                onClick={onNavigateToSettings}
+                className="btn-secondary"
+                style={{
+                  gridColumn: '1 / -1',
+                  fontSize: '0.82rem',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  background: 'rgba(255, 255, 255, 0.04)'
+                }}
+              >
+                <Settings size={16} />
+                <span>{isKannada ? '⚙️ ಸಂದೇಶ & ಗೌಪ್ಯತೆ ಸೆಟ್ಟಿಂಗ್ಸ್' : '⚙️ Messages & Privacy Settings'}</span>
+              </button>
+            )}
           </div>
         </div>
 

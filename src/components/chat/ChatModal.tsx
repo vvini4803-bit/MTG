@@ -5,6 +5,8 @@ import { dbService } from '../../services/dbService';
 import { ChatMessage, UserProfile } from '../../types';
 import { compressImage } from '../../services/imageOptimizer';
 import { geminiService } from '../../services/geminiService';
+import { notificationService } from '../../services/notificationService';
+import { triggerHapticFeedback } from '../../services/deviceIdentity';
 import {
   X,
   Send,
@@ -160,6 +162,9 @@ export const ChatModal: React.FC<ChatModalProps> = ({
 
     setIsSending(true);
     try {
+      notificationService.playMessageSent();
+      triggerHapticFeedback();
+
       await dbService.sendMessage({
         conversationId,
         senderId: currentUser.uid,
@@ -183,8 +188,10 @@ export const ChatModal: React.FC<ChatModalProps> = ({
     if (!file) return;
 
     try {
-      const compressed = await compressImage(file, 1200, 900, 0.8);
+      // Fast, lightweight 800px compression for instantaneous WhatsApp-like delivery
+      const compressed = await compressImage(file, 800, 800, 0.75);
       setAttachedImage(compressed.dataUrl);
+      triggerHapticFeedback();
     } catch (err: any) {
       alert(err.message || 'Failed to load photo');
     }

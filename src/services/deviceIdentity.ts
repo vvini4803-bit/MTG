@@ -10,7 +10,7 @@ export function getDeviceId(): string {
   return id;
 }
 
-export function getEffectiveUserId(currentUser: UserProfile | null): string {
+export function getEffectiveUserId(currentUser?: UserProfile | null): string {
   if (currentUser && currentUser.uid) {
     return currentUser.uid;
   }

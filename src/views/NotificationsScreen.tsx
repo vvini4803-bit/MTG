@@ -10,11 +10,12 @@ import {
   Calendar,
   Trophy,
   CheckCheck,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from 'lucide-react';
 
 interface NotificationsScreenProps {
-  onNavigateTab: (tab: ViewTab) => void;
+  onNavigateTab: (tab: ViewTab | string, itemId?: string) => void;
 }
 
 export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onNavigateTab }) => {
@@ -33,6 +34,8 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onNavi
 
   const getIcon = (type: NotificationItem['type']) => {
     switch (type) {
+      case 'MESSAGE':
+        return <MessageSquare size={20} color="#10B981" />;
       case 'EMERGENCY':
         return <AlertTriangle size={20} color="#EF4444" />;
       case 'NEWS_VERIFIED':
@@ -82,7 +85,11 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onNavi
             return (
               <div
                 key={notif.id}
-                onClick={() => notif.link_tab && onNavigateTab(notif.link_tab as ViewTab)}
+                onClick={() => {
+                  if (notif.link_tab) {
+                    onNavigateTab(notif.link_tab, notif.conversation_id);
+                  }
+                }}
                 className="glass-card glass-card-interactive"
                 style={{
                   padding: '16px',
