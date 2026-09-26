@@ -45,8 +45,8 @@ interface LandmarkHotspot {
 const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
   {
     id: 'temple',
-    label_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ದೇವಸ್ಥಾನ',
-    label_en: 'Sri Kalleshwara Temple',
+    label_kn: 'ಶ್ರೀ ಆಂಜನೇಯ ಸ್ವಾಮಿ ದೇವಾಲಯ (ಗೋಪುರ)',
+    label_en: 'Sri Anjaneya Swamy Temple (Gopuram)',
     icon: '🛕',
     leftPct: 23,
     topPct: 58,
@@ -56,9 +56,9 @@ const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
   },
   {
     id: 'shrine',
-    label_kn: 'ಹಳೆಯ ಕಲ್ಲಿನ ಗುಡಿ',
-    label_en: 'Old Stone Structure',
-    icon: '🪨',
+    label_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ ಸ್ವಾಮಿ ದೇವಸ್ಥಾನ',
+    label_en: 'Sri Lakshmi Thimmappa Swamy Temple',
+    icon: '🛕',
     leftPct: 19,
     topPct: 24,
     focusZoom: 1.7,
@@ -67,8 +67,8 @@ const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
   },
   {
     id: 'school',
-    label_kn: 'ಸಮುದಾಯ ಭವನ / ಶಾಲೆ',
-    label_en: 'Community Hall / School',
+    label_kn: 'ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ',
+    label_en: 'Govt Lower Primary School',
     icon: '🏫',
     leftPct: 52,
     topPct: 26,
@@ -78,7 +78,7 @@ const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
   },
   {
     id: 'farms',
-    label_kn: 'ಅಡಿಕೆ ತೋಟ',
+    label_kn: 'ಅಡಿಕೆ & ತೆಂಗಿನ ತೋಟ',
     label_en: 'Areca Nut Plantation',
     icon: '🌴',
     leftPct: 84,
@@ -89,8 +89,8 @@ const LANDMARK_HOTSPOTS: LandmarkHotspot[] = [
   },
   {
     id: 'temple1',
-    label_kn: 'ಕಲ್ಲೇಶ್ವರ ಗುಡಿ & ಗೋಪುರ',
-    label_en: 'White Shrine & Pylon',
+    label_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ಗುಡಿ (ವಿದ್ಯುತ್ ಗೋಪುರ)',
+    label_en: 'Sri Kalleshwara Temple & Pylon',
     icon: '⚡',
     leftPct: 65,
     topPct: 62,
@@ -133,7 +133,7 @@ export const Village3DView: React.FC<Village3DViewProps> = ({ onNavigateToMap })
   const [viewMode, setViewMode] = useState<ViewMode>('diorama');
   const [selectedLandmarkId, setSelectedLandmarkId] = useState<LandmarkId>('temple');
   const [selectedLocation, setSelectedLocation] = useState<MapLocationItem | null>(() => {
-    return locations.find((l) => l.id.includes('kalle') || l.id.includes('temple')) || locations[0] || null;
+    return locations.find((l) => l.id === 'mtg_temple_anjaneya' || l.id.includes('anjaneya')) || locations[0] || null;
   });
 
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
@@ -154,18 +154,24 @@ export const Village3DView: React.FC<Village3DViewProps> = ({ onNavigateToMap })
     setIsInspectorOpen(true);
 
     let match: MapLocationItem | undefined;
-    if (landmarkId === 'shrine') {
-      match = locations.find((l) => l.id.includes('thimmappa') || l.id.includes('stone') || l.name_kn.includes('ತಿಮ್ಮಪ್ಪ'));
-    } else if (landmarkId === 'temple') {
-      match = locations.find((l) => l.id.includes('kalle') || l.id.includes('anjaneya') || l.category === 'TEMPLE');
-    } else if (landmarkId === 'temple1') {
-      match = locations.find((l) => l.id.includes('kalle') || l.id.includes('shrine'));
+    if (landmarkId === 'temple') {
+      // Sri Anjaneya Swamy Temple (The colorful tiered Gopuram temple)
+      match = locations.find((l) => l.id === 'mtg_temple_anjaneya' || l.id.includes('anjaneya') || l.name_kn.includes('ಆಂಜನೇಯ'));
+    } else if (landmarkId === 'shrine') {
+      // Sri Lakshmi Thimmappa Swamy Temple (Sacred historic stone shrine)
+      match = locations.find((l) => l.id === 'mtg_temple_thimmappa' || l.id.includes('thimmappa') || l.name_kn.includes('ತಿಮ್ಮಪ್ಪ'));
     } else if (landmarkId === 'school' || landmarkId === 'panchayat') {
-      match = locations.find((l) => l.id.includes('school') || l.category === 'SCHOOL' || l.category === 'HALL');
+      // Government Lower Primary School
+      match = locations.find((l) => l.id === 'mtg_school' || l.id.includes('school') || l.name_kn.includes('ಶಾಲೆ'));
+    } else if (landmarkId === 'temple1') {
+      // Sri Kalleshwara Swamy Temple (Kalle Devaru) & Pylon
+      match = locations.find((l) => l.id === 'mtg_temple_kalle_devar' || l.id.includes('kalle'));
     } else if (landmarkId === 'kindergarden') {
-      match = locations.find((l) => l.id.includes('anganwadi') || l.category === 'HEALTH');
+      // Anganwadi Kendra
+      match = locations.find((l) => l.id === 'mtg_anganwadi' || l.id.includes('anganwadi') || l.category === 'HEALTH');
     } else if (landmarkId === 'farms') {
-      match = locations.find((l) => l.id.includes('farm') || l.category === 'FARM');
+      // Areca Nut & Coconut Plantation
+      match = locations.find((l) => l.id.includes('plantation') || l.id.includes('farm') || l.category === 'FARM');
     } else if (landmarkId === 'water') {
       match = locations.find((l) => l.id.includes('water') || l.category === 'WATER');
     }

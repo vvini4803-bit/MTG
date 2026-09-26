@@ -64,7 +64,7 @@ function createSchoolBannerTexture(): THREE.CanvasTexture {
   ctx.font = 'bold 54px "Noto Sans Kannada", "Segoe UI", sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText('ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ', 225, 95);
+  ctx.fillText('ಸರ್ಕಾರಿ ಕಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ', 225, 95);
 
   ctx.fillStyle = '#B91C1C';
   ctx.font = 'bold 36px "Noto Sans Kannada", "Segoe UI", sans-serif';
@@ -278,7 +278,8 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
   const activeLandmarkId: LandmarkId = useMemo(() => {
     const raw = (selectedId || '').toLowerCase();
     if (raw.includes('thimmappa') || raw.includes('stone') || raw.includes('shrine') || raw.includes('huchharaya')) return 'shrine';
-    if (raw.includes('kalle') || raw.includes('temple1')) return 'temple';
+    if (raw.includes('anjaneya')) return 'temple';
+    if (raw.includes('kalle') || raw.includes('temple1') || raw.includes('pylon')) return 'temple1';
     if (raw.includes('anganwadi') || raw.includes('kindergarden')) return 'kindergarden';
     if (raw.includes('school') || raw.includes('hall') || raw.includes('panchayat')) return 'school';
     if (raw.includes('farm') || raw.includes('areca') || raw.includes('coconut')) return 'farms';
