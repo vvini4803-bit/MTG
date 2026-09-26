@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://mtg-swart.vercel.app
+Host: https://mutthagundi-17.web.app
 
 # Sitemap location for Googlebot & search crawlers
-Sitemap: https://mtg-swart.vercel.app/sitemap.xml
+Sitemap: https://mutthagundi-17.web.app/sitemap.xml
