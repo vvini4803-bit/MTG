@@ -168,18 +168,39 @@ export const VillageHero: React.FC = () => {
               }}
             />
             <div>
-              <h1
-                style={{
-                  fontSize: 'clamp(2rem, 5vw, 2.8rem)',
-                  fontWeight: 900,
-                  lineHeight: 1.15,
-                  margin: 0,
-                  letterSpacing: '-0.02em',
-                  textShadow: '0 2px 10px rgba(0,0,0,0.5)'
-                }}
-              >
-                {villageName}
-              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <h1
+                  style={{
+                    fontSize: 'clamp(2rem, 5vw, 2.8rem)',
+                    fontWeight: 900,
+                    lineHeight: 1.15,
+                    margin: 0,
+                    letterSpacing: '-0.02em',
+                    textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  {villageName}
+                </h1>
+                <span
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.25)',
+                    border: '1px solid rgba(52, 211, 153, 0.45)',
+                    color: '#6EE7B7',
+                    padding: '3px 10px',
+                    borderRadius: '999px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    backdropFilter: 'blur(8px)',
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  MTG Village App
+                </span>
+              </div>
+              <div style={{ fontSize: '0.84rem', color: '#A7F3D0', fontWeight: 600, letterSpacing: '0.03em', marginTop: '4px' }}>
+                {isKannada ? 'MTG ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್' : 'MTG Digital Village Portal'}
+              </div>
             </div>
           </div>
 

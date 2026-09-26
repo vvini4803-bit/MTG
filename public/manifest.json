@@ -1,7 +1,8 @@
 {
-  "short_name": "Muttagundi",
-  "name": "Muttagundi - Digital Village Super App | ಮುತ್ತಾಗೊಂದಿ",
-  "description": "The digital home for Muttagundi village (Hosadurga, Chitradurga) — people, news, sports, agriculture, culture, and future.",
+  "short_name": "MTG App",
+  "name": "MTG Village - MTG Digital Village App | ಮುತ್ತಾಗೊಂದಿ",
+  "description": "MTG Village - Official MTG Digital Village App for Muttagundi (Hosadurga, Chitradurga). News, weather, temples, community, and services.",
+  "categories": ["community", "social", "lifestyle"],
   "icons": [
     {
       "src": "/logo-192.png",
