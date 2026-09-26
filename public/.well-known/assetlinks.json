@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.web.mutthagundi_17.twa",
+        "sha256_cert_fingerprints": ["B7:39:9A:E4:0D:BA:49:B1:1D:A8:97:A2:48:A7:EA:87:2E:7C:D3:D3:8E:55:B3:50:32:58:AB:D9:CC:57:FD:47"]
+      }
+    }]

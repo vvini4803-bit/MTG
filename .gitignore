@@ -25,3 +25,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Play Store & Signing Keys (Keep safe and private)
+playstore-package/
+*.keystore
+signing-key-info.txt
