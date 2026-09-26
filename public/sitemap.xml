@@ -2,6 +2,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://mtg-swart.vercel.app/</loc>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mtg-swart.vercel.app/" />
+    <xhtml:link rel="alternate" hreflang="kn" href="https://mtg-swart.vercel.app/" />
+  </url>
+  <url>
     <loc>https://mutthagundi-17.web.app/</loc>
     <lastmod>2026-09-26</lastmod>
     <changefreq>daily</changefreq>
