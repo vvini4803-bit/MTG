@@ -9,52 +9,48 @@ export type LandmarkId =
   | 'temple1'
   | 'kindergarden'
   | 'panchayat'
-  | 'water'
-  | 'sign';
+  | 'water';
 
 export interface Village3DSceneProps {
   selectedId?: string;
   onSelect?: (id: LandmarkId) => void;
   isKannada?: boolean;
-  isAnimeMode?: boolean;
-  onToggleAnimeMode?: (val: boolean) => void;
-  onOpenAnimeShowcase?: (id: LandmarkId) => void;
 }
 
 type TimeOfDay = 'day' | 'sunset' | 'night';
 
-// Helper: Procedural Canvas Textures for crisp authentic village details
-function createKannadaSchoolBannerTexture(): THREE.CanvasTexture {
+// --- Procedural Canvas Textures for Maximum Authenticity ---
+function createSchoolBannerTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
   canvas.height = 256;
   const ctx = canvas.getContext('2d')!;
 
-  // Background cream/yellow
+  // Warm cream/yellow background matching reference photo
   ctx.fillStyle = '#FEF08A';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Blue decorative top & bottom borders
   ctx.fillStyle = '#1D4ED8';
-  ctx.fillRect(0, 0, canvas.width, 18);
-  ctx.fillRect(0, canvas.height - 18, canvas.width, 18);
+  ctx.fillRect(0, 0, canvas.width, 16);
+  ctx.fillRect(0, canvas.height - 16, canvas.width, 16);
 
-  // Karnataka Flag Circular Emblem on Left
+  // Karnataka State Flag Emblem on Left (Red top half, Yellow bottom half)
   const cx = 110;
   const cy = 128;
-  const r = 80;
+  const r = 75;
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.clip();
-  ctx.fillStyle = '#DC2626'; // Red upper half
+  ctx.fillStyle = '#DC2626';
   ctx.fillRect(cx - r, cy - r, r * 2, r);
-  ctx.fillStyle = '#FBBF24'; // Yellow lower half
+  ctx.fillStyle = '#FBBF24';
   ctx.fillRect(cx - r, cy, r * 2, r);
   ctx.restore();
 
   ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.stroke();
@@ -64,58 +60,15 @@ function createKannadaSchoolBannerTexture(): THREE.CanvasTexture {
   ctx.font = 'bold 54px "Noto Sans Kannada", "Segoe UI", sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText('ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ', 230, 95);
+  ctx.fillText('ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ', 225, 95);
 
   ctx.fillStyle = '#B91C1C';
   ctx.font = 'bold 36px "Noto Sans Kannada", "Segoe UI", sans-serif';
-  ctx.fillText('ಮುತ್ತಾಗೊಂದಿ • ಹೊಸದುರ್ಗ ತಾಲೂಕು', 234, 165);
+  ctx.fillText('ಮುತ್ಸಾಗೊಂದಿ • ಹೊಸದುರ್ಗ ತಾಲೂಕು', 230, 165);
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.anisotropy = 8;
-  return texture;
-}
-
-function createMtgSignTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 160;
-  const ctx = canvas.getContext('2d')!;
-
-  // Rustic wood plank background
-  ctx.fillStyle = '#78350F';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#92400E';
-  ctx.fillRect(8, 8, canvas.width - 16, canvas.height - 16);
-
-  // Grain lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-  ctx.lineWidth = 3;
-  for (let y = 20; y < canvas.height; y += 22) {
-    ctx.beginPath();
-    ctx.moveTo(10, y);
-    ctx.lineTo(canvas.width - 10, y);
-    ctx.stroke();
-  }
-
-  // Border nails
-  ctx.fillStyle = '#D97706';
-  ctx.beginPath();
-  ctx.arc(20, 20, 6, 0, Math.PI * 2);
-  ctx.arc(canvas.width - 20, 20, 6, 0, Math.PI * 2);
-  ctx.arc(20, canvas.height - 20, 6, 0, Math.PI * 2);
-  ctx.arc(canvas.width - 20, canvas.height - 20, 6, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Text: 📍 Muttagundi, India
-  ctx.fillStyle = '#FEF3C7';
-  ctx.font = 'bold 44px "Outfit", "Segoe UI", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('📍 Muttagundi, India', canvas.width / 2, canvas.height / 2);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.anisotropy = 4;
-  return texture;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
+  return tex;
 }
 
 function createAnganwadiMuralTexture(): THREE.CanvasTexture {
@@ -124,40 +77,39 @@ function createAnganwadiMuralTexture(): THREE.CanvasTexture {
   canvas.height = 256;
   const ctx = canvas.getContext('2d')!;
 
-  // Sky blue base
+  // Cheerful sky-blue background matching reference
   ctx.fillStyle = '#38BDF8';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Lower yellow plinth
   ctx.fillStyle = '#FDE047';
-  ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+  ctx.fillRect(0, canvas.height - 48, canvas.width, 48);
 
-  // Cheerful painted sun & hills
+  // Painted sun & cheerful preschool designs
   ctx.fillStyle = '#F59E0B';
   ctx.beginPath();
-  ctx.arc(80, 70, 45, 0, Math.PI * 2);
+  ctx.arc(80, 75, 45, 0, Math.PI * 2);
   ctx.fill();
 
-  // Green hills
   ctx.fillStyle = '#22C55E';
   ctx.beginPath();
-  ctx.arc(160, 240, 100, Math.PI, 0);
+  ctx.arc(170, 240, 100, Math.PI, 0);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(320, 240, 120, Math.PI, 0);
+  ctx.arc(340, 240, 110, Math.PI, 0);
   ctx.fill();
 
-  // Kannada text: ಅಂಗನವಾಡಿ ಕೇಂದ್ರ
-  ctx.fillStyle = '#0F172A';
-  ctx.font = 'bold 36px "Noto Sans Kannada", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('ಅಂಗನವಾಡಿ ಕೇಂದ್ರ', canvas.width / 2, 60);
-  ctx.font = 'bold 24px "Noto Sans Kannada", sans-serif';
-  ctx.fillText('ಮುತ್ತಾಗೊಂದಿ', canvas.width / 2, 100);
+  // White cloud puffs
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.arc(280, 60, 28, 0, Math.PI * 2);
+  ctx.arc(310, 50, 35, 0, Math.PI * 2);
+  ctx.arc(345, 60, 26, 0, Math.PI * 2);
+  ctx.fill();
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.anisotropy = 4;
-  return texture;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 4;
+  return tex;
 }
 
 function createAsphaltTexture(): THREE.CanvasTexture {
@@ -166,33 +118,29 @@ function createAsphaltTexture(): THREE.CanvasTexture {
   canvas.height = 256;
   const ctx = canvas.getContext('2d')!;
 
-  // Dark matte asphalt
-  ctx.fillStyle = '#262A33';
+  ctx.fillStyle = '#2B2F38'; // Dark matte asphalt
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Fine road grain
-  for (let i = 0; i < 4000; i++) {
+  // Subtle realistic road grain
+  for (let i = 0; i < 3500; i++) {
     const x = Math.random() * canvas.width;
     const y = Math.random() * canvas.height;
-    const gray = 40 + Math.random() * 35;
-    ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+    const g = 40 + Math.random() * 30;
+    ctx.fillStyle = `rgb(${g},${g},${g})`;
     ctx.fillRect(x, y, 1.5, 1.5);
   }
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 4);
-  return texture;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(6, 6);
+  return tex;
 }
 
 export const Village3DScene: React.FC<Village3DSceneProps> = ({
   selectedId = 'temple',
   onSelect,
-  isKannada = true,
-  isAnimeMode: controlledAnimeMode = true,
-  onToggleAnimeMode,
-  onOpenAnimeShowcase
+  isKannada = true
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
@@ -200,18 +148,18 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
   const dragDistanceRef = useRef(0);
   const villageGroupRef = useRef<THREE.Group | null>(null);
 
-  // Rotation & camera target angles
-  const targetRotationYRef = useRef(0);
-  const currentRotationYRef = useRef(0);
-  const targetRotationXRef = useRef(0.08); // Slight vertical tilt
-  const currentRotationXRef = useRef(0.08);
+  // Exact reference camera angles
+  // In the reference image, the scene is viewed from an elevated isometric aerial angle
+  const targetRotationYRef = useRef(0.0);
+  const currentRotationYRef = useRef(0.0);
+  const targetRotationXRef = useRef(0.05);
+  const currentRotationXRef = useRef(0.05);
 
-  const targetZoomRef = useRef(32);
-  const currentZoomRef = useRef(32);
-  const isAutoRotatingRef = useRef(false); // Default false for steady cinematic composure
+  const targetZoomRef = useRef(33);
+  const currentZoomRef = useRef(33);
+  const isAutoRotatingRef = useRef(false);
   const [isAutoRotating, setIsAutoRotating] = useState(false);
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('day');
-  const [showLabels, setShowLabels] = useState(true);
 
   const landmarkObjectsRef = useRef<{ [key in LandmarkId]?: THREE.Object3D }>({});
   const interactiveMeshesRef = useRef<{ mesh: THREE.Mesh; id: LandmarkId }[]>([]);
@@ -219,67 +167,59 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     sunLight?: THREE.DirectionalLight;
     ambientLight?: THREE.AmbientLight;
     hemiLight?: THREE.HemisphereLight;
-    templeLights?: THREE.PointLight[];
   }>({});
 
-  const [screenCoords, setScreenCoords] = useState<{
-    [key in LandmarkId]?: { x: number; y: number; visible: boolean };
-  }>({});
-
-  // Map any incoming location ID to landmark ID
+  // Map incoming selection ID
   const activeLandmarkId: LandmarkId = useMemo(() => {
     const raw = (selectedId || '').toLowerCase();
     if (raw.includes('thimmappa') || raw.includes('stone') || raw.includes('shrine') || raw.includes('huchharaya')) return 'shrine';
-    if (raw.includes('kalle') || raw.includes('temple1')) return 'temple'; // Map main temple
+    if (raw.includes('kalle') || raw.includes('temple1')) return 'temple';
     if (raw.includes('anganwadi') || raw.includes('kindergarden')) return 'kindergarden';
     if (raw.includes('school') || raw.includes('hall') || raw.includes('panchayat')) return 'school';
     if (raw.includes('farm') || raw.includes('areca') || raw.includes('coconut')) return 'farms';
     if (raw.includes('water')) return 'water';
-    if (raw.includes('sign')) return 'sign';
     return 'temple';
   }, [selectedId]);
 
-  // Positions corresponding exactly to the Reference Image layout
-  const landmarkPositions: Record<LandmarkId, { x: number; y: number; z: number }> = useMemo(() => ({
-    shrine: { x: -8.8, y: 5.5, z: -4.5 },       // UPPER LEFT (Old Stone Structure)
-    school: { x: 0.2, y: 5.2, z: -5.0 },        // UPPER CENTER (Village Community Hall / School)
-    farms: { x: 9.2, y: 5.8, z: -3.8 },         // UPPER RIGHT (Areca Nut Plantation)
-    temple: { x: -6.4, y: 4.2, z: 2.2 },        // LOWER LEFT / CENTER (Sri Kalleshwara Temple)
-    temple1: { x: 5.5, y: 3.8, z: 1.5 },        // LOWER RIGHT (Shrine & Electric Tower)
-    kindergarden: { x: 8.8, y: 2.2, z: 5.8 },   // LOWER RIGHT FOREGROUND (Anganwadi)
-    panchayat: { x: 0.2, y: 5.2, z: -5.0 },     // Linked to Community Hall
-    water: { x: 3.2, y: 3.5, z: -1.0 },
-    sign: { x: 0.0, y: 2.2, z: 7.2 }            // FOREGROUND CENTER (MTG VILLAGE sign)
+  // Exact 3D Positions corresponding precisely to the reference image blueprint
+  const landmarkCoordinates: Record<LandmarkId, { x: number; y: number; z: number }> = useMemo(() => ({
+    shrine: { x: -9.2, y: 3.5, z: -5.8 },      // UPPER LEFT (Old Stone Structure)
+    school: { x: 0.5, y: 3.8, z: -7.2 },       // UPPER CENTER (Village Community Hall / School)
+    farms: { x: 10.2, y: 4.2, z: -4.8 },       // UPPER RIGHT (Areca Nut Plantation)
+    temple: { x: -7.0, y: 2.2, z: 2.2 },       // LOWER LEFT (Sri Kalleshwara Temple)
+    temple1: { x: 5.6, y: 2.2, z: 1.2 },       // RIGHT CENTER (White Shrine & Electric Pylon)
+    kindergarden: { x: 9.8, y: 1.6, z: 6.2 },  // LOWER RIGHT FOREGROUND (Anganwadi)
+    panchayat: { x: 0.5, y: 3.8, z: -7.2 },
+    water: { x: 3.4, y: 2.4, z: -1.0 }
   }), []);
 
-  // Smoothly focus camera/rotation toward targeted landmark
+  // Smooth focus on selected landmark
   const focusOnLandmark = useCallback((id: LandmarkId) => {
-    // Keep orientation near reference view while tilting smoothly
     if (id === 'shrine') {
-      targetRotationYRef.current = 0.25;
+      targetRotationYRef.current = 0.22;
       targetZoomRef.current = 26;
     } else if (id === 'school') {
       targetRotationYRef.current = 0.0;
       targetZoomRef.current = 25;
     } else if (id === 'farms') {
-      targetRotationYRef.current = -0.32;
+      targetRotationYRef.current = -0.35;
       targetZoomRef.current = 26;
     } else if (id === 'temple') {
-      targetRotationYRef.current = 0.18;
-      targetZoomRef.current = 24;
-    } else if (id === 'temple1' || id === 'kindergarden') {
-      targetRotationYRef.current = -0.22;
+      targetRotationYRef.current = 0.2;
       targetZoomRef.current = 25;
+    } else if (id === 'temple1' || id === 'kindergarden') {
+      targetRotationYRef.current = -0.25;
+      targetZoomRef.current = 26;
     } else {
       targetRotationYRef.current = 0.0;
-      targetZoomRef.current = 32;
+      targetZoomRef.current = 33;
     }
   }, []);
 
-  const resetView = () => {
+  const resetToMasterReferenceView = () => {
     targetRotationYRef.current = 0.0;
-    targetRotationXRef.current = 0.08;
-    targetZoomRef.current = 32;
+    targetRotationXRef.current = 0.05;
+    targetZoomRef.current = 33;
   };
 
   useEffect(() => {
@@ -295,17 +235,17 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     landmarkObjectsRef.current = {};
 
     const width = container.clientWidth;
-    const height = container.clientHeight || 520;
+    const height = container.clientHeight || 560;
 
     // --- Scene Setup ---
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xe2f1ff, 0.012);
+    scene.fog = new THREE.FogExp2(0xd6e8fa, 0.01);
 
-    // --- Isometric-style Perspective Camera ---
-    const camera = new THREE.PerspectiveCamera(36, width / height, 0.5, 180);
-    // Elevated 3D isometric angle matching the reference photo
-    camera.position.set(0, 22, currentZoomRef.current);
-    camera.lookAt(0, 2.5, 0);
+    // --- Isometric Aerial Perspective Camera Matching Reference ---
+    // Elevation: 23 units high, 33 units back, looking slightly below the village center
+    const camera = new THREE.PerspectiveCamera(35, width / height, 0.5, 200);
+    camera.position.set(0, 23, currentZoomRef.current);
+    camera.lookAt(0, 2.0, 0);
 
     // --- WebGL Renderer ---
     const renderer = new THREE.WebGLRenderer({
@@ -318,76 +258,68 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
+    renderer.toneMappingExposure = 1.32;
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // --- Lighting ---
-    // Warm natural sun matching the morning golden sun in reference
+    // --- Natural Warm Lighting Matching Reference Image ---
+    // Warm morning sunlight coming from upper left, casting soft natural directional shadows
     const ambientLight = new THREE.AmbientLight(0xfff7ed, 0.95);
     scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0xbae6fd, 0xd97706, 0.7);
+    const hemiLight = new THREE.HemisphereLight(0xbae6fd, 0xc2410c, 0.65);
     scene.add(hemiLight);
 
-    const sunLight = new THREE.DirectionalLight(0xfffbeb, 2.2);
-    sunLight.position.set(-18, 32, 22);
+    const sunLight = new THREE.DirectionalLight(0xfffbeb, 2.4);
+    sunLight.position.set(-20, 36, 18);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
     sunLight.shadow.mapSize.height = 2048;
-    sunLight.shadow.camera.near = 1;
-    sunLight.shadow.camera.far = 80;
-    sunLight.shadow.camera.left = -22;
-    sunLight.shadow.camera.right = 22;
-    sunLight.shadow.camera.top = 22;
-    sunLight.shadow.camera.bottom = -22;
-    sunLight.shadow.bias = -0.0004;
+    sunLight.shadow.camera.near = 2;
+    sunLight.shadow.camera.far = 90;
+    sunLight.shadow.camera.left = -24;
+    sunLight.shadow.camera.right = 24;
+    sunLight.shadow.camera.top = 24;
+    sunLight.shadow.camera.bottom = -24;
+    sunLight.shadow.bias = -0.0003;
     scene.add(sunLight);
 
-    const templeLights: THREE.PointLight[] = [];
+    lightsRef.current = { sunLight, ambientLight, hemiLight };
 
-    lightsRef.current = {
-      sunLight,
-      ambientLight,
-      hemiLight,
-      templeLights
-    };
-
-    // --- Main Village Diorama Master Group ---
+    // --- Master Village Diorama Group ---
     const villageGroup = new THREE.Group();
     scene.add(villageGroup);
     villageGroupRef.current = villageGroup;
 
-    // --- Shared High-Quality Materials ---
-    const asphaltTex = createAsphaltTexture();
+    // --- Shared High-Fidelity Materials ---
     const asphaltMat = new THREE.MeshStandardMaterial({
-      map: asphaltTex,
+      map: createAsphaltTexture(),
       roughness: 0.85,
       metalness: 0.1
     });
 
-    const grassMat = new THREE.MeshStandardMaterial({
-      color: 0x228B22, // Forest Green
-      roughness: 0.75,
+    const lushGrassMat = new THREE.MeshStandardMaterial({
+      color: 0x228B22, // Natural forest green
+      roughness: 0.8,
       metalness: 0.05
     });
 
     const redSoilMat = new THREE.MeshStandardMaterial({
-      color: 0x9A3412, // Rich red Karnataka soil
-      roughness: 0.9,
+      color: 0xA03612, // Authentic red Karnataka loam
+      roughness: 0.92,
       metalness: 0.02
     });
 
-    const weatheredStoneMat = new THREE.MeshStandardMaterial({
-      color: 0x78716C,
-      roughness: 0.9,
+    const weatheredGraniteMat = new THREE.MeshStandardMaterial({
+      color: 0x6B6560,
+      roughness: 0.95,
       metalness: 0.05
     });
 
     const templeGoldMat = new THREE.MeshStandardMaterial({
       color: 0xF59E0B,
-      roughness: 0.3,
-      metalness: 0.85
+      roughness: 0.25,
+      metalness: 0.9
     });
 
     const templeYellowMat = new THREE.MeshStandardMaterial({
@@ -408,131 +340,182 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
       metalness: 0.1
     });
 
-    const whitePlasterMat = new THREE.MeshStandardMaterial({
+    const whiteWallMat = new THREE.MeshStandardMaterial({
       color: 0xF8FAFC,
-      roughness: 0.6,
+      roughness: 0.65,
       metalness: 0.02
     });
 
-    // Helper: Register clickable landmark mesh
+    const foliageGreen1 = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.85 }); // Dark forest
+    const foliageGreen2 = new THREE.MeshStandardMaterial({ color: 0x15803D, roughness: 0.8 });  // Emerald
+    const foliageGreen3 = new THREE.MeshStandardMaterial({ color: 0x22C55E, roughness: 0.75 }); // Fresh leaf
+    const barkBrownMat = new THREE.MeshStandardMaterial({ color: 0x78350F, roughness: 0.9 });
+
+    // Interactive Mesh Registration
     const registerInteractive = (mesh: THREE.Mesh, id: LandmarkId) => {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       interactiveMeshesRef.current.push({ mesh, id });
     };
 
+    // Helper: Create Realistic Organic Tree (not a single primitive sphere)
+    const createOrganicTree = (scale = 1.0, type: 'banyan' | 'neem' | 'shrub' = 'banyan'): THREE.Group => {
+      const tree = new THREE.Group();
+      const trunkH = 1.8 * scale;
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * scale, 0.28 * scale, trunkH, 8), barkBrownMat);
+      trunk.position.y = trunkH / 2;
+      trunk.castShadow = true;
+      tree.add(trunk);
+
+      // Multi-cluster volumetric crown matching reference photo
+      const clusters = type === 'banyan' ? 5 : 4;
+      for (let i = 0; i < clusters; i++) {
+        const mat = i % 3 === 0 ? foliageGreen1 : i % 3 === 1 ? foliageGreen2 : foliageGreen3;
+        const rad = (0.9 + Math.random() * 0.4) * scale;
+        const cluster = new THREE.Mesh(new THREE.DodecahedronGeometry(rad, 1), mat);
+        const ang = (i / clusters) * Math.PI * 2;
+        const dist = 0.5 * scale;
+        cluster.position.set(
+          Math.cos(ang) * dist,
+          trunkH + 0.5 * scale + (i === 0 ? 0.4 : 0),
+          Math.sin(ang) * dist
+        );
+        cluster.scale.set(1.1, 0.85, 1.0);
+        cluster.castShadow = true;
+        cluster.receiveShadow = true;
+        tree.add(cluster);
+      }
+      return tree;
+    };
+
     // =========================================================================
-    // 1. DIORAMA BASE & SCULPTED TERRAIN (Miniature Aerial Model)
+    // 1. DIORAMA BASE & TOPOGRAPHY (Matching Reference Image)
     // =========================================================================
     const terrainGroup = new THREE.Group();
     villageGroup.add(terrainGroup);
 
-    // Sculpted Green & Red Soil Base Slab
-    const baseGeo = new THREE.CylinderGeometry(18.5, 19.5, 2.5, 48);
-    const baseMat = new THREE.MeshStandardMaterial({
-      color: 0x451A03, // Dark rich earth underbelly
-      roughness: 0.95
-    });
-    const baseMesh = new THREE.Mesh(baseGeo, baseMat);
-    baseMesh.position.y = -1.25;
+    // Main Curved Diorama Slab Base
+    const baseGeo = new THREE.CylinderGeometry(19.2, 20.2, 2.8, 54);
+    const baseUnderMat = new THREE.MeshStandardMaterial({ color: 0x3F2615, roughness: 0.95 });
+    const baseMesh = new THREE.Mesh(baseGeo, baseUnderMat);
+    baseMesh.position.y = -1.4;
     baseMesh.receiveShadow = true;
     terrainGroup.add(baseMesh);
 
-    // Lush Green Grass Top Surface
-    const topGrassGeo = new THREE.CylinderGeometry(18.4, 18.5, 0.4, 48);
-    const topGrassMesh = new THREE.Mesh(topGrassGeo, grassMat);
+    // Top Natural Green Grass Layer
+    const topGrassGeo = new THREE.CylinderGeometry(19.1, 19.2, 0.4, 54);
+    const topGrassMesh = new THREE.Mesh(topGrassGeo, lushGrassMat);
     topGrassMesh.position.y = 0.1;
     topGrassMesh.receiveShadow = true;
     terrainGroup.add(topGrassMesh);
 
-    // Elevated mounds (Upper Left for Stone Structure, Upper Right for plantation, Center Front for MTG sign)
-    const stoneHillGeo = new THREE.ConeGeometry(5.5, 2.6, 24);
-    const stoneHill = new THREE.Mesh(stoneHillGeo, redSoilMat);
-    stoneHill.position.set(-8.8, 1.2, -4.5);
+    // Upper Left Raised Earthen Mound for Old Stone Structure
+    const stoneHill = new THREE.Mesh(new THREE.ConeGeometry(5.8, 2.8, 28), redSoilMat);
+    stoneHill.position.set(-9.2, 1.3, -5.8);
     stoneHill.receiveShadow = true;
     terrainGroup.add(stoneHill);
 
-    const signKnollGeo = new THREE.ConeGeometry(3.6, 1.4, 20);
-    const signKnoll = new THREE.Mesh(signKnollGeo, grassMat);
-    signKnoll.position.set(0, 0.6, 6.8);
-    signKnoll.receiveShadow = true;
-    terrainGroup.add(signKnoll);
+    // Upper Center Tiered Terrace for Community Hall
+    const hallTerrace = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.8, 6.2), redSoilMat);
+    hallTerrace.position.set(0.5, 0.4, -7.2);
+    hallTerrace.receiveShadow = true;
+    terrainGroup.add(hallTerrace);
 
-    // Plantation Red Earth Terrace (Upper Right)
-    const plantationEarthGeo = new THREE.BoxGeometry(10.5, 0.35, 9.5);
-    const plantationEarth = new THREE.Mesh(plantationEarthGeo, redSoilMat);
-    plantationEarth.position.set(8.5, 0.3, -4.0);
-    plantationEarth.rotation.y = 0.05;
-    plantationEarth.receiveShadow = true;
-    terrainGroup.add(plantationEarth);
+    // Upper Right Plantation Flat Agricultural Earth Bed
+    const plantationSoil = new THREE.Mesh(new THREE.BoxGeometry(11.2, 0.35, 10.5), redSoilMat);
+    plantationSoil.position.set(10.2, 0.25, -4.8);
+    plantationSoil.receiveShadow = true;
+    terrainGroup.add(plantationSoil);
 
-    // Soft clouds floating around the base perimeter of the diorama
+    // Foreground Lush Shrub Knoll (Between Road Forks - exactly as in reference!)
+    const frontKnoll = new THREE.Mesh(new THREE.ConeGeometry(4.2, 1.4, 24), lushGrassMat);
+    frontKnoll.position.set(0, 0.6, 6.2);
+    frontKnoll.receiveShadow = true;
+    terrainGroup.add(frontKnoll);
+
+    // Clustered natural river boulders & bushes on the front knoll
+    for (let fb = 0; fb < 8; fb++) {
+      const bGeo = new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.4, 0);
+      const boulder = new THREE.Mesh(bGeo, weatheredGraniteMat);
+      boulder.position.set(
+        (Math.random() - 0.5) * 3.5,
+        0.5 + Math.random() * 0.3,
+        6.0 + (Math.random() - 0.5) * 1.6
+      );
+      boulder.castShadow = true;
+      terrainGroup.add(boulder);
+
+      // Flowering green bushes
+      const bush = new THREE.Mesh(new THREE.SphereGeometry(0.55 + Math.random() * 0.3, 7, 7), foliageGreen2);
+      bush.position.set(
+        (Math.random() - 0.5) * 3.8,
+        0.7 + Math.random() * 0.3,
+        6.2 + (Math.random() - 0.5) * 1.8
+      );
+      bush.castShadow = true;
+      terrainGroup.add(bush);
+    }
+
+    // Soft clouds framing the base perimeter (miniature diorama floating edge)
     const cloudsGroup = new THREE.Group();
     villageGroup.add(cloudsGroup);
     const cloudMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
+      color: 0xFFFFFF,
       roughness: 1.0,
       transparent: true,
-      opacity: 0.82
+      opacity: 0.85
     });
 
-    for (let c = 0; c < 16; c++) {
-      const angle = (c / 16) * Math.PI * 2;
-      const dist = 18.8 + Math.random() * 2.2;
-      const puffGeo = new THREE.SphereGeometry(2.2 + Math.random() * 1.6, 8, 8);
-      const puff = new THREE.Mesh(puffGeo, cloudMat);
-      puff.position.set(
-        Math.cos(angle) * dist,
-        -0.8 + Math.sin(c * 2) * 0.4,
-        Math.sin(angle) * dist
-      );
-      puff.scale.set(1.4, 0.6, 1.0);
+    for (let c = 0; c < 18; c++) {
+      const ang = (c / 18) * Math.PI * 2;
+      const dist = 19.5 + Math.random() * 2.5;
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(2.4 + Math.random() * 1.8, 8, 8), cloudMat);
+      puff.position.set(Math.cos(ang) * dist, -0.6 + Math.sin(c * 2) * 0.4, Math.sin(ang) * dist);
+      puff.scale.set(1.5, 0.65, 1.1);
       cloudsGroup.add(puff);
     }
 
     // =========================================================================
-    // 2. CENTRAL CURVING ROAD NETWORK WITH DASHED WHITE LANES
+    // 2. CENTRAL CURVING ROAD NETWORK WITH WHITE MARKINGS (Exact Blueprint)
     // =========================================================================
     const roadGroup = new THREE.Group();
     villageGroup.add(roadGroup);
 
-    // Main road curve sweeping through the village (as in reference image)
-    const roadPoints = [
-      new THREE.Vector3(-14, 0.32, 10),
-      new THREE.Vector3(-6, 0.32, 7.5),
-      new THREE.Vector3(-2.8, 0.32, 4.8),   // Sweeps past front sign
-      new THREE.Vector3(0, 0.32, 2.2),      // Central road junction
-      new THREE.Vector3(2.5, 0.32, 0.0),    // Ascending past community hall
-      new THREE.Vector3(1.2, 0.32, -3.2),
-      new THREE.Vector3(-3.5, 0.32, -4.2),  // Toward school and stone structure
-      new THREE.Vector3(-12, 0.32, -5.5)
-    ];
+    // Main sweeping road: comes from bottom left, curves around temple, goes up past school
+    const mainCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-14.5, 0.32, 9.5),
+      new THREE.Vector3(-6.5, 0.32, 7.2),
+      new THREE.Vector3(-2.8, 0.32, 4.5),   // Around front knoll
+      new THREE.Vector3(0.0, 0.32, 2.0),    // Central junction
+      new THREE.Vector3(2.4, 0.32, -0.2),
+      new THREE.Vector3(1.2, 0.32, -3.8),
+      new THREE.Vector3(-3.2, 0.32, -5.2),
+      new THREE.Vector3(-12.5, 0.32, -6.5)
+    ]);
 
-    const roadCurve = new THREE.CatmullRomCurve3(roadPoints);
-    const roadGeo = new THREE.TubeGeometry(roadCurve, 64, 1.4, 6, false);
+    const roadGeo = new THREE.TubeGeometry(mainCurve, 64, 1.45, 6, false);
     const roadMesh = new THREE.Mesh(roadGeo, asphaltMat);
-    roadMesh.scale.set(1, 0.08, 1); // Flatten into a ribbon
+    roadMesh.scale.set(1, 0.07, 1);
     roadMesh.position.y = 0.32;
     roadMesh.receiveShadow = true;
     roadGroup.add(roadMesh);
 
-    // Fork branching to right towards Anganwadi and Plantation
-    const forkPoints = [
-      new THREE.Vector3(0, 0.32, 2.2),
-      new THREE.Vector3(4.2, 0.32, 3.8),
-      new THREE.Vector3(8.5, 0.32, 7.2),
-      new THREE.Vector3(14, 0.32, 9.5)
-    ];
-    const forkCurve = new THREE.CatmullRomCurve3(forkPoints);
-    const forkGeo = new THREE.TubeGeometry(forkCurve, 32, 1.3, 6, false);
+    // Right fork: from central junction, curving between white shrine & anganwadi into plantation
+    const forkCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.0, 0.32, 2.0),
+      new THREE.Vector3(4.5, 0.32, 3.8),
+      new THREE.Vector3(9.2, 0.32, 7.2),
+      new THREE.Vector3(14.8, 0.32, 9.8)
+    ]);
+    const forkGeo = new THREE.TubeGeometry(forkCurve, 36, 1.35, 6, false);
     const forkMesh = new THREE.Mesh(forkGeo, asphaltMat);
-    forkMesh.scale.set(1, 0.08, 1);
+    forkMesh.scale.set(1, 0.07, 1);
     forkMesh.position.y = 0.32;
     forkMesh.receiveShadow = true;
     roadGroup.add(forkMesh);
 
-    // Dashed Lane Centerlines along the Road
-    const dashCurvePoints = roadCurve.getPoints(40);
+    // White dashed centerlines along the roads
+    const dashCurvePoints = mainCurve.getPoints(44);
     const dashMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
     for (let i = 0; i < dashCurvePoints.length - 1; i += 2) {
       const p1 = dashCurvePoints[i];
@@ -546,489 +529,446 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     }
 
     // =========================================================================
-    // 3. FOREGROUND CENTER: MTG VILLAGE 3D SCULPTED SIGN
-    // =========================================================================
-    const signGroup = new THREE.Group();
-    signGroup.position.set(0, 1.2, 6.8);
-    villageGroup.add(signGroup);
-    landmarkObjectsRef.current['sign'] = signGroup;
-
-    // Rock base mound with boulders
-    const boulderMat = new THREE.MeshStandardMaterial({ color: 0x57534E, roughness: 0.9 });
-    for (let b = 0; b < 9; b++) {
-      const bGeo = new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.4, 0);
-      const boulder = new THREE.Mesh(bGeo, boulderMat);
-      boulder.position.set(
-        (Math.random() - 0.5) * 3.4,
-        0.2 + Math.random() * 0.3,
-        (Math.random() - 0.5) * 1.8
-      );
-      boulder.castShadow = true;
-      signGroup.add(boulder);
-    }
-
-    // Large 3D stylized letters: "MTG"
-    const mtgMat = new THREE.MeshStandardMaterial({
-      color: 0x16A34A, // Lush vibrant green with leaf feel
-      roughness: 0.35,
-      metalness: 0.15
-    });
-
-    const letterM = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.35), mtgMat);
-    letterM.position.set(-1.1, 1.6, 0);
-    registerInteractive(letterM, 'sign');
-    signGroup.add(letterM);
-
-    const letterT = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 0.35), mtgMat);
-    letterT.position.set(0, 1.6, 0);
-    registerInteractive(letterT, 'sign');
-    signGroup.add(letterT);
-
-    const letterG = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.35), mtgMat);
-    letterG.position.set(1.1, 1.6, 0);
-    registerInteractive(letterG, 'sign');
-    signGroup.add(letterG);
-
-    // 3D Block Letters: "VILLAGE" beneath MTG
-    const villageTextMat = new THREE.MeshStandardMaterial({
-      color: 0xFEF3C7, // Warm ivory/cream
-      roughness: 0.4,
-      metalness: 0.05
-    });
-    const villageBar = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.5, 0.28), villageTextMat);
-    villageBar.position.set(0, 0.85, 0.08);
-    registerInteractive(villageBar, 'sign');
-    signGroup.add(villageBar);
-
-    // Wooden plank underneath: 📍 Muttagundi, India
-    const plaqueMat = new THREE.MeshStandardMaterial({
-      map: createMtgSignTexture(),
-      roughness: 0.7
-    });
-    const plaqueMesh = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.45, 0.1), plaqueMat);
-    plaqueMesh.position.set(0, 0.35, 0.18);
-    registerInteractive(plaqueMesh, 'sign');
-    signGroup.add(plaqueMesh);
-
-    // =========================================================================
-    // 4. LOWER LEFT / CENTER: SRI KALLESHWARA SWAMY TEMPLE COMPLEX
+    // 3. LEFT / CENTER: SRI KALLESHWARA SWAMY TEMPLE (Main Attraction)
     // =========================================================================
     const templeGroup = new THREE.Group();
-    templeGroup.position.set(-6.4, 0.4, 2.2);
+    templeGroup.position.set(-7.0, 0.4, 2.2);
     villageGroup.add(templeGroup);
     landmarkObjectsRef.current['temple'] = templeGroup;
 
-    // Temple Plinth / Raised Courtyard
-    const courtyardGeo = new THREE.BoxGeometry(7.2, 0.4, 8.5);
-    const courtyardMesh = new THREE.Mesh(courtyardGeo, new THREE.MeshStandardMaterial({ color: 0xFDE68A, roughness: 0.8 }));
-    courtyardMesh.position.set(0, 0.2, 0);
-    courtyardMesh.receiveShadow = true;
-    templeGroup.add(courtyardMesh);
+    // Courtyard Plinth
+    const tCourtyard = new THREE.Mesh(
+      new THREE.BoxGeometry(7.4, 0.4, 8.8),
+      new THREE.MeshStandardMaterial({ color: 0xFDE68A, roughness: 0.8 })
+    );
+    tCourtyard.position.set(0, 0.2, 0);
+    tCourtyard.receiveShadow = true;
+    templeGroup.add(tCourtyard);
 
-    // Perimeter Compound Wall with Arches and Colorful Accents
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0xFEF08A, roughness: 0.7 });
-    const wallTrimMat = new THREE.MeshStandardMaterial({ color: 0xDC2626 });
+    // Perimeter Compound Wall with Yellow Stucco
+    const tWallMat = new THREE.MeshStandardMaterial({ color: 0xFEF08A, roughness: 0.7 });
+    const tWallBack = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.45, 0.3), tWallMat);
+    tWallBack.position.set(0, 1.05, -4.25);
+    templeGroup.add(tWallBack);
 
-    // Compound Wall Sections
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(7.0, 1.4, 0.3), wallMat);
-    backWall.position.set(0, 1.0, -4.1);
-    backWall.castShadow = true;
-    templeGroup.add(backWall);
+    const tWallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.45, 8.5), tWallMat);
+    tWallLeft.position.set(-3.55, 1.05, 0);
+    templeGroup.add(tWallLeft);
 
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 8.2), wallMat);
-    leftWall.position.set(-3.45, 1.0, 0);
-    leftWall.castShadow = true;
-    templeGroup.add(leftWall);
+    const tWallRight = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.45, 8.5), tWallMat);
+    tWallRight.position.set(3.55, 1.05, 0);
+    templeGroup.add(tWallRight);
 
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 8.2), wallMat);
-    rightWall.position.set(3.45, 1.0, 0);
-    rightWall.castShadow = true;
-    templeGroup.add(rightWall);
+    // Decorative Arches (Pink & Turquoise arches matching reference outer wall)
+    for (let a = -3.2; a <= 3.2; a += 1.3) {
+      const archM = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.42, 0.42, 0.1, 16, 1, false, 0, Math.PI),
+        templePinkMat
+      );
+      archM.rotation.z = Math.PI;
+      archM.rotation.y = Math.PI / 2;
+      archM.position.set(-3.6, 1.75, a);
+      templeGroup.add(archM);
 
-    // Colorful Decorative Arches on the Outer Wall (Pink & Turquoise arches)
-    for (let a = -3; a <= 3; a += 1.2) {
-      const archMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.1, 16, 1, false, 0, Math.PI), templePinkMat);
-      archMesh.rotation.z = Math.PI;
-      archMesh.rotation.y = Math.PI / 2;
-      archMesh.position.set(-3.5, 1.7, a);
-      templeGroup.add(archMesh);
+      const archInner = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.5, 0.5), templeBlueMat);
+      archInner.position.set(-3.6, 1.2, a);
+      templeGroup.add(archInner);
     }
 
-    // --- Magnificent Multi-Tiered Dravidian Temple Gopuram ---
-    const gopuraGroup = new THREE.Group();
-    gopuraGroup.position.set(-1.6, 0.4, -1.8);
-    templeGroup.add(gopuraGroup);
+    // --- Multi-Tiered Colorful Dravidian Gopuram Tower ---
+    const gopura = new THREE.Group();
+    gopura.position.set(-1.8, 0.4, -2.0);
+    templeGroup.add(gopura);
 
-    // Base Tier (Level 1)
-    const gopuraBase = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.6, 3.0), templeYellowMat);
-    gopuraBase.position.y = 0.8;
-    registerInteractive(gopuraBase, 'temple');
-    gopuraGroup.add(gopuraBase);
+    // Tier 1 (Base - Yellow & Stone)
+    const gTier1 = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 3.2), templeYellowMat);
+    gTier1.position.y = 0.9;
+    registerInteractive(gTier1, 'temple');
+    gopura.add(gTier1);
 
-    // Tier 2 (Turquoise with niches)
-    const tier2 = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.4, 2.5), templeBlueMat);
-    tier2.position.y = 2.3;
-    registerInteractive(tier2, 'temple');
-    gopuraGroup.add(tier2);
+    // Tier 2 (Turquoise Blue with niches)
+    const gTier2 = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.5, 2.6), templeBlueMat);
+    gTier2.position.y = 2.5;
+    registerInteractive(gTier2, 'temple');
+    gopura.add(gTier2);
 
-    // Tier 3 (Pink with cornices)
-    const tier3 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 2.0), templePinkMat);
-    tier3.position.y = 3.6;
-    registerInteractive(tier3, 'temple');
-    gopuraGroup.add(tier3);
+    // Tier 3 (Coral Pink with cornices)
+    const gTier3 = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.3, 2.1), templePinkMat);
+    gTier3.position.y = 3.85;
+    registerInteractive(gTier3, 'temple');
+    gopura.add(gTier3);
 
     // Tier 4 (Orange/Red)
-    const tier4 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.0, 1.5), new THREE.MeshStandardMaterial({ color: 0xEA580C }));
-    tier4.position.y = 4.7;
-    registerInteractive(tier4, 'temple');
-    gopuraGroup.add(tier4);
+    const gTier4 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.1, 1.6), new THREE.MeshStandardMaterial({ color: 0xEA580C }));
+    gTier4.position.y = 5.0;
+    registerInteractive(gTier4, 'temple');
+    gopura.add(gTier4);
 
-    // Golden Sikhara Dome & Kalashas on top
-    const domeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1.1, 0.8, 16), templeGoldMat);
-    domeMesh.position.y = 5.6;
-    gopuraGroup.add(domeMesh);
+    // Sikhara Rounded Cap & 3 Golden Kalasha Finials
+    const dome = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.2, 0.9, 16), templeGoldMat);
+    dome.position.y = 6.0;
+    gopura.add(dome);
 
-    // 3 Golden Kalasha Finials
-    for (let k = -0.4; k <= 0.4; k += 0.4) {
-      const kalasha = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.7, 12), templeGoldMat);
-      kalasha.position.set(k, 6.25, 0);
-      gopuraGroup.add(kalasha);
+    for (let k = -0.42; k <= 0.42; k += 0.42) {
+      const kalasha = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.8, 12), templeGoldMat);
+      kalasha.position.set(k, 6.75, 0);
+      gopura.add(kalasha);
     }
 
-    // Temple Courtyard Pillared Hall (Mantapa)
-    const mantapaRoof = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.35, 4.2), wallMat);
-    mantapaRoof.position.set(1.2, 1.8, 0.5);
-    mantapaRoof.castShadow = true;
-    registerInteractive(mantapaRoof, 'temple');
-    templeGroup.add(mantapaRoof);
+    // Inner Courtyard Mandapa (Colonnaded Hall)
+    const mandapaRoof = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.4, 4.4), tWallMat);
+    mandapaRoof.position.set(1.2, 1.9, 0.6);
+    registerInteractive(mandapaRoof, 'temple');
+    templeGroup.add(mandapaRoof);
 
-    // Columns for Mantapa
+    // Columns
+    const colMat = new THREE.MeshStandardMaterial({ color: 0xDC2626 });
     for (let cx = -0.4; cx <= 2.8; cx += 1.6) {
-      for (let cz = -1.2; cz <= 2.2; cz += 1.6) {
-        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.4, 8), wallTrimMat);
-        pillar.position.set(cx, 0.9, cz);
+      for (let cz = -1.2; cz <= 2.4; cz += 1.8) {
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.5, 8), colMat);
+        pillar.position.set(cx, 0.95, cz);
         templeGroup.add(pillar);
       }
     }
 
-    // Sacred Saffron / Orange Flags fluttering on tall poles
-    const flagMat = new THREE.MeshStandardMaterial({ color: 0xF97316, roughness: 0.5, side: THREE.DoubleSide });
+    // Saffron / Orange Flags fluttering on tall poles (Dhavaja)
+    const flagMat = new THREE.MeshStandardMaterial({ color: 0xF97316, roughness: 0.4, side: THREE.DoubleSide });
     for (let f = 0; f < 3; f++) {
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 4.2, 6), new THREE.MeshStandardMaterial({ color: 0x78716C }));
-      pole.position.set(-0.2 + f * 1.2, 2.1, 2.8);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 4.4, 6), new THREE.MeshStandardMaterial({ color: 0x78716C }));
+      pole.position.set(-0.2 + f * 1.3, 2.2, 3.0);
       templeGroup.add(pole);
 
-      // Triangular Flag
-      const flagShape = new THREE.Shape();
-      flagShape.moveTo(0, 0);
-      flagShape.lineTo(0.9, 0.35);
-      flagShape.lineTo(0, 0.7);
-      flagShape.closePath();
-      const flagMesh = new THREE.Mesh(new THREE.ShapeGeometry(flagShape), flagMat);
-      flagMesh.position.set(-0.2 + f * 1.2, 3.5, 2.8);
-      flagMesh.rotation.y = 0.2;
-      templeGroup.add(flagMesh);
+      const fShape = new THREE.Shape();
+      fShape.moveTo(0, 0);
+      fShape.lineTo(1.0, 0.4);
+      fShape.lineTo(0, 0.8);
+      fShape.closePath();
+      const flagM = new THREE.Mesh(new THREE.ShapeGeometry(fShape), flagMat);
+      flagM.position.set(-0.2 + f * 1.3, 3.6, 3.0);
+      flagM.rotation.y = 0.25;
+      templeGroup.add(flagM);
     }
 
-    // Temple entrance archway with golden bell
-    const entranceArch = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.0, 0.4), templeYellowMat);
-    entranceArch.position.set(1.2, 1.2, 4.1);
-    templeGroup.add(entranceArch);
+    // Entrance Archway facing road
+    const entrance = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.2, 0.4), templeYellowMat);
+    entrance.position.set(1.2, 1.3, 4.3);
+    templeGroup.add(entrance);
 
-    // Shady trees around the temple
-    const treeMat = new THREE.MeshStandardMaterial({ color: 0x15803D, roughness: 0.8 });
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350F, roughness: 0.9 });
-    for (let t = 0; t < 5; t++) {
-      const tree = new THREE.Group();
-      tree.position.set(-4.2 + (t % 2) * 8.4, 0, -2.5 + t * 2.2);
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.28, 2.5, 8), trunkMat);
-      trunk.position.y = 1.25;
-      tree.add(trunk);
-      const foliage = new THREE.Mesh(new THREE.DodecahedronGeometry(1.4, 1), treeMat);
-      foliage.position.y = 2.8;
-      foliage.castShadow = true;
-      tree.add(foliage);
-      templeGroup.add(tree);
-    }
+    // Surrounding Shady Trees around the temple
+    const templeTrees = [
+      { x: -4.5, z: -3.0 },
+      { x: -4.8, z: 1.5 },
+      { x: -4.2, z: 4.8 },
+      { x: 4.2, z: -2.5 },
+      { x: 4.5, z: 2.8 }
+    ];
+    templeTrees.forEach((pos) => {
+      const tr = createOrganicTree(1.15, 'banyan');
+      tr.position.set(pos.x, 0, pos.z);
+      templeGroup.add(tr);
+    });
 
     // =========================================================================
-    // 5. UPPER LEFT: OLD STONE STRUCTURE (Ancient Granite Megalithic Shrine)
+    // 4. UPPER LEFT: OLD STONE STRUCTURE (Megalithic Granite Dolmen / Cave)
     // =========================================================================
-    const stoneStructureGroup = new THREE.Group();
-    stoneStructureGroup.position.set(-8.8, 1.4, -4.5);
-    villageGroup.add(stoneStructureGroup);
-    landmarkObjectsRef.current['shrine'] = stoneStructureGroup;
+    const stoneGroup = new THREE.Group();
+    stoneGroup.position.set(-9.2, 1.4, -5.8);
+    villageGroup.add(stoneGroup);
+    landmarkObjectsRef.current['shrine'] = stoneGroup;
 
-    // Stacked irregular granite boulders & weathered megalithic slabs
-    // Left stone pillars
-    const stoneCol1 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.4, 1.2), weatheredStoneMat);
-    stoneCol1.position.set(-1.3, 1.2, 0);
-    registerInteractive(stoneCol1, 'shrine');
-    stoneStructureGroup.add(stoneCol1);
+    // Heavy weathered granite jamb pillars
+    const stoneJambL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.5, 1.2), weatheredGraniteMat);
+    stoneJambL.position.set(-1.4, 1.25, 0);
+    registerInteractive(stoneJambL, 'shrine');
+    stoneGroup.add(stoneJambL);
 
-    // Right stone pillar
-    const stoneCol2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 1.1), weatheredStoneMat);
-    stoneCol2.position.set(1.3, 1.2, 0);
-    registerInteractive(stoneCol2, 'shrine');
-    stoneStructureGroup.add(stoneCol2);
+    const stoneJambR = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.5, 1.2), weatheredGraniteMat);
+    stoneJambR.position.set(1.4, 1.25, 0);
+    registerInteractive(stoneJambR, 'shrine');
+    stoneGroup.add(stoneJambR);
 
-    // Back stone wall
-    const stoneBack = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.4, 1.2), weatheredStoneMat);
-    stoneBack.position.set(0, 1.2, -1.0);
-    registerInteractive(stoneBack, 'shrine');
-    stoneStructureGroup.add(stoneBack);
+    // Rear chamber
+    const stoneBackWall = new THREE.Mesh(new THREE.BoxGeometry(3.8, 2.5, 1.4), weatheredGraniteMat);
+    stoneBackWall.position.set(0, 1.25, -1.1);
+    registerInteractive(stoneBackWall, 'shrine');
+    stoneGroup.add(stoneBackWall);
 
-    // Massive Weathered Stone Lintel (Roof slab)
-    const stoneRoof = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.8, 3.2), weatheredStoneMat);
-    stoneRoof.position.set(0, 2.7, -0.4);
-    registerInteractive(stoneRoof, 'shrine');
-    stoneStructureGroup.add(stoneRoof);
+    // Massive Stone Lintel (Roof slab)
+    const stoneCap = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.9, 3.4), weatheredGraniteMat);
+    stoneCap.position.set(0, 2.85, -0.4);
+    registerInteractive(stoneCap, 'shrine');
+    stoneGroup.add(stoneCap);
 
-    // Mound of natural weathered rocks and dry grass piled around
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x57534E, roughness: 0.95 });
-    for (let r = 0; r < 18; r++) {
-      const rockMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.4 + Math.random() * 0.5, 0), rockMat);
-      rockMesh.position.set(
-        (Math.random() - 0.5) * 4.6,
-        0.3 + Math.random() * 2.2,
-        (Math.random() - 0.5) * 3.8
+    // Boulders, irregular rocks, and dry shrubs piled around
+    for (let r = 0; r < 22; r++) {
+      const rMesh = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.45 + Math.random() * 0.55, 0),
+        weatheredGraniteMat
       );
-      rockMesh.scale.set(1.2, 0.7, 1.1);
-      rockMesh.castShadow = true;
-      registerInteractive(rockMesh, 'shrine');
-      stoneStructureGroup.add(rockMesh);
+      rMesh.position.set(
+        (Math.random() - 0.5) * 4.8,
+        0.3 + Math.random() * 2.4,
+        (Math.random() - 0.5) * 4.0
+      );
+      rMesh.scale.set(1.2, 0.75, 1.1);
+      rMesh.castShadow = true;
+      registerInteractive(rMesh, 'shrine');
+      stoneGroup.add(rMesh);
     }
 
-    // Wild shrubs growing on top of stone roof
-    const wildShrub = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), new THREE.MeshStandardMaterial({ color: 0x4D7C0F, roughness: 0.9 }));
-    wildShrub.position.set(-0.6, 3.3, -0.3);
-    stoneStructureGroup.add(wildShrub);
+    // Wild dry grass and greenery on top of the stone roof
+    const wildRoofGrass = new THREE.Mesh(new THREE.SphereGeometry(0.85, 8, 8), foliageGreen3);
+    wildRoofGrass.position.set(-0.7, 3.5, -0.2);
+    stoneGroup.add(wildRoofGrass);
 
     // =========================================================================
-    // 6. UPPER CENTER: VILLAGE COMMUNITY HALL / GOVT PRIMARY SCHOOL
+    // 5. UPPER CENTER: VILLAGE COMMUNITY HALL / GOVT PRIMARY SCHOOL
     // =========================================================================
     const schoolGroup = new THREE.Group();
-    schoolGroup.position.set(0.2, 0.4, -5.0);
+    schoolGroup.position.set(0.5, 0.4, -7.2);
     villageGroup.add(schoolGroup);
     landmarkObjectsRef.current['school'] = schoolGroup;
     landmarkObjectsRef.current['panchayat'] = schoolGroup;
 
-    // School Building (Yellow/Cream stucco with blue doors matching real photo)
+    // School Building (Yellow/Cream stucco with blue doors matching reference)
     const schoolWallMat = new THREE.MeshStandardMaterial({ color: 0xFEF08A, roughness: 0.6 });
-    const schoolBase = new THREE.Mesh(new THREE.BoxGeometry(6.8, 2.6, 3.8), schoolWallMat);
-    schoolBase.position.y = 1.3;
-    registerInteractive(schoolBase, 'school');
-    schoolGroup.add(schoolBase);
+    const schoolBuilding = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.8, 4.0), schoolWallMat);
+    schoolBuilding.position.y = 1.4;
+    registerInteractive(schoolBuilding, 'school');
+    schoolGroup.add(schoolBuilding);
 
     // Kannada Signboard Banner across top: "ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ಮುತ್ಸಾಗೊಂದಿ"
-    const bannerTex = createKannadaSchoolBannerTexture();
-    const bannerMat = new THREE.MeshStandardMaterial({ map: bannerTex, roughness: 0.4 });
-    const bannerMesh = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.9, 0.1), bannerMat);
-    bannerMesh.position.set(0, 2.55, 1.95);
-    registerInteractive(bannerMesh, 'school');
-    schoolGroup.add(bannerMesh);
+    const schoolBannerMat = new THREE.MeshStandardMaterial({
+      map: createSchoolBannerTexture(),
+      roughness: 0.4
+    });
+    const schoolBanner = new THREE.Mesh(new THREE.BoxGeometry(7.0, 1.0, 0.1), schoolBannerMat);
+    schoolBanner.position.set(0, 2.75, 2.05);
+    registerInteractive(schoolBanner, 'school');
+    schoolGroup.add(schoolBanner);
 
     // Blue Metal Doors & Windows on front facade
     const doorMat = new THREE.MeshStandardMaterial({ color: 0x1E40AF, roughness: 0.4 });
-    const door1 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.7, 0.12), doorMat);
-    door1.position.set(-1.8, 0.85, 1.92);
-    schoolGroup.add(door1);
+    const sDoorL = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.8, 0.12), doorMat);
+    sDoorL.position.set(-1.9, 0.9, 2.02);
+    schoolGroup.add(sDoorL);
 
-    const door2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.7, 0.12), doorMat);
-    door2.position.set(1.8, 0.85, 1.92);
-    schoolGroup.add(door2);
+    const sDoorR = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.8, 0.12), doorMat);
+    sDoorR.position.set(1.9, 0.9, 2.02);
+    schoolGroup.add(sDoorR);
 
-    // Windows
-    const windowMat = new THREE.MeshStandardMaterial({ color: 0x60A5FA, roughness: 0.2 });
-    for (let w = -0.8; w <= 0.8; w += 0.8) {
-      const win = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.85, 0.12), windowMat);
-      win.position.set(w, 1.2, 1.92);
+    // Front Windows
+    const winMat = new THREE.MeshStandardMaterial({ color: 0x60A5FA, roughness: 0.2 });
+    for (let w = -0.85; w <= 0.85; w += 0.85) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.12), winMat);
+      win.position.set(w, 1.25, 2.02);
       schoolGroup.add(win);
     }
 
-    // Yellow Rooftop Water Tank (Sintex-style on the left roof corner as in reference)
-    const tankMat = new THREE.MeshStandardMaterial({ color: 0xFBBF24, roughness: 0.4 });
-    const waterTank = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.7, 16), tankMat);
-    waterTank.position.set(-2.5, 3.0, 0.8);
-    waterTank.castShadow = true;
-    schoolGroup.add(waterTank);
+    // Yellow Rooftop Water Tank on the left roof corner
+    const yellowTank = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.42, 0.42, 0.75, 16),
+      new THREE.MeshStandardMaterial({ color: 0xFBBF24, roughness: 0.4 })
+    );
+    yellowTank.position.set(-2.7, 3.2, 0.9);
+    yellowTank.castShadow = true;
+    schoolGroup.add(yellowTank);
 
-    // Entrance concrete steps and green railings leading up
-    const stepsMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.7 });
-    const steps = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.35, 1.2), stepsMat);
-    steps.position.set(0, 0.18, 2.4);
+    // Concrete Entrance Steps leading down to the road
+    const stepsMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.75 });
+    const steps = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.4, 1.6), stepsMat);
+    steps.position.set(0, 0.2, 2.6);
     schoolGroup.add(steps);
 
-    // Green metal railing
+    // Green Metal Railings along the front plinth & steps
     const railMat = new THREE.MeshStandardMaterial({ color: 0x15803D, metalness: 0.7, roughness: 0.3 });
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.6, 0.08), railMat);
-    rail.position.set(0, 0.6, 2.9);
-    schoolGroup.add(rail);
+    const handrail = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.7, 0.08), railMat);
+    handrail.position.set(0, 0.7, 3.3);
+    schoolGroup.add(handrail);
 
-    // Trees beside school
-    const schoolTree = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6, 1), treeMat);
-    schoolTree.position.set(-4.2, 3.2, -0.5);
-    schoolGroup.add(schoolTree);
+    // Shady trees behind and beside school
+    const sTreeL = createOrganicTree(1.3, 'banyan');
+    sTreeL.position.set(-4.5, 0, -1.0);
+    schoolGroup.add(sTreeL);
+
+    const sTreeR = createOrganicTree(1.2, 'neem');
+    sTreeR.position.set(4.6, 0, -1.0);
+    schoolGroup.add(sTreeR);
 
     // =========================================================================
-    // 7. UPPER RIGHT: DENSE ARECA NUT PLANTATION (Real Photo Style)
+    // 6. UPPER RIGHT: DENSE ARECA NUT PLANTATION (Real Photo Style)
     // =========================================================================
     const plantationGroup = new THREE.Group();
-    plantationGroup.position.set(8.5, 0.4, -4.0);
+    plantationGroup.position.set(10.2, 0.4, -4.8);
     villageGroup.add(plantationGroup);
     landmarkObjectsRef.current['farms'] = plantationGroup;
 
-    // Multi-row grid of authentic tall, slender areca palms (Areca catechu)
+    // Realistic Areca Palm (Areca catechu) Trunks & Radiating Feathery Crowns
     const arecaTrunkMat = new THREE.MeshStandardMaterial({
-      color: 0x64748B, // Ringed slate grey-brown bark
+      color: 0x64748B, // Ringed grey-brown slender bark
       roughness: 0.85
     });
 
     const arecaFrondMat = new THREE.MeshStandardMaterial({
       color: 0x15803D, // Lush dark emerald green
-      roughness: 0.6,
+      roughness: 0.55,
       side: THREE.DoubleSide
     });
 
     const rows = 5;
-    const cols = 6;
+    const cols = 7;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const posX = (c - (cols - 1) / 2) * 1.4 + (Math.random() - 0.5) * 0.2;
-        const posZ = (r - (rows - 1) / 2) * 1.5 + (Math.random() - 0.5) * 0.2;
-        const treeHeight = 5.2 + Math.random() * 1.6;
+        const px = (c - (cols - 1) / 2) * 1.45 + (Math.random() - 0.5) * 0.25;
+        const pz = (r - (rows - 1) / 2) * 1.55 + (Math.random() - 0.5) * 0.25;
+        const h = 5.5 + Math.random() * 2.0;
 
-        const palmTree = new THREE.Group();
-        palmTree.position.set(posX, 0, posZ);
+        const palm = new THREE.Group();
+        palm.position.set(px, 0, pz);
 
-        // Slender ringed trunk
-        const trunk = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.08, 0.12, treeHeight, 8),
-          arecaTrunkMat
-        );
-        trunk.position.y = treeHeight / 2;
+        // Slender tall trunk
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.13, h, 8), arecaTrunkMat);
+        trunk.position.y = h / 2;
         trunk.castShadow = true;
         registerInteractive(trunk, 'farms');
-        palmTree.add(trunk);
+        palm.add(trunk);
 
-        // Radiating feathery palm fronds crown
-        const crownGroup = new THREE.Group();
-        crownGroup.position.y = treeHeight;
+        // Crown of 7 radiating feathery palm fronds
+        const crown = new THREE.Group();
+        crown.position.y = h;
         for (let f = 0; f < 7; f++) {
-          const fAngle = (f / 7) * Math.PI * 2 + Math.random() * 0.2;
-          const frondMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(0.7, 1.8),
-            arecaFrondMat
-          );
-          frondMesh.rotation.x = Math.PI / 3 + (Math.random() - 0.5) * 0.2;
-          frondMesh.rotation.y = fAngle;
-          frondMesh.position.set(Math.sin(fAngle) * 0.4, -0.2, Math.cos(fAngle) * 0.4);
-          crownGroup.add(frondMesh);
+          const fAng = (f / 7) * Math.PI * 2 + Math.random() * 0.2;
+          const frond = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 2.0), arecaFrondMat);
+          frond.rotation.x = Math.PI / 3 + (Math.random() - 0.5) * 0.15;
+          frond.rotation.y = fAng;
+          frond.position.set(Math.sin(fAng) * 0.45, -0.2, Math.cos(fAng) * 0.45);
+          crown.add(frond);
         }
-        palmTree.add(crownGroup);
-        plantationGroup.add(palmTree);
+        palm.add(crown);
+        plantationGroup.add(palm);
       }
     }
 
     // =========================================================================
-    // 8. LOWER RIGHT: SRI KALLESHWARA SWAMY TEMPLE (Muttagundi Shrine) & ELECTRIC TOWER
+    // 7. RIGHT / CENTER: WHITE SHRINE & ELECTRIC TRANSMISSION PYLON
     // =========================================================================
     const shrineGroup = new THREE.Group();
-    shrineGroup.position.set(5.5, 0.4, 1.5);
+    shrineGroup.position.set(5.6, 0.4, 1.2);
     villageGroup.add(shrineGroup);
     landmarkObjectsRef.current['temple1'] = shrineGroup;
 
     // Whitewashed village shrine structure
-    const shrineBuilding = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 2.2), whitePlasterMat);
-    shrineBuilding.position.set(0, 0.9, 0);
-    registerInteractive(shrineBuilding, 'temple1');
-    shrineGroup.add(shrineBuilding);
+    const shrineBase = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.8, 2.4), whiteWallMat);
+    shrineBase.position.set(0, 0.9, 0);
+    registerInteractive(shrineBase, 'temple1');
+    shrineGroup.add(shrineBase);
 
-    // Stepped white vimana tower on the left side of the shrine (as in photo)
-    const vimana1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 1.2), whitePlasterMat);
-    vimana1.position.set(-0.8, 2.15, 0);
-    shrineGroup.add(vimana1);
-    const vimana2 = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.9, 4), whitePlasterMat);
-    vimana2.rotation.y = Math.PI / 4;
-    vimana2.position.set(-0.8, 2.85, 0);
-    registerInteractive(vimana2, 'temple1');
-    shrineGroup.add(vimana2);
+    // Stepped white vimana tower on the left of the shrine (matching reference)
+    const vim1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.75, 1.2), whiteWallMat);
+    vim1.position.set(-0.85, 2.15, 0);
+    shrineGroup.add(vim1);
 
-    // Realistic High-Voltage Steel Lattice Transmission Pylon (ವಿದ್ಯುತ್ ಗೋಪುರ)
+    const vim2 = new THREE.Mesh(new THREE.ConeGeometry(0.65, 0.95, 4), whiteWallMat);
+    vim2.rotation.y = Math.PI / 4;
+    vim2.position.set(-0.85, 2.95, 0);
+    registerInteractive(vim2, 'temple1');
+    shrineGroup.add(vim2);
+
+    // Steel Lattice Transmission Pylon (ವಿದ್ಯುತ್ ಗೋಪುರ)
     const pylonMat = new THREE.MeshStandardMaterial({
-      color: 0x475569, // Galvanized dark steel
+      color: 0x334155, // Dark galvanized steel
       metalness: 0.85,
       roughness: 0.4
     });
 
-    const pylonGroup = new THREE.Group();
-    pylonGroup.position.set(1.6, 0, -1.2);
-    shrineGroup.add(pylonGroup);
+    const pylon = new THREE.Group();
+    pylon.position.set(1.8, 0, -1.4);
+    shrineGroup.add(pylon);
 
-    // 4 Main corner legs tapering upward
-    const legGeo = new THREE.CylinderGeometry(0.04, 0.06, 9.5, 6);
-    const leg1 = new THREE.Mesh(legGeo, pylonMat);
-    leg1.position.set(-0.45, 4.75, -0.45);
-    pylonGroup.add(leg1);
-    const leg2 = new THREE.Mesh(legGeo, pylonMat);
-    leg2.position.set(0.45, 4.75, -0.45);
-    pylonGroup.add(leg2);
-    const leg3 = new THREE.Mesh(legGeo, pylonMat);
-    leg3.position.set(-0.45, 4.75, 0.45);
-    pylonGroup.add(leg3);
-    const leg4 = new THREE.Mesh(legGeo, pylonMat);
-    leg4.position.set(0.45, 4.75, 0.45);
-    pylonGroup.add(leg4);
+    // 4 Corner Legs
+    const pLegGeo = new THREE.CylinderGeometry(0.04, 0.065, 10.0, 6);
+    const p1 = new THREE.Mesh(pLegGeo, pylonMat); p1.position.set(-0.48, 5.0, -0.48); pylon.add(p1);
+    const p2 = new THREE.Mesh(pLegGeo, pylonMat); p2.position.set(0.48, 5.0, -0.48); pylon.add(p2);
+    const p3 = new THREE.Mesh(pLegGeo, pylonMat); p3.position.set(-0.48, 5.0, 0.48); pylon.add(p3);
+    const p4 = new THREE.Mesh(pLegGeo, pylonMat); p4.position.set(0.48, 5.0, 0.48); pylon.add(p4);
 
-    // Crossarms at the top
-    const crossarm1 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.1, 0.1), pylonMat);
-    crossarm1.position.set(0, 8.2, 0);
-    pylonGroup.add(crossarm1);
+    // Crossarms & Transmission lines stretching right
+    const pArm1 = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.12, 0.12), pylonMat);
+    pArm1.position.set(0, 8.6, 0);
+    pylon.add(pArm1);
 
-    const crossarm2 = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.1, 0.1), pylonMat);
-    crossarm2.position.set(0, 9.2, 0);
-    pylonGroup.add(crossarm2);
+    const pArm2 = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.12, 0.12), pylonMat);
+    pArm2.position.set(0, 9.6, 0);
+    pylon.add(pArm2);
 
     // =========================================================================
-    // 9. LOWER RIGHT / FOREGROUND: ANGANWADI CENTER (ಅಂಗನವಾಡಿ ಕೇಂದ್ರ ಮುತ್ತಾಗೊಂದಿ)
+    // 8. LOWER RIGHT / FOREGROUND: ANGANWADI KENDRA (ಅಂಗನವಾಡಿ ಕೇಂದ್ರ)
     // =========================================================================
     const anganwadiGroup = new THREE.Group();
-    anganwadiGroup.position.set(8.8, 0.4, 5.8);
+    anganwadiGroup.position.set(9.8, 0.4, 6.2);
     villageGroup.add(anganwadiGroup);
     landmarkObjectsRef.current['kindergarden'] = anganwadiGroup;
 
-    // Sky-blue painted rectangular building with mural texture
-    const muralTex = createAnganwadiMuralTexture();
-    const anganwadiMat = new THREE.MeshStandardMaterial({
-      map: muralTex,
+    // Cheerful sky-blue building with mural texture
+    const angMat = new THREE.MeshStandardMaterial({
+      map: createAnganwadiMuralTexture(),
       roughness: 0.5
     });
 
-    const anganwadiMesh = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.8, 2.6), anganwadiMat);
-    anganwadiMesh.position.y = 0.9;
-    registerInteractive(anganwadiMesh, 'kindergarden');
-    anganwadiGroup.add(anganwadiMesh);
+    const angBuilding = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.85, 2.8), angMat);
+    angBuilding.position.y = 0.92;
+    registerInteractive(angBuilding, 'kindergarden');
+    anganwadiGroup.add(angBuilding);
 
-    // Blue Sintex-style cylindrical water tank on the roof
-    const blueTankMat = new THREE.MeshStandardMaterial({ color: 0x0284C7, roughness: 0.4 });
-    const roofTank = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.65, 16), blueTankMat);
-    roofTank.position.set(1.4, 2.15, 0.4);
-    roofTank.castShadow = true;
-    anganwadiGroup.add(roofTank);
+    // Blue Sintex-style cylindrical water tank on the flat terrace
+    const blueTank = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.38, 0.38, 0.7, 16),
+      new THREE.MeshStandardMaterial({ color: 0x0284C7, roughness: 0.4 })
+    );
+    blueTank.position.set(1.6, 2.2, 0.4);
+    blueTank.castShadow = true;
+    anganwadiGroup.add(blueTank);
 
-    // Yellow boundary wall with entrance
-    const boundaryMat = new THREE.MeshStandardMaterial({ color: 0xFDE047, roughness: 0.7 });
-    const bWall1 = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.7, 0.12), boundaryMat);
-    bWall1.position.set(0, 0.35, 1.6);
-    anganwadiGroup.add(bWall1);
+    // Yellow boundary wall with entrance gate along the road
+    const yBoundMat = new THREE.MeshStandardMaterial({ color: 0xFDE047, roughness: 0.7 });
+    const yWall = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.75, 0.14), yBoundMat);
+    yWall.position.set(0, 0.38, 1.7);
+    anganwadiGroup.add(yWall);
 
     // Trees beside anganwadi
-    const angTree = new THREE.Mesh(new THREE.DodecahedronGeometry(1.1, 1), treeMat);
-    angTree.position.set(-2.8, 1.8, 0.4);
+    const angTree = createOrganicTree(1.0, 'neem');
+    angTree.position.set(-3.2, 0, 0.5);
     anganwadiGroup.add(angTree);
 
     // =========================================================================
-    // 10. INTERACTION, DRAGGING & ANIMATION LOOP
+    // 9. BACKGROUND VILLAGE HOUSES & DISTANT HILLS (Atmospheric Depth)
+    // =========================================================================
+    // Distant small village houses tucked behind trees
+    const roofTileMat = new THREE.MeshStandardMaterial({ color: 0xB45309, roughness: 0.8 });
+    const bgHouseMat = new THREE.MeshStandardMaterial({ color: 0xFEF3C7, roughness: 0.7 });
+
+    const bgHousePositions = [
+      { x: -14.0, z: -8.0 },
+      { x: -5.0, z: -10.5 },
+      { x: 5.0, z: -11.0 },
+      { x: 14.0, z: 2.0 }
+    ];
+
+    bgHousePositions.forEach((hp) => {
+      const house = new THREE.Group();
+      house.position.set(hp.x, 0.3, hp.z);
+      const bWalls = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.4, 1.8), bgHouseMat);
+      bWalls.position.y = 0.7;
+      house.add(bWalls);
+      const bRoof = new THREE.Mesh(new THREE.ConeGeometry(1.8, 1.0, 4), roofTileMat);
+      bRoof.rotation.y = Math.PI / 4;
+      bRoof.position.y = 1.9;
+      house.add(bRoof);
+      villageGroup.add(house);
+    });
+
+    // =========================================================================
+    // 10. INTERACTION, DRAGGING & RENDERING LOOP
     // =========================================================================
     const handlePointerDown = (clientX: number, clientY: number) => {
       isDraggingRef.current = true;
@@ -1038,12 +978,12 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
 
     const handlePointerMove = (clientX: number, clientY: number) => {
       if (!isDraggingRef.current) return;
-      const deltaX = clientX - previousMousePosition.current.x;
-      const deltaY = clientY - previousMousePosition.current.y;
-      dragDistanceRef.current += Math.abs(deltaX) + Math.abs(deltaY);
+      const dx = clientX - previousMousePosition.current.x;
+      const dy = clientY - previousMousePosition.current.y;
+      dragDistanceRef.current += Math.abs(dx) + Math.abs(dy);
 
-      targetRotationYRef.current += deltaX * 0.007;
-      targetRotationXRef.current = Math.max(-0.25, Math.min(0.35, targetRotationXRef.current + deltaY * 0.004));
+      targetRotationYRef.current += dx * 0.007;
+      targetRotationXRef.current = Math.max(-0.25, Math.min(0.35, targetRotationXRef.current + dy * 0.004));
 
       previousMousePosition.current = { x: clientX, y: clientY };
     };
@@ -1098,7 +1038,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      targetZoomRef.current = Math.max(18, Math.min(46, targetZoomRef.current + e.deltaY * 0.02));
+      targetZoomRef.current = Math.max(18, Math.min(48, targetZoomRef.current + e.deltaY * 0.02));
     };
 
     container.addEventListener('mousedown', onMouseDown);
@@ -1110,19 +1050,17 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
     window.addEventListener('touchend', onTouchEnd, { passive: true });
     container.addEventListener('wheel', onWheel, { passive: false });
 
-    // --- Animation Render Loop ---
+    // --- Render Loop ---
     let animationFrameId: number;
-    const tempVec = new THREE.Vector3();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // Auto rotation if enabled
       if (isAutoRotatingRef.current) {
         targetRotationYRef.current += 0.003;
       }
 
-      // Smooth interpolation (Lerp)
+      // Smooth Lerp
       currentRotationYRef.current += (targetRotationYRef.current - currentRotationYRef.current) * 0.08;
       currentRotationXRef.current += (targetRotationXRef.current - currentRotationXRef.current) * 0.08;
       currentZoomRef.current += (targetZoomRef.current - currentZoomRef.current) * 0.08;
@@ -1133,38 +1071,13 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
       }
 
       camera.position.z = currentZoomRef.current;
-      camera.lookAt(0, 2.5, 0);
+      camera.lookAt(0, 2.0, 0);
 
       renderer.render(scene, camera);
-
-      // Calculate 2D Screen Coordinates for Floating Labels
-      const coords: { [key in LandmarkId]?: { x: number; y: number; visible: boolean } } = {};
-      const halfWidth = width / 2;
-      const halfHeight = height / 2;
-
-      (Object.keys(landmarkPositions) as LandmarkId[]).forEach((id) => {
-        const pos = landmarkPositions[id];
-        tempVec.set(pos.x, pos.y, pos.z);
-
-        if (villageGroupRef.current) {
-          tempVec.applyEuler(villageGroupRef.current.rotation);
-        }
-
-        tempVec.project(camera);
-
-        const x = (tempVec.x * halfWidth) + halfWidth;
-        const y = -(tempVec.y * halfHeight) + halfHeight;
-        const visible = tempVec.z < 1.0;
-
-        coords[id] = { x, y, visible };
-      });
-
-      setScreenCoords(coords);
     };
 
     animate();
 
-    // Clean up
     return () => {
       cancelAnimationFrame(animationFrameId);
       container.removeEventListener('mousedown', onMouseDown);
@@ -1179,7 +1092,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
       renderer.dispose();
       scene.clear();
     };
-  }, [landmarkPositions, onSelect, focusOnLandmark]);
+  }, [landmarkCoordinates, onSelect, focusOnLandmark]);
 
   // Adjust Lighting on TimeOfDay change
   useEffect(() => {
@@ -1188,14 +1101,14 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
 
     if (timeOfDay === 'day') {
       sunLight.color.setHex(0xfffbeb);
-      sunLight.intensity = 2.2;
+      sunLight.intensity = 2.4;
       ambientLight.color.setHex(0xfff7ed);
       ambientLight.intensity = 0.95;
       hemiLight.color.setHex(0xbae6fd);
-      hemiLight.groundColor.setHex(0xd97706);
+      hemiLight.groundColor.setHex(0xc2410c);
     } else if (timeOfDay === 'sunset') {
       sunLight.color.setHex(0xfb923c); // Warm amber golden-hour
-      sunLight.intensity = 1.9;
+      sunLight.intensity = 2.0;
       ambientLight.color.setHex(0xfef3c7);
       ambientLight.intensity = 0.8;
       hemiLight.color.setHex(0xf472b6);
@@ -1204,51 +1117,11 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
       sunLight.color.setHex(0x38bdf8);
       sunLight.intensity = 0.35;
       ambientLight.color.setHex(0x1e293b);
-      ambientLight.intensity = 0.5;
+      ambientLight.intensity = 0.55;
       hemiLight.color.setHex(0x0f172a);
       hemiLight.groundColor.setHex(0x020617);
     }
   }, [timeOfDay]);
-
-  // Floating Labels definitions matching the Reference Image exactly
-  const labelsToRender: { id: LandmarkId; text_en: string; text_kn: string; sub?: string }[] = [
-    {
-      id: 'shrine',
-      text_en: 'Old Stone Structure',
-      text_kn: 'ಶ್ರೀ ಲಕ್ಷ್ಮಿ ತಿಮ್ಮಪ್ಪ (ಹಳೆಯ ಕಲ್ಲಿನ ಗುಡಿ)',
-      sub: 'Ancient Granite Cave Shrine'
-    },
-    {
-      id: 'school',
-      text_en: 'Village Community Hall',
-      text_kn: 'ಸರ್ಕಾರಿ ಶಾಲೆ & ಸಮುದಾಯ ಭವನ',
-      sub: 'Govt Higher Primary School'
-    },
-    {
-      id: 'farms',
-      text_en: 'Areca Nut Plantation',
-      text_kn: 'ಅಡಿಕೆ ತೋಟ',
-      sub: 'Arecanut & Coconut Palms'
-    },
-    {
-      id: 'temple',
-      text_en: 'Sri Kalleshwara Swamy Temple',
-      text_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ಸ್ವಾಮಿ ದೇವಾಲಯ',
-      sub: 'Main Dravidian Gopuram'
-    },
-    {
-      id: 'temple1',
-      text_en: 'SRI KALLESHWARA SWAMY TEMPLE\n(Muttagundi)',
-      text_kn: 'ಕಲ್ಲೇ ದೇವರ ಗುಡಿ (ವಿದ್ಯುತ್ ಗೋಪುರ)',
-      sub: 'Village Shrine & Pylon'
-    },
-    {
-      id: 'kindergarden',
-      text_en: 'ಅಂಗನವಾಡಿ ಕೇಂದ್ರ ಮುತ್ತಾಗೊಂದಿ',
-      text_kn: 'ಅಂಗನವಾಡಿ ಕೇಂದ್ರ ಮುತ್ತಾಗೊಂದಿ',
-      sub: 'Anganwadi Preschool Center'
-    }
-  ];
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '520px', userSelect: 'none' }}>
@@ -1268,81 +1141,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
         }}
       />
 
-      {/* Floating 3D Labels matching the Reference Image Capsules */}
-      {showLabels && labelsToRender.map((label) => {
-        const coord = screenCoords[label.id];
-        if (!coord || !coord.visible) return null;
-        const isSelected = activeLandmarkId === label.id;
-
-        return (
-          <div
-            key={label.id}
-            onClick={() => {
-              if (onSelect) onSelect(label.id);
-              focusOnLandmark(label.id);
-            }}
-            style={{
-              position: 'absolute',
-              left: `${coord.x}px`,
-              top: `${coord.y}px`,
-              transform: 'translate(-50%, -100%)',
-              pointerEvents: 'auto',
-              cursor: 'pointer',
-              zIndex: isSelected ? 30 : 20,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center'
-            }}
-          >
-            {/* Elegant Capsule Label matching Reference Image */}
-            <div
-              style={{
-                background: isSelected ? 'rgba(23, 17, 10, 0.94)' : 'rgba(28, 25, 23, 0.88)',
-                backdropFilter: 'blur(8px)',
-                border: isSelected ? '1.5px solid #F59E0B' : '1px solid rgba(254, 243, 199, 0.5)',
-                boxShadow: isSelected
-                  ? '0 6px 18px rgba(0,0,0,0.6), 0 0 14px rgba(245, 158, 11, 0.5)'
-                  : '0 4px 14px rgba(0,0,0,0.45)',
-                borderRadius: '16px',
-                padding: '5px 12px',
-                color: '#FFFFFF',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                textAlign: 'center',
-                whiteSpace: 'pre-line',
-                lineHeight: 1.25,
-                transition: 'all 0.2s ease',
-                transform: isSelected ? 'scale(1.05)' : 'scale(1)'
-              }}
-            >
-              <span>{isKannada ? label.text_kn : label.text_en}</span>
-            </div>
-
-            {/* Thin vertical pointer line */}
-            <div
-              style={{
-                width: '1.5px',
-                height: '18px',
-                background: isSelected ? '#F59E0B' : 'rgba(255, 255, 255, 0.65)',
-                boxShadow: '0 0 4px rgba(0,0,0,0.5)'
-              }}
-            />
-
-            {/* Location dot at building base */}
-            <div
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: isSelected ? '#F59E0B' : '#FFFFFF',
-                boxShadow: '0 0 6px rgba(0,0,0,0.8)'
-              }}
-            />
-          </div>
-        );
-      })}
-
-      {/* Floating Compact Controls Toolbar (Glassmorphism) */}
+      {/* Compact Top-Right Floating Controls (Glassmorphism) */}
       <div
         style={{
           position: 'absolute',
@@ -1351,7 +1150,7 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          background: 'rgba(7, 15, 30, 0.82)',
+          background: 'rgba(7, 15, 30, 0.85)',
           backdropFilter: 'blur(12px)',
           border: '1px solid rgba(255, 255, 255, 0.12)',
           borderRadius: '20px',
@@ -1381,24 +1180,6 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
           <span>{timeOfDay === 'day' ? (isKannada ? 'ಹಗಲು' : 'Day') : timeOfDay === 'sunset' ? (isKannada ? 'ಸಂಜೆ' : 'Sunset') : (isKannada ? 'ರಾತ್ರಿ' : 'Night')}</span>
         </button>
 
-        {/* Toggle Labels */}
-        <button
-          onClick={() => setShowLabels(!showLabels)}
-          style={{
-            background: showLabels ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-            border: showLabels ? '1px solid #10B981' : 'none',
-            borderRadius: '14px',
-            padding: '5px 9px',
-            color: showLabels ? '#34D399' : '#94A3B8',
-            fontSize: '0.74rem',
-            fontWeight: 800,
-            cursor: 'pointer'
-          }}
-          title="Toggle Landmark Labels"
-        >
-          🏷️
-        </button>
-
         {/* Auto Rotate */}
         <button
           onClick={() => {
@@ -1421,9 +1202,9 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
           🔄
         </button>
 
-        {/* Reset View */}
+        {/* Reset to Blueprint Reference View */}
         <button
-          onClick={resetView}
+          onClick={resetToMasterReferenceView}
           style={{
             background: 'rgba(255, 255, 255, 0.08)',
             border: 'none',
@@ -1434,13 +1215,13 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
             fontWeight: 800,
             cursor: 'pointer'
           }}
-          title="Reset Camera View"
+          title="Reset to Master Reference View"
         >
           🎯
         </button>
       </div>
 
-      {/* Floating Bottom Quick Zoom & Drag Hints */}
+      {/* Floating Bottom Quick Gesture Hints */}
       <div
         style={{
           position: 'absolute',
@@ -1461,6 +1242,8 @@ export const Village3DScene: React.FC<Village3DSceneProps> = ({
         <span>👆 {isKannada ? 'ಎಳೆದು 360° ತಿರುಗಿಸಿ' : 'Drag to rotate 360°'}</span>
         <span>•</span>
         <span>🔍 {isKannada ? 'ಸ್ಕ್ರಾಲ್ ಮಾಡಿ ಜೂಮ್' : 'Scroll to zoom'}</span>
+        <span>•</span>
+        <span>🏛️ {isKannada ? 'ಕಟ್ಟಡ ಕ್ಲಿಕ್ ಮಾಡಿ' : 'Tap landmark'}</span>
       </div>
     </div>
   );

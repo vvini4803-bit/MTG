@@ -79,8 +79,7 @@ export const Village3DView: React.FC<Village3DViewProps> = ({ onNavigateToMap })
     { id: 'school', label_kn: 'ಸಮುದಾಯ ಭವನ / ಶಾಲೆ', label_en: 'Community Hall', icon: '🏫' },
     { id: 'shrine', label_kn: 'ಹಳೆಯ ಕಲ್ಲಿನ ಗುಡಿ', label_en: 'Old Stone Structure', icon: '🪨' },
     { id: 'kindergarden', label_kn: 'ಅಂಗನವಾಡಿ ಕೇಂದ್ರ', label_en: 'Anganwadi Center', icon: '👶' },
-    { id: 'temple1', label_kn: 'ಕಲ್ಲೇಶ್ವರ ಗುಡಿ (ವಿದ್ಯುತ್ ಗೋಪುರ)', label_en: 'Village Shrine & Pylon', icon: '⚡' },
-    { id: 'sign', label_kn: 'MTG ವಿಲೇಜ್ ಫಲಕ', label_en: 'MTG Village Sign', icon: '📍' }
+    { id: 'temple1', label_kn: 'ಕಲ್ಲೇಶ್ವರ ಗುಡಿ (ವಿದ್ಯುತ್ ಗೋಪುರ)', label_en: 'Village Shrine & Pylon', icon: '⚡' }
   ];
 
   return (
