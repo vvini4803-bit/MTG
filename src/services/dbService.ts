@@ -42,6 +42,7 @@ import {
 } from './seedData';
 import { isFirebaseConfigured, db } from './firebaseConfig';
 import { realtimeSync } from './realtimeSync';
+import { notificationService } from './notificationService';
 import {
   collection,
   onSnapshot,
@@ -462,6 +463,33 @@ class DatabaseService {
             this.news = [item, ...this.news];
             this.saveCollection('news', this.news);
             this.emit('news', this.news);
+
+            // Add notification record & trigger mobile push notification
+            const notifItem: NotificationItem = {
+              id: 'notif_' + Date.now(),
+              user_id: 'ALL',
+              title_en: (item.urgent ? '🚨 URGENT: ' : '📰 NEW: ') + item.title_en,
+              title_kn: (item.urgent ? '🚨 ತುರ್ತು: ' : '📰 ಹೊಸ ಸುದ್ದಿ: ') + item.title_kn,
+              message_en: (item.content_en || item.title_en).substring(0, 120),
+              message_kn: (item.content_kn || item.title_kn).substring(0, 120),
+              type: item.urgent ? 'EMERGENCY' : 'NEWS_VERIFIED',
+              link_tab: 'news',
+              read: false,
+              created_at: new Date().toISOString()
+            };
+            this.notifications = [notifItem, ...this.notifications];
+            this.saveCollection('notifications', this.notifications);
+            this.emit('notifications', this.notifications);
+
+            notificationService.sendNotification({
+              title_kn: (item.urgent ? '🚨 ತುರ್ತು ಗ್ರಾಮ ಸುದ್ದಿ: ' : '📰 ಹೊಸ ಗ್ರಾಮ ಸುದ್ದಿ: ') + item.title_kn,
+              title_en: (item.urgent ? '🚨 Urgent Village News: ' : '📰 Village News: ') + item.title_en,
+              body_kn: (item.content_kn || item.title_kn).substring(0, 120),
+              body_en: (item.content_en || item.title_en).substring(0, 120),
+              section: 'news',
+              itemId: item.id,
+              urgent: item.urgent
+            });
           }
           break;
         }
@@ -505,6 +533,32 @@ class DatabaseService {
           if (!this.events.some((e) => e.id === evt.id)) {
             this.events = [evt, ...this.events];
             this.saveCollection('events', this.events);
+            this.emit('events', this.events);
+
+            const notifItem: NotificationItem = {
+              id: 'notif_' + Date.now(),
+              user_id: 'ALL',
+              title_en: '📅 NEW EVENT: ' + evt.title_en,
+              title_kn: '📅 ಹೊಸ ಕಾರ್ಯಕ್ರಮ: ' + evt.title_kn,
+              message_en: (evt.description_en || evt.title_en).substring(0, 120),
+              message_kn: (evt.description_kn || evt.title_kn).substring(0, 120),
+              type: 'EVENT',
+              link_tab: 'events',
+              read: false,
+              created_at: new Date().toISOString()
+            };
+            this.notifications = [notifItem, ...this.notifications];
+            this.saveCollection('notifications', this.notifications);
+            this.emit('notifications', this.notifications);
+
+            notificationService.sendNotification({
+              title_kn: '📅 ಹೊಸ ಗ್ರಾಮ ಕಾರ್ಯಕ್ರಮ: ' + evt.title_kn,
+              title_en: '📅 New Village Event: ' + evt.title_en,
+              body_kn: (evt.description_kn || evt.title_kn).substring(0, 120),
+              body_en: (evt.description_en || evt.title_en).substring(0, 120),
+              section: 'events',
+              itemId: evt.id
+            });
           }
           break;
         }
@@ -580,6 +634,32 @@ class DatabaseService {
           if (!this.crops.some((c) => c.id === crop.id)) {
             this.crops = [crop, ...this.crops];
             this.saveCollection('crops', this.crops);
+            this.emit('crops', this.crops);
+
+            const notifItem: NotificationItem = {
+              id: 'notif_' + Date.now(),
+              user_id: 'ALL',
+              title_en: `🌾 Crop Guide: ${crop.name_en}`,
+              title_kn: `🌾 ಕೃಷಿ ಮಾಹಿತಿ: ${crop.name_kn}`,
+              message_en: crop.cultivation_en ? crop.cultivation_en.substring(0, 120) : 'Agricultural crop information updated.',
+              message_kn: crop.cultivation_kn ? crop.cultivation_kn.substring(0, 120) : 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕೃಷಿ ಬೆಳೆ ಮಾಹಿತಿ ಅಪ್‌ಡೇಟ್ ಆಗಿದೆ.',
+              type: 'SOCIAL',
+              link_tab: 'agriculture',
+              read: false,
+              created_at: new Date().toISOString()
+            };
+            this.notifications = [notifItem, ...this.notifications];
+            this.saveCollection('notifications', this.notifications);
+            this.emit('notifications', this.notifications);
+
+            notificationService.sendNotification({
+              title_kn: `🌾 ಕೃಷಿ ಮಾಹಿತಿ: ${crop.name_kn}`,
+              title_en: `🌾 Crop Guide: ${crop.name_en}`,
+              body_kn: crop.cultivation_kn ? crop.cultivation_kn.substring(0, 120) : 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕೃಷಿ ಬೆಳೆ ಮಾಹಿತಿ ಅಪ್‌ಡೇಟ್ ಆಗಿದೆ.',
+              body_en: crop.cultivation_en ? crop.cultivation_en.substring(0, 120) : 'Agricultural crop guide updated.',
+              section: 'agriculture',
+              itemId: crop.id
+            });
           }
           break;
         }
@@ -590,6 +670,7 @@ class DatabaseService {
           if (!this.temples.some((item) => item.id === t.id)) {
             this.temples = [t, ...this.temples];
             this.saveCollection('temples', this.temples);
+            this.emit('temples', this.temples);
           }
           break;
         }
@@ -600,6 +681,7 @@ class DatabaseService {
           if (!this.tournaments.some((item) => item.id === tourn.id)) {
             this.tournaments = [tourn, ...this.tournaments];
             this.saveCollection('tournaments', this.tournaments);
+            this.emit('tournaments', this.tournaments);
           }
           break;
         }
@@ -612,7 +694,72 @@ class DatabaseService {
             if (match) {
               Object.assign(match, updates);
               this.saveCollection('tournaments', [...this.tournaments]);
+              this.emit('tournaments', this.tournaments);
+
+              notificationService.sendNotification({
+                title_kn: `🏏 ಕ್ರೀಡಾ ಅಪ್‌ಡೇಟ್: ${match.team_a} vs ${match.team_b}`,
+                title_en: `🏏 Match Score: ${match.team_a} vs ${match.team_b}`,
+                body_kn: `ಸ್ಥಿತಿ: ${match.current_status_kn || 'ಲೈವ್'} | ${match.team_a_score || ''} - ${match.team_b_score || ''}`,
+                body_en: `Status: ${match.current_status_en || 'Live'} | ${match.team_a_score || ''} - ${match.team_b_score || ''}`,
+                section: 'sports',
+                itemId: tournamentId
+              });
             }
+          }
+          break;
+        }
+
+        case 'EMERGENCY_ALERT_UPDATED': {
+          const alert: EmergencyAlert | null = envelope.payload;
+          this.emergencyAlert = alert;
+          this.saveCollection('emergency_alert', this.emergencyAlert);
+          this.emit('emergency_alert', this.emergencyAlert);
+
+          if (alert && alert.active) {
+            const notifItem: NotificationItem = {
+              id: 'notif_' + Date.now(),
+              user_id: 'ALL',
+              title_en: '🚨 EMERGENCY: ' + alert.title_en,
+              title_kn: '🚨 ತುರ್ತು ಪ್ರಕಟಣೆ: ' + alert.title_kn,
+              message_en: alert.message_en,
+              message_kn: alert.message_kn,
+              type: 'EMERGENCY',
+              link_tab: 'home',
+              read: false,
+              created_at: new Date().toISOString()
+            };
+            this.notifications = [notifItem, ...this.notifications];
+            this.saveCollection('notifications', this.notifications);
+            this.emit('notifications', this.notifications);
+
+            notificationService.sendNotification({
+              title_kn: '🚨 ತುರ್ತು ಗ್ರಾಮ ಎಚ್ಚರಿಕೆ: ' + alert.title_kn,
+              title_en: '🚨 Emergency Alert: ' + alert.title_en,
+              body_kn: alert.message_kn,
+              body_en: alert.message_en,
+              section: 'home',
+              urgent: true
+            });
+          }
+          break;
+        }
+
+        case 'NOTIFICATION_CREATED': {
+          const notif: NotificationItem = envelope.payload;
+          if (!notif || !notif.id) return;
+          if (!this.notifications.some((n) => n.id === notif.id)) {
+            this.notifications = [notif, ...this.notifications];
+            this.saveCollection('notifications', this.notifications);
+            this.emit('notifications', this.notifications);
+
+            notificationService.sendNotification({
+              title_kn: notif.title_kn,
+              title_en: notif.title_en,
+              body_kn: notif.message_kn,
+              body_en: notif.message_en,
+              section: notif.link_tab || 'notifications',
+              urgent: notif.type === 'EMERGENCY'
+            });
           }
           break;
         }
@@ -907,6 +1054,18 @@ class DatabaseService {
     this.saveCollection('news', this.news);
     this.emit('news', this.news);
     realtimeSync.broadcast('NEWS_CREATED', newItem);
+
+    // Auto-generate notification item & trigger push notification across mobile
+    this.addNotification({
+      user_id: 'ALL',
+      title_en: (newItem.urgent ? '🚨 URGENT: ' : '📰 NEW: ') + newItem.title_en,
+      title_kn: (newItem.urgent ? '🚨 ತುರ್ತು: ' : '📰 ಹೊಸ ಸುದ್ದಿ: ') + newItem.title_kn,
+      message_en: (newItem.content_en || newItem.title_en).substring(0, 120),
+      message_kn: (newItem.content_kn || newItem.title_kn).substring(0, 120),
+      type: newItem.urgent ? 'EMERGENCY' : 'NEWS_VERIFIED',
+      link_tab: 'news'
+    });
+
     this.logAudit('CREATE_NEWS', newItem.author_id, newItem.author_name, newItem.id, 'NEWS', `Created and auto-verified: ${newItem.title_en}`);
     return newItem;
   }
@@ -1208,7 +1367,19 @@ class DatabaseService {
 
     this.events = [newEvent, ...this.events];
     this.saveCollection('events', this.events);
+    this.emit('events', this.events);
     realtimeSync.broadcast('EVENT_CREATED', newEvent);
+
+    this.addNotification({
+      user_id: 'ALL',
+      title_en: '📅 NEW EVENT: ' + newEvent.title_en,
+      title_kn: '📅 ಹೊಸ ಕಾರ್ಯಕ್ರಮ: ' + newEvent.title_kn,
+      message_en: (newEvent.description_en || newEvent.title_en).substring(0, 120),
+      message_kn: (newEvent.description_kn || newEvent.title_kn).substring(0, 120),
+      type: 'EVENT',
+      link_tab: 'events'
+    });
+
     return newEvent;
   }
 
@@ -1290,7 +1461,19 @@ class DatabaseService {
     };
     this.crops = [newCrop, ...this.crops];
     this.saveCollection('crops', this.crops);
+    this.emit('crops', this.crops);
     realtimeSync.broadcast('CROP_ADDED', newCrop);
+
+    this.addNotification({
+      user_id: 'ALL',
+      title_en: `🌾 Crop Guide: ${newCrop.name_en}`,
+      title_kn: `🌾 ಕೃಷಿ ಮಾಹಿತಿ: ${newCrop.name_kn}`,
+      message_en: newCrop.cultivation_en ? newCrop.cultivation_en.substring(0, 120) : 'Agricultural crop information updated.',
+      message_kn: newCrop.cultivation_kn ? newCrop.cultivation_kn.substring(0, 120) : 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕೃಷಿ ಬೆಳೆ ಮಾಹಿತಿ ಅಪ್‌ಡೇಟ್ ಆಗಿದೆ.',
+      type: 'SOCIAL',
+      link_tab: 'agriculture'
+    });
+
     return newCrop;
   }
 
@@ -1549,6 +1732,9 @@ class DatabaseService {
   public async setEmergencyAlert(alert: EmergencyAlert | null): Promise<void> {
     this.emergencyAlert = alert;
     this.saveCollection('emergency_alert', this.emergencyAlert);
+    this.emit('emergency_alert', this.emergencyAlert);
+    realtimeSync.broadcast('EMERGENCY_ALERT_UPDATED', alert);
+
     if (alert && alert.active) {
       this.addNotification({
         user_id: 'ALL',
@@ -1654,6 +1840,28 @@ class DatabaseService {
     };
     this.notifications = [newNotif, ...this.notifications];
     this.saveCollection('notifications', this.notifications);
+    this.emit('notifications', this.notifications);
+    realtimeSync.broadcast('NOTIFICATION_CREATED', newNotif);
+
+    // Trigger mobile notification tray, Web Audio chime, vibration, and in-app toast!
+    notificationService.sendNotification({
+      title_kn: newNotif.title_kn,
+      title_en: newNotif.title_en,
+      body_kn: newNotif.message_kn,
+      body_en: newNotif.message_en,
+      section: newNotif.link_tab || 'notifications',
+      urgent: newNotif.type === 'EMERGENCY'
+    });
+  }
+
+  public subscribeUnreadNotificationsCount(userId: string, callback: (count: number) => void): () => void {
+    const calcCount = (items: NotificationItem[]) =>
+      items.filter((n) => (n.user_id === 'ALL' || n.user_id === userId) && !n.read).length;
+
+    callback(calcCount(this.notifications));
+    return this.subscribe('notifications', this.notifications, (items) => {
+      callback(calcCount(items));
+    });
   }
 
   public async markAllNotificationsRead(userId: string): Promise<void> {

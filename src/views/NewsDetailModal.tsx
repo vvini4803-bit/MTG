@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { dbService, getOneWeekStatus } from '../services/dbService';
 import { voiceAssistant } from '../services/voiceService';
 import { NewsItem, VerificationStatus } from '../types';
+import { notificationService } from '../services/notificationService';
 import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
 import { ImageLightboxModal } from '../components/common/ImageLightboxModal';
 import {
@@ -105,11 +106,27 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
     if (navigator.share) {
       try {
         await navigator.share(shareData);
+        notificationService.sendNotification({
+          title_kn: '✅ ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ',
+          title_en: '✅ News Shared',
+          body_kn: `"${title}" ಸುದ್ದಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ.`,
+          body_en: `"${title}" has been shared successfully.`,
+          section: 'news',
+          itemId: news.id
+        }, isKannada);
       } catch {}
     } else {
       navigator.clipboard.writeText(`${title} - ${window.location.href}`);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2500);
+      notificationService.sendNotification({
+        title_kn: '📋 ಲಿಂಕ್ ನಕಲಿಸಲಾಗಿದೆ',
+        title_en: '📋 Link Copied',
+        body_kn: `ಸುದ್ದಿಯ ಲಿಂಕ್ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ಕಾಪಿ ಮಾಡಲಾಗಿದೆ.`,
+        body_en: `News link copied to clipboard.`,
+        section: 'news',
+        itemId: news.id
+      }, isKannada);
     }
   };
 

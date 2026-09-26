@@ -23,6 +23,9 @@ import { UserProfileScreen } from './views/UserProfileScreen';
 import { AdminDashboardScreen } from './views/AdminDashboardScreen';
 import { SearchScreen } from './views/SearchScreen';
 import { NotificationsScreen } from './views/NotificationsScreen';
+import { InAppNotificationToast } from './components/notifications/InAppNotificationToast';
+import { NotificationPermissionBanner } from './components/notifications/NotificationPermissionBanner';
+import { notificationService } from './services/notificationService';
 
 // Modals
 import { NewsDetailModal } from './views/NewsDetailModal';
@@ -41,6 +44,7 @@ import { AuthModal } from './components/auth/AuthModal';
 
 // Icons
 import {
+  Bell,
   Home,
   Newspaper,
   Calendar,
@@ -105,6 +109,7 @@ export const App: React.FC = () => {
   const [activeTournaments, setActiveTournaments] = useState<Tournament[]>([]);
   const [villageStats, setVillageStats] = useState(dbService['villageStats']);
   const [liveNewsIndex, setLiveNewsIndex] = useState(0);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   // Modals state
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -284,6 +289,30 @@ export const App: React.FC = () => {
     const unsubUnread = dbService.subscribeUnreadMessagesCount(currentUser.uid, setUnreadMsgCount);
     return () => unsubUnread();
   }, [currentUser]);
+
+  useEffect(() => {
+    const unsubNotif = dbService.subscribeUnreadNotificationsCount(
+      currentUser?.uid || 'ALL',
+      setUnreadNotifCount
+    );
+    return () => unsubNotif();
+  }, [currentUser]);
+
+  useEffect(() => {
+    const handleSwNavigate = (event: any) => {
+      const { section, itemId } = event.detail || {};
+      if (section) {
+        navigateTo(section as MainSection);
+      }
+      if (section === 'news' && itemId) {
+        const item = dbService.getNews().find((n) => n.id === itemId);
+        if (item) setSelectedNews(item);
+      }
+    };
+
+    window.addEventListener('mtg_navigate', handleSwNavigate);
+    return () => window.removeEventListener('mtg_navigate', handleSwNavigate);
+  }, []);
 
   const navigateTo = (section: MainSection) => {
     backNavigation.navigateTo(section);
@@ -521,6 +550,52 @@ export const App: React.FC = () => {
               )}
             </button>
 
+            {/* 🔔 Notification Bell Button with Live Unread Badge */}
+            <button
+              onClick={() => navigateTo('notifications')}
+              className="site-header-icon-btn"
+              style={{
+                position: 'relative',
+                background: currentSection === 'notifications' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                color: currentSection === 'notifications' ? '#10B981' : '#CBD5E1',
+                border: currentSection === 'notifications' ? '1px solid #10B981' : '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '50%',
+                width: '38px',
+                height: '38px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+              title={isKannada ? 'ಗ್ರಾಮ ಸೂಚನೆಗಳು (Notifications)' : 'Notifications & Alerts'}
+            >
+              <Bell size={18} />
+              {unreadNotifCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    background: '#EF4444',
+                    color: '#FFFFFF',
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    minWidth: '18px',
+                    height: '18px',
+                    borderRadius: '9px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid #070F1E',
+                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)'
+                  }}
+                >
+                  {unreadNotifCount}
+                </span>
+              )}
+            </button>
+
             {/* Quick Ask Village Voice Button */}
             <button
               onClick={() => setIsVoiceModalOpen(true)}
@@ -648,6 +723,17 @@ export const App: React.FC = () => {
         </div>
       </header>
 
+      {/* Floating In-App Live Notification Toast Banner */}
+      <InAppNotificationToast
+        onNavigate={(section, itemId) => {
+          navigateTo(section as MainSection);
+          if (section === 'news' && itemId) {
+            const item = dbService.getNews().find((n) => n.id === itemId);
+            if (item) setSelectedNews(item);
+          }
+        }}
+      />
+
       {/* 2. EMERGENCY ALERT BANNER (High Priority Broadcast) */}
       {emergencyAlert && emergencyAlert.active && (
         <div
@@ -705,6 +791,9 @@ export const App: React.FC = () => {
           <div>
             {/* The Animated Village Hero Landscape */}
             <VillageHero />
+
+            {/* Mobile Notification Enable Permission Banner */}
+            <NotificationPermissionBanner />
 
             {/* 🔴 LIVE VILLAGE UPDATE (Interactive Live Banner - Click shows new update) */}
             {(() => {
@@ -1663,6 +1752,41 @@ export const App: React.FC = () => {
               </button>
             </div>
             <SearchScreen
+              onNavigateTab={(tab) => {
+                if (tab === 'news') navigateTo('news');
+                else if (tab === 'events') navigateTo('events');
+                else if (tab === 'sports') navigateTo('sports');
+                else if (tab === 'agriculture') navigateTo('agriculture');
+                else if (tab === 'temples') navigateTo('temples');
+                else navigateTo('home');
+              }}
+            />
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* 🔔 SECTION 13: NOTIFICATIONS & ALERTS                        */}
+        {/* ============================================================ */}
+        {currentSection === 'notifications' && (
+          <div>
+            <div style={{ marginBottom: '14px' }}>
+              <button
+                onClick={() => navigateTo('home')}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  borderRadius: '10px',
+                  padding: '6px 14px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                ← {isKannada ? 'ಮುಖಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ' : 'Back to Home'}
+              </button>
+            </div>
+            <NotificationsScreen
               onNavigateTab={(tab) => {
                 if (tab === 'news') navigateTo('news');
                 else if (tab === 'events') navigateTo('events');

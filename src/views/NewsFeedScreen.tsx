@@ -3,6 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { dbService, isWithinOneWeek, getOneWeekStatus } from '../services/dbService';
 import { NewsItem, NewsCategory, VerificationStatus } from '../types';
+import { notificationService } from '../services/notificationService';
 import { getEffectiveUserId, triggerHapticFeedback } from '../services/deviceIdentity';
 import { ImageLightboxModal } from '../components/common/ImageLightboxModal';
 import {
@@ -555,9 +556,28 @@ export const NewsFeedScreen: React.FC<NewsFeedScreenProps> = ({
                         const title = isKannada ? item.title_kn : item.title_en;
                         const text = `📰 *${title}* - ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಸುದ್ದಿ:\n${window.location.href}`;
                         if (navigator.share) {
-                          navigator.share({ title, text, url: window.location.href }).catch(() => {});
+                          navigator.share({ title, text, url: window.location.href })
+                            .then(() => {
+                              notificationService.sendNotification({
+                                title_kn: '✅ ಸುದ್ದಿ ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ',
+                                title_en: '✅ News Shared',
+                                body_kn: `"${title}" ಸುದ್ದಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ.`,
+                                body_en: `"${title}" has been shared successfully.`,
+                                section: 'news',
+                                itemId: item.id
+                              }, isKannada);
+                            })
+                            .catch(() => {});
                         } else {
                           window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+                          notificationService.sendNotification({
+                            title_kn: '✅ ವಾಟ್ಸಾಪ್‌ನಲ್ಲಿ ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ',
+                            title_en: '✅ Shared to WhatsApp',
+                            body_kn: `"${title}" ಸುದ್ದಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ.`,
+                            body_en: `"${title}" shared to WhatsApp.`,
+                            section: 'news',
+                            itemId: item.id
+                          }, isKannada);
                         }
                       }}
                       style={{
