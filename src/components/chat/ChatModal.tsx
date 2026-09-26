@@ -188,8 +188,8 @@ export const ChatModal: React.FC<ChatModalProps> = ({
     if (!file) return;
 
     try {
-      // Fast, lightweight 800px compression for instantaneous WhatsApp-like delivery
-      const compressed = await compressImage(file, 800, 800, 0.75);
+      // Fast, lightweight WhatsApp-grade compression for instantaneous send & receive
+      const compressed = await compressImage(file, 640, 640, 0.70);
       setAttachedImage(compressed.dataUrl);
       triggerHapticFeedback();
     } catch (err: any) {

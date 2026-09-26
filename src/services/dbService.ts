@@ -52,7 +52,9 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy
+  orderBy,
+  limit,
+  limitToLast
 } from 'firebase/firestore';
 import {
   savePhotoPermanently,
@@ -161,6 +163,7 @@ class DatabaseService {
   constructor() {
     this.initLocalData();
     this.initRealtimeSync();
+    this.initFirestoreSync();
   }
 
   private initLocalData() {
@@ -800,6 +803,7 @@ class DatabaseService {
               this.emit('conversations', this.conversations);
             }
 
+            this.emit('messages', this.messages);
             this.emit(`messages_${msg.conversation_id}`, this.messages.filter((m) => m.conversation_id === msg.conversation_id));
             this.emit('unread_messages', this.messages);
 
@@ -831,17 +835,23 @@ class DatabaseService {
               this.emit('notifications', this.notifications);
             }
 
-            // Immediately trigger sound chime, vibration, push notification, and in-app toast!
-            notificationService.playMessageReceived();
-            notificationService.sendNotification({
-              title_kn: notifItem.title_kn,
-              title_en: notifItem.title_en,
-              body_kn: notifItem.message_kn,
-              body_en: notifItem.message_en,
-              section: 'messages',
-              itemId: msg.conversation_id,
-              urgent: false
-            });
+            // Immediately trigger sound chime, vibration, push notification, and in-app toast for recipient!
+            const savedActive = typeof window !== 'undefined' ? localStorage.getItem('gramasiri_active_user') : null;
+            const myUid = savedActive ? JSON.parse(savedActive).uid : null;
+            const isForMe = !myUid || (recipientId && myUid === recipientId) || (conv?.participants.includes(myUid || ''));
+
+            if (isForMe && msg.sender_id !== myUid) {
+              notificationService.playMessageReceived();
+              notificationService.sendNotification({
+                title_kn: notifItem.title_kn,
+                title_en: notifItem.title_en,
+                body_kn: notifItem.message_kn,
+                body_en: notifItem.message_en,
+                section: 'messages',
+                itemId: msg.conversation_id,
+                urgent: false
+              });
+            }
           }
           break;
         }
@@ -932,6 +942,145 @@ class DatabaseService {
         }
       }
     });
+  }
+
+  private initFirestoreSync() {
+    if (!isFirebaseConfigured || !db) return;
+
+    try {
+      // 1. Live Firestore Conversations Sync across all users & devices
+      const convsQuery = query(collection(db, 'conversations'), orderBy('updated_at', 'desc'), limit(100));
+      onSnapshot(
+        convsQuery,
+        (snapshot) => {
+          let changed = false;
+          snapshot.docs.forEach((d) => {
+            const data = { id: d.id, ...d.data() } as Conversation;
+            const existingIdx = this.conversations.findIndex((c) => c.id === data.id);
+            if (existingIdx >= 0) {
+              const existing = this.conversations[existingIdx];
+              if (new Date(data.updated_at).getTime() >= new Date(existing.updated_at).getTime()) {
+                this.conversations[existingIdx] = { ...existing, ...data };
+                changed = true;
+              }
+            } else {
+              this.conversations.push(data);
+              changed = true;
+            }
+          });
+          if (changed) {
+            this.saveCollection('conversations', this.conversations);
+            this.emit('conversations', this.conversations);
+          }
+        },
+        (err) => console.warn('Firestore conversations sync note:', err)
+      );
+
+      // 2. Live Firestore Messages Sync (all cross-user messages & photos!)
+      const msgsQuery = query(collection(db, 'messages'), orderBy('created_at', 'asc'), limitToLast(300));
+      onSnapshot(
+        msgsQuery,
+        (snapshot) => {
+          let newMsgsAdded = false;
+          const currentSavedUser = typeof window !== 'undefined' ? localStorage.getItem('gramasiri_active_user') : null;
+          const currentUid = currentSavedUser ? JSON.parse(currentSavedUser).uid : null;
+
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+              const msg = { id: change.doc.id, ...change.doc.data() } as ChatMessage;
+              if (!this.messages.some((m) => m.id === msg.id)) {
+                this.messages.push(msg);
+                newMsgsAdded = true;
+
+                // Update conversation metadata if available
+                const conv = this.conversations.find((c) => c.id === msg.conversation_id);
+                if (conv) {
+                  conv.last_message_text = msg.media_url && !msg.text ? '📷 Photo' : (msg.text || '');
+                  conv.last_message_at = msg.created_at;
+                  conv.last_sender_id = msg.sender_id;
+                  conv.updated_at = msg.created_at;
+                }
+
+                // If sent recently (within last 45s) and targeted to current user, trigger alert
+                const isFresh = Date.now() - new Date(msg.created_at).getTime() < 45000;
+                if (isFresh && currentUid && msg.sender_id !== currentUid) {
+                  const recipientId = conv?.participants.find((p) => p !== msg.sender_id);
+                  if (recipientId === currentUid || conv?.participants.includes(currentUid)) {
+                    // Create notification item in bell bar
+                    const notifItem: NotificationItem = {
+                      id: 'notif_msg_' + msg.id,
+                      user_id: currentUid,
+                      title_kn: `💬 ${msg.sender_name} ಅವರಿಂದ ಹೊಸ ಸಂದೇಶ`,
+                      title_en: `💬 Message from ${msg.sender_name}`,
+                      message_kn: msg.media_url && !msg.text ? `📷 ${msg.sender_name} ನಿಮಗೆ ಒಂದು ಚಿತ್ರವನ್ನು ಕಳುಹಿಸಿದ್ದಾರೆ.` : `${msg.sender_name}: ${msg.text || 'ಹೊಸ ಸಂದೇಶ'}`,
+                      message_en: msg.media_url && !msg.text ? `📷 ${msg.sender_name} sent you a photo.` : `${msg.sender_name}: ${msg.text || 'New message'}`,
+                      type: 'MESSAGE',
+                      link_tab: 'messages',
+                      read: false,
+                      created_at: msg.created_at,
+                      sender_id: msg.sender_id,
+                      sender_name: msg.sender_name,
+                      conversation_id: msg.conversation_id
+                    };
+                    if (!this.notifications.some((n) => n.id === notifItem.id)) {
+                      this.notifications = [notifItem, ...this.notifications];
+                      this.saveCollection('notifications', this.notifications);
+                      this.emit('notifications', this.notifications);
+                    }
+
+                    notificationService.playMessageReceived();
+                    notificationService.sendNotification({
+                      title_kn: notifItem.title_kn,
+                      title_en: notifItem.title_en,
+                      body_kn: notifItem.message_kn,
+                      body_en: notifItem.message_en,
+                      section: 'messages',
+                      itemId: msg.conversation_id,
+                      urgent: false
+                    });
+                  }
+                }
+
+                this.emit(`messages_${msg.conversation_id}`, this.messages.filter((m) => m.conversation_id === msg.conversation_id));
+              }
+            }
+          });
+
+          if (newMsgsAdded) {
+            this.saveCollection('messages', this.messages);
+            this.emit('messages', this.messages);
+            this.emit('unread_messages', this.messages);
+            this.emit('conversations', this.conversations);
+          }
+        },
+        (err) => console.warn('Firestore messages sync note:', err)
+      );
+
+      // 3. Live Firestore Notifications Sync
+      const notifsQuery = query(collection(db, 'notifications'), orderBy('created_at', 'desc'), limit(100));
+      onSnapshot(
+        notifsQuery,
+        (snapshot) => {
+          let notifAdded = false;
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+              const item = { id: change.doc.id, ...change.doc.data() } as NotificationItem;
+              if (!this.notifications.some((n) => n.id === item.id)) {
+                this.notifications = [item, ...this.notifications];
+                notifAdded = true;
+              }
+            }
+          });
+          if (notifAdded) {
+            this.saveCollection('notifications', this.notifications);
+            this.emit('notifications', this.notifications);
+          }
+        },
+        (err) => console.warn('Firestore notifications sync note:', err)
+      );
+    } catch (e) {
+      console.warn('Firestore initSync error:', e);
+    }
   }
 
   private loadCollection<T>(key: string, defaultValue: T): T {
@@ -2281,9 +2430,17 @@ class DatabaseService {
         .filter((m) => m.conversation_id === conversationId)
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-    return this.subscribe('messages', getFiltered(), () => {
+    const unsubSpecific = this.subscribe(`messages_${conversationId}`, getFiltered(), () => {
       callback(getFiltered());
     });
+    const unsubGeneral = this.subscribe('messages', getFiltered(), () => {
+      callback(getFiltered());
+    });
+
+    return () => {
+      unsubSpecific();
+      unsubGeneral();
+    };
   }
 
   public subscribeUnreadMessagesCount(userId: string, callback: (count: number) => void): () => void {
@@ -2370,6 +2527,11 @@ class DatabaseService {
 
     this.conversations = [newConv, ...this.conversations];
     this.saveCollection('conversations', this.conversations);
+    if (isFirebaseConfigured && db) {
+      try {
+        setDoc(doc(db, 'conversations', newConv.id), cleanFirestoreData(newConv)).catch(() => {});
+      } catch {}
+    }
     return newConv;
   }
 
@@ -2458,6 +2620,7 @@ class DatabaseService {
     }
 
     realtimeSync.broadcast('CHAT_MESSAGE', { message: newMsg, conversation: conv }, recipientId);
+    this.emit('messages', this.messages);
     this.emit(`messages_${params.conversationId}`, this.messages.filter((m) => m.conversation_id === params.conversationId));
     this.emit('unread_messages', this.messages);
 
@@ -2502,9 +2665,15 @@ class DatabaseService {
     if (convUpdated) {
       this.saveCollection('conversations', [...this.conversations]);
       this.emit('conversations', this.conversations);
+      if (isFirebaseConfigured && db && conv) {
+        try {
+          setDoc(doc(db, 'conversations', conv.id), cleanFirestoreData(conv)).catch(() => {});
+        } catch {}
+      }
     }
     if (msgsUpdated) {
       this.saveCollection('messages', [...this.messages]);
+      this.emit('messages', this.messages);
       this.emit(`messages_${conversationId}`, this.messages.filter((m) => m.conversation_id === conversationId));
       this.emit('unread_messages', this.messages);
 

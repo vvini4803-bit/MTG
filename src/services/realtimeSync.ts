@@ -28,6 +28,7 @@ export interface SyncEnvelope {
   payload: any;
   senderDeviceId: string;
   senderUserId?: string;
+  targetUserId?: string;
   timestamp: string;
 }
 
@@ -79,6 +80,8 @@ class RealtimeSyncService {
     }
   }
 
+  private seenEnvelopes: Set<string> = new Set();
+
   private connectCloudBroker() {
     if (typeof window === 'undefined') return;
 
@@ -99,9 +102,18 @@ class RealtimeSyncService {
       this.client.onMessageArrived = (message: Paho.Message) => {
         try {
           const envelope: SyncEnvelope = JSON.parse(message.payloadString);
-          if (envelope.senderDeviceId !== this.deviceId) {
-            this.notifyListeners(envelope);
+          if (envelope.senderDeviceId === this.deviceId) return;
+
+          // Unique packet ID to prevent duplicate handling
+          const packetKey = `${envelope.type}_${envelope.payload?.message?.id || envelope.payload?.id || envelope.timestamp}_${envelope.senderDeviceId}`;
+          if (this.seenEnvelopes.has(packetKey)) return;
+          this.seenEnvelopes.add(packetKey);
+          if (this.seenEnvelopes.size > 200) {
+            const first = this.seenEnvelopes.values().next().value;
+            if (first) this.seenEnvelopes.delete(first);
           }
+
+          this.notifyListeners(envelope);
         } catch (err) {
           console.warn('Failed to parse realtime message:', err);
         }
@@ -165,6 +177,7 @@ class RealtimeSyncService {
       payload,
       senderDeviceId: this.deviceId,
       senderUserId: this.currentUserId || undefined,
+      targetUserId,
       timestamp: new Date().toISOString()
     };
 
@@ -178,11 +191,19 @@ class RealtimeSyncService {
     // 2. Global Cloud Relay over MQTT WebSockets
     if (this.isConnected && this.client) {
       try {
-        const topic = targetUserId ? `muttagundi/chat/${targetUserId}` : 'muttagundi/broadcast';
-        const msg = new Paho.Message(JSON.stringify(envelope));
-        msg.destinationName = topic;
-        msg.qos = 1; // At least once delivery
-        this.client.send(msg);
+        // ALWAYS publish to muttagundi/broadcast so every online client receives it
+        const broadcastMsg = new Paho.Message(JSON.stringify(envelope));
+        broadcastMsg.destinationName = 'muttagundi/broadcast';
+        broadcastMsg.qos = 1;
+        this.client.send(broadcastMsg);
+
+        // Also publish to recipient-specific topic for dedicated direct push
+        if (targetUserId) {
+          const directMsg = new Paho.Message(JSON.stringify(envelope));
+          directMsg.destinationName = `muttagundi/chat/${targetUserId}`;
+          directMsg.qos = 1;
+          this.client.send(directMsg);
+        }
       } catch (err) {
         console.warn('Failed to send realtime packet:', err);
       }
