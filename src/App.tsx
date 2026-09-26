@@ -463,27 +463,6 @@ export const App: React.FC = () => {
               padding: '2px 0'
             }}
           >
-            {/* Home Button on Far Left */}
-            <button
-              onClick={() => navigateTo('home')}
-              className="site-header-icon-btn"
-              style={{
-                background: currentSection === 'home' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                color: currentSection === 'home' ? '#34D399' : '#FFFFFF',
-                border: currentSection === 'home' ? '1.5px solid #10B981' : '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '50%',
-                width: '38px',
-                height: '38px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                flexShrink: 0
-              }}
-              title={isKannada ? 'ಮುಖಪುಟ (Home)' : 'Home'}
-            >
-              <Home size={18} />
-            </button>
             {/* Search Button */}
             <button
               onClick={() => navigateTo('search')}
