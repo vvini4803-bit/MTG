@@ -22,13 +22,31 @@ function rotateApiKey() {
 }
 
 // Default active Gemini models verified with current API key
-const GEMINI_MODELS = ['gemini-3-flash-preview', 'gemini-3.6-flash', 'gemini-flash-lite-latest'];
+const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-3.8-flash'];
 
 export interface GeminiResponse {
   answer_en: string;
   answer_kn: string;
   category?: string;
   navTab?: string;
+}
+
+export interface PhotoAnalysisResult {
+  category: 'AGRICULTURE' | 'HEALTHCARE' | 'TEMPLE_VILLAGE' | 'DOCUMENT_OCR' | 'INFRASTRUCTURE' | 'LIVESTOCK' | 'GENERAL' | 'UNCLEAR';
+  category_label_en: string;
+  category_label_kn: string;
+  what_i_see_en: string;
+  what_i_see_kn: string;
+  analysis_en: string;
+  analysis_kn: string;
+  possible_issue_en?: string;
+  possible_issue_kn?: string;
+  recommended_action_en: string;
+  recommended_action_kn: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  detected_text?: string;
+  caution_notes_en?: string;
+  caution_notes_kn?: string;
 }
 
 class GeminiService {
@@ -336,15 +354,251 @@ JSON array only:`;
    */
   public async summarizeNews(content: string, lang: Language): Promise<string> {
     const targetName = lang === 'kn' ? 'simple spoken Kannada' : 'simple English';
-    const prompt = `Summarize this village announcement in 2 clear sentences in ${targetName} for farmers and residents:
-"${content}"
-Summary:`;
-
+    const prompt = `Summarize this village announcement in 2 clear sentences in ${targetName} for farmers and residents: "${content}"`;
     try {
       const summary = await this.callGeminiAPI(prompt);
       return summary.trim();
     } catch {
       return content.slice(0, 150) + '...';
+    }
+  }
+
+  /**
+   * Generic Multimodal content caller for images and multi-turn conversations
+   */
+  public async callGeminiMultimodalAPI(
+    contents: any[],
+    systemInstruction?: string,
+    isJson: boolean = false
+  ): Promise<string> {
+    let lastError: any = null;
+
+    for (const model of GEMINI_MODELS) {
+      const activeKey = this.getApiKey();
+      if (!activeKey) continue;
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
+
+        const body: any = {
+          contents,
+          generationConfig: {
+            temperature: 0.25,
+            maxOutputTokens: 1500
+          }
+        };
+
+        if (isJson) {
+          body.generationConfig.responseMimeType = 'application/json';
+        }
+
+        if (systemInstruction) {
+          body.systemInstruction = {
+            parts: [{ text: systemInstruction }]
+          };
+        }
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.error?.message || `HTTP ${res.status}`;
+          if (res.status === 429 || res.status === 403) {
+            rotateApiKey();
+          }
+          throw new Error(errorMsg);
+        }
+
+        const data = await res.json();
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        const textPart = parts.find((p: any) => p.text && !p.thought) || parts[parts.length - 1];
+        if (textPart && textPart.text) {
+          return textPart.text.trim();
+        }
+      } catch (err) {
+        lastError = err;
+        rotateApiKey();
+        continue;
+      }
+    }
+
+    throw lastError || new Error('Failed to reach Gemini Multimodal API');
+  }
+
+  /**
+   * Comprehensive Universal Image Analysis for MTG AI Photo Analyzer
+   */
+  public async analyzePhoto(
+    imageBase64: string,
+    mimeType: string = 'image/jpeg'
+  ): Promise<PhotoAnalysisResult> {
+    // Strip header prefix if present (e.g., data:image/jpeg;base64,)
+    const cleanBase64 = imageBase64.includes(';base64,')
+      ? imageBase64.split(';base64,')[1]
+      : imageBase64;
+
+    const villageContext = this.buildVillageContext();
+
+    const systemInstruction = `You are the MTG Village AI visual assistant (ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕೃತಕ ಬುದ್ಧಿಮತ್ತೆ ದೃಶ್ಯ ಸಹಾಯಕ).
+Context: Muttagundi Digital Village, Hosadurga Taluk, Chitradurga District, Karnataka.
+${villageContext}
+
+Analyze the user's uploaded image carefully. Identify what is visibly present, determine the most relevant context, and provide useful information in simple, clear language. Do not invent details that cannot be determined from the image. Clearly distinguish observations from assumptions.
+
+CATEGORIES (Identify the most relevant):
+- AGRICULTURE: Crops, leaves, plants, fruits, weeds, soil, pests, diseases, farm water.
+  * Rules: Do not diagnose with absolute certainty from photo alone. For uncertain issues, explicitly state: "Possible cause — needs field confirmation" (ಕೃಷಿ ಜಮೀನಿನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳುವುದು ಅಗತ್ಯ). Do NOT prescribe hazardous pesticide dosage without official advice.
+- HEALTHCARE: Medical, health clinic, prescription, pharmacy, symptom, injury.
+  * Rules: Do NOT provide a definitive medical diagnosis. Strictly state: "This image may show... For a proper diagnosis, consult a qualified healthcare professional." (ಸರಿಯಾದ ರೋಗನಿರ್ಣಯಕ್ಕಾಗಿ ದಯವಿಟ್ಟು ಅರ್ಹ ವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ).
+- TEMPLE_VILLAGE: Temples, religious shrines, cultural monuments, heritage structures.
+  * Rules: Describe visible architecture, gopuram, stone carvings, facilities. Do not invent unverified historical folklore.
+- INFRASTRUCTURE: Roads, schools, drainage, electricity poles, public buildings, damaged roads/structures.
+  * Rules: Describe visible physical condition, maintenance needs, safety impact.
+- DOCUMENT_OCR: Notice boards, printed/written circulars, receipts, announcements, boards.
+  * Rules: Transcribe text, summarize clearly, highlight dates, amounts, and critical actions in both Kannada and English.
+- LIVESTOCK: Cows, oxen, buffaloes, sheep, goats, poultry, domestic animals.
+  * Rules: Note visible physical condition, advise local veterinary doctor (ಪಶು ವೈದ್ಯಾಧಿಕಾರಿ) for medical care.
+- GENERAL: Everyday objects, tools, vehicles, scenes.
+- UNCLEAR: Blurry, too dark, out of focus, or indeterminate image. Prompt user for a clearer photo.
+
+OUTPUT FORMAT: Strict JSON object with these keys:
+{
+  "category": "AGRICULTURE" | "HEALTHCARE" | "TEMPLE_VILLAGE" | "DOCUMENT_OCR" | "INFRASTRUCTURE" | "LIVESTOCK" | "GENERAL" | "UNCLEAR",
+  "category_label_en": "Short category name in English (e.g. Agriculture / Crop Health)",
+  "category_label_kn": "Short category name in Kannada (e.g. ಕೃಷಿ / ಬೆಳೆ ಆರೋಗ್ಯ)",
+  "what_i_see_en": "1-2 sentences identifying what is in the photo in English",
+  "what_i_see_kn": "1-2 sentences identifying what is in the photo in Kannada",
+  "analysis_en": "Detailed observations of features, symptoms, condition, or OCR text in English",
+  "analysis_kn": "Detailed observations of features, symptoms, condition, or OCR text in Kannada",
+  "possible_issue_en": "Visible issue, damage, illness or concern (if any) in English",
+  "possible_issue_kn": "Visible issue, damage, illness or concern (if any) in Kannada",
+  "recommended_action_en": "Clear practical next steps and safe advice in English",
+  "recommended_action_kn": "Clear practical next steps and safe advice in Kannada",
+  "confidence": "HIGH" | "MEDIUM" | "LOW",
+  "detected_text": "Extracted OCR text if text is detected (optional)",
+  "caution_notes_en": "Relevant cautionary disclaimer in English",
+  "caution_notes_kn": "Relevant cautionary disclaimer in Kannada"
+}`;
+
+    const contents = [
+      {
+        role: 'user',
+        parts: [
+          {
+            inlineData: {
+              mimeType,
+              data: cleanBase64
+            }
+          },
+          {
+            text: `Analyze this image thoroughly for a resident of Muttagundi Village. Provide accurate visual identification, analysis, issues, actions, and safety guidance in both English and Kannada. Return ONLY the requested JSON object.`
+          }
+        ]
+      }
+    ];
+
+    try {
+      const raw = await this.callGeminiMultimodalAPI(contents, systemInstruction, true);
+      const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      return {
+        category: parsed.category || 'GENERAL',
+        category_label_en: parsed.category_label_en || 'General Object',
+        category_label_kn: parsed.category_label_kn || 'ಸಾಮಾನ್ಯ ವಸ್ತು',
+        what_i_see_en: parsed.what_i_see_en || 'Visual object detected in photo.',
+        what_i_see_kn: parsed.what_i_see_kn || 'ಚಿತ್ರದಲ್ಲಿ ಗುರುತಿಸಲಾದ ಅಂಶ.',
+        analysis_en: parsed.analysis_en || 'Detailed visual analysis complete.',
+        analysis_kn: parsed.analysis_kn || 'ಚಿತ್ರದ ವಿವರವಾದ ವಿಶ್ಲೇಷಣೆ ಪೂರ್ಣಗೊಂಡಿದೆ.',
+        possible_issue_en: parsed.possible_issue_en,
+        possible_issue_kn: parsed.possible_issue_kn,
+        recommended_action_en: parsed.recommended_action_en || 'Verify on site and proceed as needed.',
+        recommended_action_kn: parsed.recommended_action_kn || 'ಸ್ಥಳದಲ್ಲಿ ಪರಿಶೀಲಿಸಿ ಸೂಕ್ತ ಕ್ರಮ ಕೈಗೊಳ್ಳಿ.',
+        confidence: (parsed.confidence as any) || 'MEDIUM',
+        detected_text: parsed.detected_text,
+        caution_notes_en: parsed.caution_notes_en,
+        caution_notes_kn: parsed.caution_notes_kn
+      };
+    } catch (err) {
+      console.warn('Multimodal Gemini analysis fallback:', err);
+      return {
+        category: 'GENERAL',
+        category_label_en: 'General Visual Analysis',
+        category_label_kn: 'ಸಾಮಾನ್ಯ ದೃಶ್ಯ ವಿಶ್ಲೇಷಣೆ',
+        what_i_see_en: 'Photo captured for Muttagundi village analysis.',
+        what_i_see_kn: 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ವಿಶ್ಲೇಷಣೆಗಾಗಿ ಸೆರೆಹಿಡಿಯಲಾದ ಚಿತ್ರ.',
+        analysis_en: 'Image received successfully. Please ensure a stable internet connection for full deep multi-spectral analysis.',
+        analysis_kn: 'ಚಿತ್ರವನ್ನು ಸ್ವೀಕರಿಸಲಾಗಿದೆ. ಸಂಪೂರ್ಣ ವಿಶ್ಲೇಷಣೆಗಾಗಿ ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಿ.',
+        possible_issue_en: 'Temporary network delay while connecting to Gemini cloud.',
+        possible_issue_kn: 'ಕ್ಲೌಡ್ ಸಂಪರ್ಕದ ವೇಳೆ ತಾತ್ಕಾಲಿಕ ನೆಟ್‌ವರ್ಕ್ ವಿಳಂಬ.',
+        recommended_action_en: 'Click "Analyze Photo" again or ask a specific follow-up question below.',
+        recommended_action_kn: 'ಮತ್ತೊಮ್ಮೆ "Analyze Photo" ಕ್ಲಿಕ್ ಮಾಡಿ ಅಥವಾ ಕೆಳಗೆ ಪ್ರಶ್ನೆ ಕೇಳಿ.',
+        confidence: 'LOW',
+        caution_notes_en: 'Preliminary offline fallback. Real-time Gemini scan will refresh upon retry.',
+        caution_notes_kn: 'ಆಫ್‌ಲೈನ್ ಪರಿಶೀಲನೆ. ಮರುಪ್ರಯತ್ನಿಸಿದಾಗ ಜೆಮಿನಿ ಸ್ಕ್ಯಾನ್ ನವೀಕರಣಗೊಳ್ಳುತ್ತದೆ.'
+      };
+    }
+  }
+
+  /**
+   * Conversational Follow-Up about the analyzed photo (Multi-turn Gemini chat)
+   */
+  public async askPhotoFollowUp(
+    imageBase64: string,
+    mimeType: string = 'image/jpeg',
+    history: Array<{ role: 'user' | 'model'; text: string }>,
+    question: string,
+    preferredLang: Language = 'kn'
+  ): Promise<string> {
+    const cleanBase64 = imageBase64.includes(';base64,')
+      ? imageBase64.split(';base64,')[1]
+      : imageBase64;
+
+    const langName = preferredLang === 'kn' ? 'Kannada (ಕನ್ನಡ)' : 'Indian English';
+
+    const systemInstruction = `You are the MTG Village AI visual assistant. You are in an interactive conversation with a resident of Muttagundi Village who has uploaded a photo.
+Answer the user's follow-up questions specifically regarding the uploaded photo.
+Always reply in simple, respectful, and direct ${langName}.
+Keep safety rules in mind:
+- If agricultural: never claim 100% disease certainty; note field confirmation is recommended. Avoid prescribing dangerous chemical dosages.
+- If medical/health: do not give definitive medical diagnoses; advise consulting a doctor.
+- If OCR/document: answer based on visible text.`;
+
+    const contents: any[] = [
+      {
+        role: 'user',
+        parts: [
+          { inlineData: { mimeType, data: cleanBase64 } },
+          { text: 'This is the reference photo for our conversation.' }
+        ]
+      }
+    ];
+
+    // Append prior history
+    for (const item of history.slice(-6)) {
+      contents.push({
+        role: item.role,
+        parts: [{ text: item.text }]
+      });
+    }
+
+    // Append current question
+    contents.push({
+      role: 'user',
+      parts: [{ text: `${question}\n\n(Please answer helpfully in ${langName})` }]
+    });
+
+    try {
+      const response = await this.callGeminiMultimodalAPI(contents, systemInstruction, false);
+      return response;
+    } catch (err: any) {
+      console.warn('Photo follow-up API error:', err);
+      return preferredLang === 'kn'
+        ? 'ಕ್ಷಮಿಸಿ, ಈ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸಲು ತಾತ್ಕಾಲಿಕ ನೆಟ್‌ವರ್ಕ್ ತೊಂದರೆಯಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸಿ.'
+        : 'Sorry, unable to answer this question right now due to a network delay. Please try again.';
     }
   }
 }

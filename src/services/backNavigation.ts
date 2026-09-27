@@ -16,7 +16,8 @@ export type MainSection =
   | 'admin'
   | 'search'
   | 'notifications'
-  | 'settings';
+  | 'settings'
+  | 'photo_analyzer';
 
 type ModalCloseHandler = () => void;
 

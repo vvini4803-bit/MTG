@@ -32,6 +32,7 @@ import { AnalyticsScreen } from './views/AnalyticsScreen';
 import { SearchScreen } from './views/SearchScreen';
 import { NotificationsScreen } from './views/NotificationsScreen';
 import { SettingsScreen } from './views/SettingsScreen';
+import { PhotoAnalyzerScreen } from './views/PhotoAnalyzerScreen';
 import { InAppNotificationToast } from './components/notifications/InAppNotificationToast';
 import { NotificationPermissionBanner } from './components/notifications/NotificationPermissionBanner';
 import { notificationService } from './services/notificationService';
@@ -106,7 +107,8 @@ export type MainSection =
   | 'admin'
   | 'search'
   | 'notifications'
-  | 'settings';
+  | 'settings'
+  | 'photo_analyzer';
 
 export const App: React.FC = () => {
   const { language, setLanguage, isKannada } = useLanguage();
@@ -447,6 +449,16 @@ export const App: React.FC = () => {
       icon: '🎙️',
       color: '#10B981',
       bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(59, 130, 246, 0.14) 100%)'
+    },
+    {
+      id: 'photo_analyzer' as MainSection,
+      title_en: 'AI PHOTO ANALYZER',
+      title_kn: 'AI ಫೋಟೋ ವಿಶ್ಲೇಷಕ',
+      subtitle_en: 'Universal Gemini visual scanner & expert AI',
+      subtitle_kn: 'ಫೋಟೋ ತೆಗೆಯಿರಿ ಅಥವಾ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ — ಪೂರ್ಣ ವಿವರ',
+      icon: '🔍',
+      color: '#06B6D4',
+      bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(14, 165, 233, 0.1) 100%)'
     }
   ];
 
@@ -1882,6 +1894,15 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {/* ============================================================ */}
+        {/* 🔍 SECTION: MTG AI PHOTO ANALYZER                            */}
+        {/* ============================================================ */}
+        {currentSection === 'photo_analyzer' && (
+          <div>
+            <PhotoAnalyzerScreen onBack={() => navigateTo('home')} />
+          </div>
+        )}
+
         {/* 🌐 GLOBAL VILLAGE FOOTER */}
         <footer
           style={{
@@ -2092,6 +2113,7 @@ export const App: React.FC = () => {
           else if (tab === 'sports') navigateTo('sports');
           else if (tab === 'agriculture') navigateTo('agriculture');
           else if (tab === 'temples') navigateTo('temples');
+          else if (tab === 'photo_analyzer') navigateTo('photo_analyzer');
           else navigateTo('home');
         }}
       />

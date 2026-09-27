@@ -464,7 +464,8 @@ export type ViewTab =
   | 'admin'
   | 'analytics'
   | 'map'
-  | 'village_3d';
+  | 'village_3d'
+  | 'photo_analyzer';
 
 export interface Conversation {
   id: string;

@@ -49,6 +49,7 @@ export const MoreDrawer: React.FC<MoreDrawerProps> = ({
     {
       title: isKannada ? 'ಗ್ರಾಮ ಸೇವೆಗಳು & ಜ್ಞಾನ' : 'Village Services & Hubs',
       items: [
+        { id: 'photo_analyzer', label: isKannada ? 'AI ಫೋಟೋ ವಿಶ್ಲೇಷಕ (Gemini)' : 'AI Photo Analyzer (Gemini)', icon: Camera, color: '#06B6D4' },
         { id: 'agriculture', label: isKannada ? 'ಕೃಷಿ ಮಾಹಿತಿ ಕೇಂದ್ರ' : 'Agriculture Hub', icon: Wheat, color: '#10B981' },
         { id: 'temples', label: isKannada ? 'ದೇವಸ್ಥಾನ & ಸಂಸ್ಕೃತಿ' : 'Temples & Culture', icon: Landmark, color: '#F59E0B' },
         { id: 'map', label: isKannada ? 'ಗ್ರಾಮ ನಕ್ಷೆ & ಜಿಪಿಎಸ್' : 'Village Map & GPS', icon: MapIcon, color: '#3B82F6' },
