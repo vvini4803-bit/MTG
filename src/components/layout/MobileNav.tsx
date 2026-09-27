@@ -1,7 +1,7 @@
 import React from 'react';
 import { ViewTab } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
-import { Home, Newspaper, Calendar, Trophy, User } from 'lucide-react';
+import { Home, Camera, Calendar, Trophy, User } from 'lucide-react';
 
 interface MobileNavProps {
   currentTab: ViewTab;
@@ -13,7 +13,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentTab, onSelectTab })
 
   const tabs = [
     { id: 'home', label: isKannada ? 'ಮುಖಪುಟ' : 'Home', icon: Home },
-    { id: 'news', label: isKannada ? 'ಸುದ್ದಿ' : 'News', icon: Newspaper },
+    { id: 'photo_analyzer', label: isKannada ? 'AI ಫೋಟೋ' : 'AI Photo', icon: Camera },
     { id: 'events', label: isKannada ? 'ಕಾರ್ಯಕ್ರಮ' : 'Events', icon: Calendar },
     { id: 'sports', label: isKannada ? 'ಕ್ರೀಡೆ' : 'Sports', icon: Trophy },
     { id: 'profile', label: isKannada ? 'ಪ್ರೊಫೈಲ್' : 'Profile', icon: User }

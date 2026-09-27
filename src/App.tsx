@@ -1994,13 +1994,13 @@ export const App: React.FC = () => {
           <span>{isKannada ? 'ಮುಖಪುಟ' : 'Home'}</span>
         </button>
 
-        {/* Tab 2: News */}
+        {/* Tab 2: AI Photo Analyzer */}
         <button
-          onClick={() => navigateTo('news')}
+          onClick={() => navigateTo('photo_analyzer')}
           style={{
             background: 'none',
             border: 'none',
-            color: currentSection === 'news' ? '#10B981' : '#94A3B8',
+            color: currentSection === 'photo_analyzer' ? '#06B6D4' : '#94A3B8',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -2010,10 +2010,23 @@ export const App: React.FC = () => {
             cursor: 'pointer',
             padding: '4px 8px'
           }}
+          title={isKannada ? 'AI ಫೋಟೋ ವಿಶ್ಲೇಷಕ' : 'AI Photo Analyzer'}
         >
-          <Newspaper size={22} color={currentSection === 'news' ? '#10B981' : '#94A3B8'} />
-          <span>{isKannada ? 'ಸುದ್ದಿ' : 'News'}</span>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Camera size={22} color={currentSection === 'photo_analyzer' ? '#06B6D4' : '#94A3B8'} />
+            <Sparkles
+              size={11}
+              color={currentSection === 'photo_analyzer' ? '#38BDF8' : '#64748B'}
+              style={{
+                position: 'absolute',
+                top: -3,
+                right: -6
+              }}
+            />
+          </div>
+          <span>{isKannada ? 'AI ಫೋಟೋ' : 'AI Photo'}</span>
         </button>
+
 
         {/* Tab 3: Events */}
         <button
