@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
-import { X, UserPlus, LogIn, Mail, Lock, User, ArrowRight, CheckCircle2, ShieldCheck, LogOut } from 'lucide-react';
+import { X, UserPlus, LogIn, Mail, Lock, User } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -16,9 +16,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const { isKannada } = useLanguage();
   const {
-    currentUser,
-    logout,
-    loginWithDemo,
     signInWithEmail,
     signUpWithEmail,
     unverifiedEmail,
@@ -54,20 +51,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsSubmitting(true);
     setErrorMsg(null);
 
-    try {
-      const res = await signUpWithEmail(email, password);
-      if (res.success) {
-        onClose();
-      } else if (res.unverifiedEmail) {
-        setVerificationEmail(res.unverifiedEmail);
-        setUnverifiedEmail(res.unverifiedEmail);
-      } else if (res.error) {
-        setErrorMsg(res.error);
-      }
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Registration error');
-    } finally {
-      setIsSubmitting(false);
+    const res = await signUpWithEmail(email, password);
+    setIsSubmitting(false);
+
+    if (res.success) {
+      onClose();
+    } else if (res.unverifiedEmail) {
+      setVerificationEmail(res.unverifiedEmail);
+      setUnverifiedEmail(res.unverifiedEmail);
+    } else if (res.error) {
+      setErrorMsg(res.error);
     }
   };
 
@@ -75,27 +68,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು ಇಮೇಲ್ ಮತ್ತು ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ' : 'Please enter email and password');
+      setErrorMsg('Email or password is incorrect');
       return;
     }
 
     setIsSubmitting(true);
     setErrorMsg(null);
 
-    try {
-      const res = await signInWithEmail(email, password);
-      if (res.unverifiedEmail) {
-        setVerificationEmail(res.unverifiedEmail);
-        setUnverifiedEmail(res.unverifiedEmail);
-      } else if (res.error) {
-        setErrorMsg(res.error);
-      } else if (res.success) {
-        onClose();
-      }
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Sign in error');
-    } finally {
-      setIsSubmitting(false);
+    const res = await signInWithEmail(email, password);
+    setIsSubmitting(false);
+
+    if (res.unverifiedEmail) {
+      setVerificationEmail(res.unverifiedEmail);
+      setUnverifiedEmail(res.unverifiedEmail);
+    } else if (res.error) {
+      setErrorMsg(res.error);
+    } else if (res.success) {
+      onClose();
     }
   };
 
@@ -108,17 +97,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsResetting(true);
     setErrorMsg(null);
     setResetMsg(null);
-    try {
-      const res = await sendPasswordReset(email);
-      if (res.success) {
-        setResetMsg(res.message);
-      } else {
-        setErrorMsg(res.message);
-      }
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Could not send reset email');
-    } finally {
-      setIsResetting(false);
+    const res = await sendPasswordReset(email);
+    setIsResetting(false);
+    if (res.success) {
+      setResetMsg(res.message);
+    } else {
+      setErrorMsg(res.message);
     }
   };
 
@@ -156,16 +140,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             />
             <div>
               <h2 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
-                {currentUser
-                  ? (isKannada ? 'ಖಾತೆ ಮಾಹಿತಿ' : 'Active Account')
-                  : verificationEmail
+                {verificationEmail
                   ? (isKannada ? 'ಇಮೇಲ್ ಪರಿಶೀಲನೆ' : 'Email Verification')
                   : activeTab === 'REGISTER'
                   ? (isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಸದಸ್ಯತ್ವ' : 'Join Community')
                   : (isKannada ? 'ಲಾಗಿನ್ / ಸೈನ್ ಇನ್' : 'Resident Sign In')}
               </h2>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                {isKannada ? 'MTG ಗ್ರಾಮ ವೇದಿಕೆ ಅಧಿಕೃತ ಪ್ರವೇಶ' : 'MTG Official Village Access'}
+                {isKannada ? 'ಗ್ರಾಮ ವೇದಿಕೆ ಅಧಿಕೃತ ಪ್ರವೇಶ' : 'Official Grama Platform Access'}
               </p>
             </div>
           </div>
@@ -188,110 +170,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </div>
 
-        {/* ALREADY LOGGED IN SCREEN */}
-        {currentUser ? (
-          <div style={{ textAlign: 'center', padding: '12px 4px' }}>
-            <div style={{ position: 'relative', width: '76px', height: '76px', margin: '0 auto 16px' }}>
-              <img
-                src={currentUser.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentUser.name)}`}
-                alt={currentUser.name}
-                style={{
-                  width: '76px',
-                  height: '76px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '3px solid #10B981',
-                  boxShadow: '0 4px 20px rgba(16, 185, 129, 0.45)'
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: '0',
-                  right: '0',
-                  background: '#10B981',
-                  borderRadius: '50%',
-                  width: '24px',
-                  height: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid #0F1D36'
-                }}
-              >
-                <CheckCircle2 size={14} color="#FFFFFF" />
-              </div>
-            </div>
-
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '4px' }}>
-              {currentUser.name}
-            </h3>
-
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
-                padding: '4px 12px',
-                borderRadius: '999px',
-                color: '#6EE7B7',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                marginBottom: '14px'
-              }}
-            >
-              <ShieldCheck size={14} />
-              <span>{currentUser.role.replace('_', ' ')}</span>
-            </div>
-
-            <p style={{ fontSize: '0.85rem', color: '#94A3B8', marginBottom: '22px', lineHeight: 1.5 }}>
-              {currentUser.email ? `Email: ${currentUser.email}` : currentUser.phone ? `Phone: ${currentUser.phone}` : ''}
-              <br />
-              <strong style={{ color: '#10B981' }}>
-                {isKannada ? '✓ ನೀವು ಈಗಾಗಲೇ ಯಶಸ್ವಿಯಾಗಿ ಲಾಗಿನ್ ಆಗಿದ್ದೀರಿ!' : '✓ You are already signed in successfully!'}
-              </strong>
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn-primary"
-                style={{ width: '100%', height: '48px', fontSize: '0.95rem', fontWeight: 800 }}
-              >
-                <span>{isKannada ? 'ಆಪ್‌ಗೆ ಮುಂದುವರಿಯಿರಿ' : 'Continue to Village App'}</span>
-                <ArrowRight size={18} />
-              </button>
-
-              <button
-                type="button"
-                onClick={async () => {
-                  await logout();
-                  setActiveTab('LOGIN');
-                  setErrorMsg(null);
-                }}
-                className="btn-secondary"
-                style={{
-                  width: '100%',
-                  height: '44px',
-                  fontSize: '0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  color: '#EF4444',
-                  borderColor: 'rgba(239, 68, 68, 0.3)'
-                }}
-              >
-                <LogOut size={16} />
-                <span>{isKannada ? 'ಬೇರೆ ಖಾತೆಗೆ ಬದಲಾಯಿಸಿ / ಲಾಗ್‌ಔಟ್' : 'Sign Out / Switch Account'}</span>
-              </button>
-            </div>
-          </div>
-        ) : verificationEmail ? (
-          /* EMAIL VERIFICATION SCREEN */
+        {/* EMAIL VERIFICATION SCREEN */}
+        {verificationEmail ? (
           <div style={{ textAlign: 'center', padding: '16px 8px' }}>
             <div
               style={{
@@ -314,6 +194,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {isKannada ? 'ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ' : 'Verify Your Email'}
             </h3>
 
+            {/* Exact Required Verification Message */}
             <p
               style={{
                 fontSize: '0.92rem',
@@ -646,33 +527,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </button>
               </form>
             )}
-
-            {/* Quick 1-Click Resident Access Option */}
-            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  loginWithDemo('USER');
-                  onClose();
-                }}
-                className="btn-secondary"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '0.84rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>{isKannada ? 'ಗ್ರಾಮಸ್ಥರಾಗಿ ಮುಂದುವರಿಯಿರಿ (ತ್ವರಿತ ಪ್ರವೇಶ)' : 'Continue as Village Resident (Quick Access)'}</span>
-                <ArrowRight size={15} />
-              </button>
-            </div>
           </>
         )}
       </div>
     </div>
   );
 };
+
