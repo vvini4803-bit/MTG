@@ -288,6 +288,82 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
 
+        {/* 👥 MTG COMMITTEE CARD (Fund • Loans • Interest • Members • AI) */}
+        <div
+          onClick={() => onNavigateTab('committee')}
+          className="glass-card glass-card-interactive card-3d"
+          style={{
+            marginBottom: '32px',
+            padding: '20px 24px',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(245, 158, 11, 0.12) 100%)',
+            border: '1.5px solid rgba(16, 185, 129, 0.4)',
+            borderRadius: '20px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+            transition: 'all 0.25s ease'
+          }}
+          title={isKannada ? 'ಎಂಟಿಜಿ ಸಮಿತಿ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ತೆರೆಯಿರಿ' : 'Open MTG Committee Dashboard'}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div
+              style={{
+                width: '54px',
+                height: '54px',
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.8rem',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                flexShrink: 0
+              }}
+            >
+              🏛️
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
+                  👥 MTG COMMITTEE
+                </h3>
+                <span
+                  style={{
+                    fontSize: '0.68rem',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    background: 'rgba(16, 185, 129, 0.25)',
+                    color: '#34D399',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    fontWeight: 800
+                  }}
+                >
+                  GEMINI AI
+                </span>
+              </div>
+              <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0', fontWeight: 600 }}>
+                {isKannada ? 'ನಿಧಿ • ಸಾಲಗಳು • ಬಡ್ಡಿ • ಸದಸ್ಯರು • AI' : 'Fund • Loans • Interest • Members • AI'}
+              </p>
+            </div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#10B981',
+              fontWeight: 800,
+              fontSize: '0.85rem'
+            }}
+          >
+            <span>{isKannada ? 'ತೆರೆಯಿರಿ' : 'Open'}</span>
+            <ChevronRight size={18} />
+          </div>
+        </div>
+
         {/* 🔴 LIVE NOW SECTION (if any live match or event) */}
         {(liveMatch || liveEvent) && (
           <section style={{ marginBottom: '40px' }}>

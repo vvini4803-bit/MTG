@@ -21,7 +21,15 @@ import {
   Conversation,
   ChatMessage,
   UserBlock,
-  MapLocationItem
+  MapLocationItem,
+  CommitteeMember,
+  CommitteeContribution,
+  CommitteeLoan,
+  LoanRepayment,
+  CommitteeExpense,
+  CommitteeTransaction,
+  CommitteeAuditLog,
+  CommitteeSummary
 } from '../types';
 import {
   SEED_NEWS,
@@ -39,6 +47,12 @@ import {
   SEED_USERS,
   SEED_CONVERSATIONS,
   SEED_MESSAGES,
+  SEED_COMMITTEE_MEMBERS,
+  SEED_COMMITTEE_CONTRIBUTIONS,
+  SEED_COMMITTEE_LOANS,
+  SEED_COMMITTEE_EXPENSES,
+  SEED_COMMITTEE_TRANSACTIONS,
+  SEED_COMMITTEE_AUDIT_LOGS,
   isSuperAdminEmail
 } from './seedData';
 import { VERIFIED_VILLAGE_LOCATIONS } from './defaultMapLocations';
@@ -159,6 +173,12 @@ class DatabaseService {
   private messages: ChatMessage[] = [];
   private userBlocks: UserBlock[] = [];
   private auditLogs: AuditLog[] = [];
+  private committeeMembers: CommitteeMember[] = [];
+  private committeeContributions: CommitteeContribution[] = [];
+  private committeeLoans: CommitteeLoan[] = [];
+  private committeeExpenses: CommitteeExpense[] = [];
+  private committeeTransactions: CommitteeTransaction[] = [];
+  private committeeAuditLogs: CommitteeAuditLog[] = [];
   private isDemoMode: boolean = true;
 
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
@@ -334,6 +354,14 @@ class DatabaseService {
     this.messages = this.loadCollection('messages', SEED_MESSAGES);
     this.userBlocks = this.loadCollection('user_blocks', []);
     this.notifications = this.loadCollection('notifications', []);
+
+    // 🏛️ Initialize MTG Committee Financial Collections
+    this.committeeMembers = this.loadCollection('committee_members', SEED_COMMITTEE_MEMBERS);
+    this.committeeContributions = this.loadCollection('committee_contributions', SEED_COMMITTEE_CONTRIBUTIONS);
+    this.committeeLoans = this.loadCollection('committee_loans', SEED_COMMITTEE_LOANS);
+    this.committeeExpenses = this.loadCollection('committee_expenses', SEED_COMMITTEE_EXPENSES);
+    this.committeeTransactions = this.loadCollection('committee_transactions', SEED_COMMITTEE_TRANSACTIONS);
+    this.committeeAuditLogs = this.loadCollection('committee_audit_logs', SEED_COMMITTEE_AUDIT_LOGS);
 
     // Ensure all stored user updates are auto-verified and have 1-week active status
     this.ensureAutoVerificationAndRetention();
@@ -926,6 +954,44 @@ class DatabaseService {
             this.emit('messages', this.messages);
             this.emit(`messages_${conversationId}`, this.messages.filter((m) => m.conversation_id === conversationId));
             this.emit('unread_messages', this.messages);
+          }
+          break;
+        }
+
+        case 'COMMITTEE_UPDATED': {
+          const { collectionName, item } = envelope.payload || {};
+          if (collectionName && item) {
+            if (collectionName === 'committee_members') {
+              const idx = this.committeeMembers.findIndex((m) => m.id === item.id);
+              if (idx >= 0) this.committeeMembers[idx] = item;
+              else this.committeeMembers.push(item);
+              this.saveCollection('committee_members', this.committeeMembers);
+              this.emit('committee_members', this.committeeMembers);
+            } else if (collectionName === 'committee_contributions') {
+              const idx = this.committeeContributions.findIndex((c) => c.id === item.id);
+              if (idx >= 0) this.committeeContributions[idx] = item;
+              else this.committeeContributions.push(item);
+              this.saveCollection('committee_contributions', this.committeeContributions);
+              this.emit('committee_contributions', this.committeeContributions);
+            } else if (collectionName === 'committee_loans') {
+              const idx = this.committeeLoans.findIndex((l) => l.id === item.id);
+              if (idx >= 0) this.committeeLoans[idx] = item;
+              else this.committeeLoans.push(item);
+              this.saveCollection('committee_loans', this.committeeLoans);
+              this.emit('committee_loans', this.committeeLoans);
+            } else if (collectionName === 'committee_expenses') {
+              const idx = this.committeeExpenses.findIndex((e) => e.id === item.id);
+              if (idx >= 0) this.committeeExpenses[idx] = item;
+              else this.committeeExpenses.push(item);
+              this.saveCollection('committee_expenses', this.committeeExpenses);
+              this.emit('committee_expenses', this.committeeExpenses);
+            } else if (collectionName === 'committee_transactions') {
+              const idx = this.committeeTransactions.findIndex((t) => t.id === item.id);
+              if (idx >= 0) this.committeeTransactions[idx] = item;
+              else this.committeeTransactions = [item, ...this.committeeTransactions];
+              this.saveCollection('committee_transactions', this.committeeTransactions);
+              this.emit('committee_transactions', this.committeeTransactions);
+            }
           }
           break;
         }
@@ -3375,6 +3441,587 @@ class DatabaseService {
       return { success: false, message: 'Invalid JSON format: ' + e.message };
     }
   }
+
+  // ==========================================
+  // 🏛️ MTG COMMITTEE & FINANCIAL MANAGEMENT API
+  // ==========================================
+
+  public getCommitteeSummary(): CommitteeSummary {
+    const totalFundCollected = this.committeeContributions.reduce((acc, c) => acc + (c.amount_paid || 0), 0);
+    const activeLoans = this.committeeLoans.filter((l) => l.status === 'ACTIVE' || l.status === 'PARTIALLY_PAID' || l.status === 'OVERDUE');
+    const activeLoansCount = activeLoans.length;
+    const outstandingLoanAmount = activeLoans.reduce((acc, l) => acc + (l.remaining_principal || 0) + (l.remaining_interest || 0), 0);
+    const interestEarned = this.committeeLoans.reduce((acc, l) => {
+      const repInterest = (l.repayments || []).reduce((rAcc, r) => rAcc + (r.interest_portion || 0), 0);
+      return acc + repInterest;
+    }, 0);
+    const totalExpenses = this.committeeExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
+
+    const totalPrincipalRepaid = this.committeeLoans.reduce((acc, l) => {
+      const repPrincipal = (l.repayments || []).reduce((rAcc, r) => rAcc + (r.principal_portion || 0), 0);
+      return acc + repPrincipal;
+    }, 0);
+
+    const totalLoansIssued = this.committeeLoans.reduce((acc, l) => acc + (l.principal_amount || 0), 0);
+
+    // Verified available balance formula
+    const availableBalance = Math.max(0, totalFundCollected + totalPrincipalRepaid + interestEarned - totalLoansIssued - totalExpenses);
+
+    const currentMonth = new Date().toISOString().substring(0, 7);
+    const currentMonthContribs = this.committeeContributions.filter((c) => c.month === currentMonth || c.month === '2026-09');
+    const pendingContribs = currentMonthContribs.filter((c) => c.status === 'PENDING' || c.amount_paid < c.expected_amount);
+    const pendingContributionsCount = pendingContribs.length;
+    const pendingContributionsAmount = pendingContribs.reduce((acc, c) => acc + Math.max(0, c.expected_amount - c.amount_paid), 0);
+
+    return {
+      totalFundCollected,
+      activeLoansCount,
+      outstandingLoanAmount,
+      interestEarned,
+      totalExpenses,
+      availableBalance,
+      pendingContributionsCount,
+      pendingContributionsAmount,
+      totalMembersCount: this.committeeMembers.length,
+      activeMembersCount: this.committeeMembers.filter((m) => m.status === 'ACTIVE').length,
+      monthlyTarget: this.committeeMembers.filter((m) => m.status === 'ACTIVE').length * 1000
+    };
+  }
+
+  // --- MEMBERS ---
+  public subscribeCommitteeMembers(callback: (members: CommitteeMember[]) => void): () => void {
+    return this.subscribe('committee_members', this.committeeMembers, callback);
+  }
+
+  public async addCommitteeMember(
+    member: Omit<CommitteeMember, 'id' | 'created_at' | 'total_contributed' | 'active_loans_count' | 'outstanding_loan_balance'>,
+    actorId: string,
+    actorName: string
+  ): Promise<CommitteeMember> {
+    const newMember: CommitteeMember = {
+      ...member,
+      id: 'mem_' + Date.now(),
+      total_contributed: 0,
+      active_loans_count: 0,
+      outstanding_loan_balance: 0,
+      created_at: new Date().toISOString()
+    };
+
+    this.committeeMembers = [...this.committeeMembers, newMember];
+    this.saveCollection('committee_members', this.committeeMembers);
+
+    await this.addAuditLog({
+      action: 'ADD_MEMBER',
+      action_kn: 'ಹೊಸ ಸಮಿತಿ ಸದಸ್ಯರನ್ನು ಸೇರಿಸಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      target_id: newMember.id,
+      target_type: 'MEMBER',
+      new_value: `${newMember.name} (${newMember.role})`
+    });
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_members', newMember.id), cleanFirestoreData(newMember)).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_members', item: newMember });
+    return newMember;
+  }
+
+  public async updateCommitteeMember(
+    id: string,
+    updates: Partial<CommitteeMember>,
+    actorId: string,
+    actorName: string
+  ): Promise<CommitteeMember | null> {
+    const idx = this.committeeMembers.findIndex((m) => m.id === id);
+    if (idx === -1) return null;
+
+    const oldMember = this.committeeMembers[idx];
+    const updated: CommitteeMember = { ...oldMember, ...updates };
+    this.committeeMembers[idx] = updated;
+    this.saveCollection('committee_members', [...this.committeeMembers]);
+
+    await this.addAuditLog({
+      action: 'UPDATE_MEMBER',
+      action_kn: 'ಸದಸ್ಯರ ವಿವರ ನವೀಕರಿಸಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      target_id: id,
+      target_type: 'MEMBER',
+      previous_value: JSON.stringify({ role: oldMember.role, status: oldMember.status }),
+      new_value: JSON.stringify({ role: updated.role, status: updated.status })
+    });
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_members', id), cleanFirestoreData(updated), { merge: true }).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_members', item: updated });
+    return updated;
+  }
+
+  public async toggleMemberStatus(id: string, actorId: string, actorName: string): Promise<boolean> {
+    const member = this.committeeMembers.find((m) => m.id === id);
+    if (!member) return false;
+    const newStatus = member.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    await this.updateCommitteeMember(id, { status: newStatus }, actorId, actorName);
+    return true;
+  }
+
+  // --- MONTHLY CONTRIBUTIONS ---
+  public subscribeCommitteeContributions(callback: (contributions: CommitteeContribution[]) => void): () => void {
+    return this.subscribe('committee_contributions', this.committeeContributions, callback);
+  }
+
+  public async recordContributionPayment(params: {
+    contributionId?: string;
+    memberId: string;
+    month: string;
+    amount: number;
+    referenceId?: string;
+    receiptUrl?: string;
+    notes?: string;
+    collectedBy: string;
+  }, actorId: string, actorName: string): Promise<CommitteeContribution> {
+    const member = this.committeeMembers.find((m) => m.id === params.memberId);
+    const memberName = member ? member.name : 'Unknown Member';
+
+    let item: CommitteeContribution;
+    if (params.contributionId) {
+      const idx = this.committeeContributions.findIndex((c) => c.id === params.contributionId);
+      if (idx >= 0) {
+        item = {
+          ...this.committeeContributions[idx],
+          amount_paid: params.amount,
+          status: 'PAID',
+          payment_date: new Date().toISOString().split('T')[0],
+          reference_id: params.referenceId || 'REF-' + Date.now().toString().substring(7),
+          receipt_url: params.receiptUrl,
+          notes: params.notes,
+          collected_by: params.collectedBy
+        };
+        this.committeeContributions[idx] = item;
+      } else {
+        item = this.createContributionRecord(params, memberName);
+        this.committeeContributions.push(item);
+      }
+    } else {
+      const existing = this.committeeContributions.find((c) => c.member_id === params.memberId && c.month === params.month);
+      if (existing) {
+        existing.amount_paid = params.amount;
+        existing.status = 'PAID';
+        existing.payment_date = new Date().toISOString().split('T')[0];
+        existing.reference_id = params.referenceId || 'REF-' + Date.now().toString().substring(7);
+        existing.receipt_url = params.receiptUrl;
+        existing.notes = params.notes;
+        existing.collected_by = params.collectedBy;
+        item = existing;
+      } else {
+        item = this.createContributionRecord(params, memberName);
+        this.committeeContributions.push(item);
+      }
+    }
+
+    // Update member's total contribution
+    if (member) {
+      member.total_contributed = (member.total_contributed || 0) + params.amount;
+      this.saveCollection('committee_members', [...this.committeeMembers]);
+    }
+
+    this.saveCollection('committee_contributions', [...this.committeeContributions]);
+
+    // Record Transaction
+    await this.addTransaction({
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      member_id: params.memberId,
+      member_name: memberName,
+      type: 'FUND_CONTRIBUTION',
+      type_kn: 'ಮಾಸಿಕ ನಿಧಿ ಪಾವತಿ',
+      amount: params.amount,
+      direction: 'IN',
+      description: `Monthly fund contribution for ${params.month} by ${memberName}`,
+      reference_id: params.referenceId || item.reference_id,
+      receipt_url: params.receiptUrl,
+      created_by: actorName,
+      status: 'COMPLETED'
+    });
+
+    await this.addAuditLog({
+      action: 'RECORD_CONTRIBUTION',
+      action_kn: 'ಮಾಸಿಕ ನಿಧಿ ಪಾವತಿ ದಾಖಲಿಸಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      target_id: item.id,
+      target_type: 'CONTRIBUTION',
+      new_value: `₹${params.amount} by ${memberName} for ${params.month}`
+    });
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_contributions', item.id), cleanFirestoreData(item)).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_contributions', item });
+    return item;
+  }
+
+  private createContributionRecord(params: {
+    memberId: string;
+    month: string;
+    amount: number;
+    referenceId?: string;
+    receiptUrl?: string;
+    notes?: string;
+    collectedBy: string;
+  }, memberName: string): CommitteeContribution {
+    return {
+      id: 'cnt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      member_id: params.memberId,
+      member_name: memberName,
+      month: params.month,
+      month_label_en: params.month,
+      month_label_kn: params.month,
+      expected_amount: 1000,
+      amount_paid: params.amount,
+      status: 'PAID',
+      payment_date: new Date().toISOString().split('T')[0],
+      reference_id: params.referenceId || 'REF-' + Date.now().toString().substring(7),
+      receipt_url: params.receiptUrl,
+      notes: params.notes,
+      collected_by: params.collectedBy,
+      created_at: new Date().toISOString()
+    };
+  }
+
+  // --- LOANS ---
+  public subscribeCommitteeLoans(callback: (loans: CommitteeLoan[]) => void): () => void {
+    return this.subscribe('committee_loans', this.committeeLoans, callback);
+  }
+
+  public async createLoan(params: {
+    memberId: string;
+    principalAmount: number;
+    interestRatePercent: number; // e.g. 2 for 2% monthly
+    interestType?: 'SIMPLE_MONTHLY' | 'FLAT_YEARLY';
+    tenureMonths: number;
+    purpose?: string;
+  }, actorId: string, actorName: string): Promise<CommitteeLoan> {
+    const member = this.committeeMembers.find((m) => m.id === params.memberId);
+    if (!member) throw new Error('Member not found');
+
+    const totalInterest = Math.round(params.principalAmount * (params.interestRatePercent / 100) * params.tenureMonths);
+    const totalPayable = params.principalAmount + totalInterest;
+    const monthlyDue = Math.round(totalPayable / params.tenureMonths);
+
+    const loanDate = new Date().toISOString().split('T')[0];
+    const dueDate = new Date(Date.now() + params.tenureMonths * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const newLoan: CommitteeLoan = {
+      id: 'loan_' + Date.now(),
+      loan_number: 'LN-' + new Date().getFullYear() + '-' + String(this.committeeLoans.length + 1).padStart(3, '0'),
+      member_id: params.memberId,
+      member_name: member.name,
+      principal_amount: params.principalAmount,
+      loan_date: loanDate,
+      interest_rate_percent: params.interestRatePercent,
+      interest_type: params.interestType || 'SIMPLE_MONTHLY',
+      tenure_months: params.tenureMonths,
+      monthly_due_amount: monthlyDue,
+      due_date: dueDate,
+      total_interest_payable: totalInterest,
+      total_amount_payable: totalPayable,
+      amount_paid: 0,
+      remaining_principal: params.principalAmount,
+      remaining_interest: totalInterest,
+      status: 'ACTIVE',
+      purpose: params.purpose || 'Agricultural / Household Development',
+      repayments: [],
+      created_at: new Date().toISOString()
+    };
+
+    member.active_loans_count = (member.active_loans_count || 0) + 1;
+    member.outstanding_loan_balance = (member.outstanding_loan_balance || 0) + totalPayable;
+    this.saveCollection('committee_members', [...this.committeeMembers]);
+
+    this.committeeLoans = [newLoan, ...this.committeeLoans];
+    this.saveCollection('committee_loans', this.committeeLoans);
+
+    // Record Transaction (LOAN_ISSUED)
+    await this.addTransaction({
+      date: loanDate,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      member_id: member.id,
+      member_name: member.name,
+      type: 'LOAN_ISSUED',
+      type_kn: 'ಸಾಲ ಮಂಜೂರು',
+      amount: params.principalAmount,
+      direction: 'OUT',
+      description: `Loan ${newLoan.loan_number} issued to ${member.name} for ${newLoan.purpose}`,
+      reference_id: newLoan.loan_number,
+      created_by: actorName,
+      status: 'COMPLETED'
+    });
+
+    await this.addAuditLog({
+      action: 'CREATE_LOAN',
+      action_kn: 'ಹೊಸ ಸಾಲ ನೀಡಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      target_id: newLoan.id,
+      target_type: 'LOAN',
+      new_value: `${newLoan.loan_number} - ₹${params.principalAmount} to ${member.name}`
+    });
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_loans', newLoan.id), cleanFirestoreData(newLoan)).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_loans', item: newLoan });
+    return newLoan;
+  }
+
+  public async recordLoanRepayment(params: {
+    loanId: string;
+    amount: number;
+    principalPortion?: number;
+    interestPortion?: number;
+    referenceId?: string;
+    receiptUrl?: string;
+    notes?: string;
+    receivedBy: string;
+  }, actorId: string, actorName: string): Promise<LoanRepayment> {
+    const loan = this.committeeLoans.find((l) => l.id === params.loanId);
+    if (!loan) throw new Error('Loan not found');
+
+    const member = this.committeeMembers.find((m) => m.id === loan.member_id);
+
+    // Calculate portion split if not explicitly provided
+    let principalPortion = params.principalPortion;
+    let interestPortion = params.interestPortion;
+    if (principalPortion === undefined || interestPortion === undefined) {
+      const remainingInt = loan.remaining_interest || 0;
+      if (params.amount <= remainingInt) {
+        interestPortion = params.amount;
+        principalPortion = 0;
+      } else {
+        interestPortion = remainingInt;
+        principalPortion = params.amount - remainingInt;
+      }
+    }
+
+    const repayment: LoanRepayment = {
+      id: 'rep_' + Date.now(),
+      loan_id: loan.id,
+      member_id: loan.member_id,
+      member_name: loan.member_name,
+      amount: params.amount,
+      principal_portion: principalPortion,
+      interest_portion: interestPortion,
+      payment_date: new Date().toISOString().split('T')[0],
+      reference_id: params.referenceId || 'REP-' + Date.now().toString().substring(7),
+      receipt_url: params.receiptUrl,
+      received_by: params.receivedBy,
+      notes: params.notes,
+      created_at: new Date().toISOString()
+    };
+
+    loan.repayments = [...(loan.repayments || []), repayment];
+    loan.amount_paid += params.amount;
+    loan.remaining_principal = Math.max(0, loan.remaining_principal - principalPortion);
+    loan.remaining_interest = Math.max(0, loan.remaining_interest - interestPortion);
+
+    if (loan.remaining_principal === 0 && loan.remaining_interest === 0) {
+      loan.status = 'FULLY_PAID';
+      if (member) {
+        member.active_loans_count = Math.max(0, (member.active_loans_count || 1) - 1);
+      }
+    } else {
+      loan.status = 'PARTIALLY_PAID';
+    }
+
+    if (member) {
+      member.outstanding_loan_balance = Math.max(0, (member.outstanding_loan_balance || 0) - params.amount);
+      this.saveCollection('committee_members', [...this.committeeMembers]);
+    }
+
+    this.saveCollection('committee_loans', [...this.committeeLoans]);
+
+    // Record Transactions
+    if (principalPortion > 0) {
+      await this.addTransaction({
+        date: repayment.payment_date,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        member_id: loan.member_id,
+        member_name: loan.member_name,
+        type: 'LOAN_REPAYMENT',
+        type_kn: 'ಸಾಲ ಅಸಲು ಮರುಪಾವತಿ',
+        amount: principalPortion,
+        direction: 'IN',
+        description: `Principal repayment on ${loan.loan_number} by ${loan.member_name}`,
+        reference_id: repayment.reference_id,
+        receipt_url: params.receiptUrl,
+        created_by: actorName,
+        status: 'COMPLETED'
+      });
+    }
+
+    if (interestPortion > 0) {
+      await this.addTransaction({
+        date: repayment.payment_date,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        member_id: loan.member_id,
+        member_name: loan.member_name,
+        type: 'INTEREST_PAYMENT',
+        type_kn: 'ಸಾಲ ಬಡ್ಡಿ ಸಂಗ್ರಹ',
+        amount: interestPortion,
+        direction: 'IN',
+        description: `Interest collection on ${loan.loan_number} by ${loan.member_name}`,
+        reference_id: repayment.reference_id + '-INT',
+        receipt_url: params.receiptUrl,
+        created_by: actorName,
+        status: 'COMPLETED'
+      });
+    }
+
+    await this.addAuditLog({
+      action: 'RECORD_REPAYMENT',
+      action_kn: 'ಸಾಲ ಮರುಪಾವತಿ ದಾಖಲಿಸಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      target_id: loan.id,
+      target_type: 'LOAN',
+      new_value: `₹${params.amount} on ${loan.loan_number} (Status: ${loan.status})`
+    });
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_loans', loan.id), cleanFirestoreData(loan), { merge: true }).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_loans', item: loan });
+    return repayment;
+  }
+
+  // --- EXPENSES ---
+  public subscribeCommitteeExpenses(callback: (expenses: CommitteeExpense[]) => void): () => void {
+    return this.subscribe('committee_expenses', this.committeeExpenses, callback);
+  }
+
+  public async addExpense(
+    expense: Omit<CommitteeExpense, 'id' | 'created_at'>,
+    actorId: string,
+    actorName: string
+  ): Promise<CommitteeExpense> {
+    const newExpense: CommitteeExpense = {
+      ...expense,
+      id: 'exp_' + Date.now(),
+      created_at: new Date().toISOString()
+    };
+
+    this.committeeExpenses = [newExpense, ...this.committeeExpenses];
+    this.saveCollection('committee_expenses', this.committeeExpenses);
+
+    // Record Transaction
+    await this.addTransaction({
+      date: newExpense.date,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'EXPENSE',
+      type_kn: 'ಸಮಿತಿ ವೆಚ್ಚ',
+      amount: newExpense.amount,
+      direction: 'OUT',
+      description: `[${newExpense.category}] ${newExpense.description}`,
+      reference_id: newExpense.id,
+      receipt_url: newExpense.receipt_url,
+      created_by: actorName,
+      status: 'COMPLETED'
+    });
+
+    await this.addAuditLog({
+      action: 'ADD_EXPENSE',
+      action_kn: 'ಹೊಸ ವೆಚ್ಚ ದಾಖಲಿಸಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      target_id: newExpense.id,
+      target_type: 'EXPENSE',
+      new_value: `₹${newExpense.amount} for ${newExpense.description}`
+    });
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_expenses', newExpense.id), cleanFirestoreData(newExpense)).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_expenses', item: newExpense });
+    return newExpense;
+  }
+
+  public async deleteExpense(expenseId: string, actorId: string, actorName: string): Promise<boolean> {
+    const idx = this.committeeExpenses.findIndex((e) => e.id === expenseId);
+    if (idx === -1) return false;
+    const target = this.committeeExpenses[idx];
+    this.committeeExpenses = this.committeeExpenses.filter((e) => e.id !== expenseId);
+    this.saveCollection('committee_expenses', this.committeeExpenses);
+
+    await this.addAuditLog({
+      action: 'DELETE_EXPENSE',
+      action_kn: 'ವೆಚ್ಚ ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      target_id: expenseId,
+      target_type: 'EXPENSE',
+      previous_value: `₹${target.amount} - ${target.description}`
+    });
+
+    if (isFirebaseConfigured && db) {
+      deleteDoc(doc(db, 'committee_expenses', expenseId)).catch(() => {});
+    }
+
+    return true;
+  }
+
+  // --- TRANSACTIONS ---
+  public subscribeCommitteeTransactions(callback: (txns: CommitteeTransaction[]) => void): () => void {
+    return this.subscribe('committee_transactions', this.committeeTransactions, callback);
+  }
+
+  public async addTransaction(txn: Omit<CommitteeTransaction, 'id' | 'created_at'>): Promise<CommitteeTransaction> {
+    const newTxn: CommitteeTransaction = {
+      ...txn,
+      id: 'txn_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      created_at: new Date().toISOString()
+    };
+
+    this.committeeTransactions = [newTxn, ...this.committeeTransactions];
+    this.saveCollection('committee_transactions', this.committeeTransactions);
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_transactions', newTxn.id), cleanFirestoreData(newTxn)).catch(() => {});
+    }
+
+    return newTxn;
+  }
+
+  // --- AUDIT LOGS ---
+  public subscribeCommitteeAuditLogs(callback: (logs: CommitteeAuditLog[]) => void): () => void {
+    return this.subscribe('committee_audit_logs', this.committeeAuditLogs, callback);
+  }
+
+  public async addAuditLog(log: Omit<CommitteeAuditLog, 'id' | 'timestamp'>): Promise<CommitteeAuditLog> {
+    const newLog: CommitteeAuditLog = {
+      ...log,
+      id: 'audit_' + Date.now(),
+      timestamp: new Date().toISOString()
+    };
+
+    this.committeeAuditLogs = [newLog, ...this.committeeAuditLogs];
+    this.saveCollection('committee_audit_logs', this.committeeAuditLogs);
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_audit_logs', newLog.id), cleanFirestoreData(newLog)).catch(() => {});
+    }
+
+    return newLog;
+  }
 }
 
 export const dbService = new DatabaseService();
+

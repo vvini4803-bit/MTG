@@ -19,7 +19,8 @@ import {
   FileText,
   UserCheck,
   Map as MapIcon,
-  Globe
+  Globe,
+  Calendar
 } from 'lucide-react';
 
 interface MoreDrawerProps {
@@ -49,6 +50,8 @@ export const MoreDrawer: React.FC<MoreDrawerProps> = ({
     {
       title: isKannada ? 'ಗ್ರಾಮ ಸೇವೆಗಳು & ಜ್ಞಾನ' : 'Village Services & Hubs',
       items: [
+        { id: 'committee', label: isKannada ? '🏛️ MTG ಸಮಿತಿ & AI (Committee)' : '🏛️ MTG Committee & AI', icon: Landmark, color: '#10B981' },
+        { id: 'events', label: isKannada ? '📅 ಕಾರ್ಯಕ್ರಮಗಳು (Events)' : '📅 Events & Festivals', icon: Calendar, color: '#F59E0B' },
         { id: 'photo_analyzer', label: isKannada ? 'AI ಫೋಟೋ ವಿಶ್ಲೇಷಕ (Gemini)' : 'AI Photo Analyzer (Gemini)', icon: Camera, color: '#06B6D4' },
         { id: 'agriculture', label: isKannada ? 'ಕೃಷಿ ಮಾಹಿತಿ ಕೇಂದ್ರ' : 'Agriculture Hub', icon: Wheat, color: '#10B981' },
         { id: 'temples', label: isKannada ? 'ದೇವಸ್ಥಾನ & ಸಂಸ್ಕೃತಿ' : 'Temples & Culture', icon: Landmark, color: '#F59E0B' },

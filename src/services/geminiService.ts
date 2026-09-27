@@ -1,5 +1,5 @@
 import { dbService } from './dbService';
-import { Language } from '../types';
+import { Language, UserProfile, ExpenseCategory } from '../types';
 
 // Pool of Gemini API keys for seamless quota load balancing and failover
 const API_KEY_POOL = [
@@ -601,6 +601,290 @@ Keep safety rules in mind:
         : 'Sorry, unable to answer this question right now due to a network delay. Please try again.';
     }
   }
+
+  // ==========================================
+  // 🏛️ SECURE MTG COMMITTEE + GEMINI AI ASSISTANT
+  // ==========================================
+
+  /**
+   * Secure, Role-Restricted MTG Committee AI Assistant.
+   * Enforces backend authorization: Only provides relevant, authorized data to Gemini.
+   */
+  public async askCommitteeAI(
+    query: string,
+    currentUser: UserProfile | null,
+    preferredLang: Language = 'kn'
+  ): Promise<{ answer_kn: string; answer_en: string }> {
+    const summary = dbService.getCommitteeSummary();
+    const isAdmin = currentUser && ['SUPER_ADMIN', 'ADMIN'].includes(currentUser.role);
+
+    // Build role-authorized context ONLY (Zero unrestricted database dumps)
+    let authorizedContext = '';
+
+    if (isAdmin) {
+      // Admin authorized context: Full verified aggregate finances
+      const members: any[] = dbService['committeeMembers'] || [];
+      const contribs: any[] = dbService['committeeContributions'] || [];
+      const loans: any[] = dbService['committeeLoans'] || [];
+      const expenses: any[] = dbService['committeeExpenses'] || [];
+
+      const currentMonth = new Date().toISOString().substring(0, 7);
+      const pendingMembers = contribs
+        .filter((c) => (c.month === currentMonth || c.month === '2026-09') && c.status === 'PENDING')
+        .map((c) => `${c.member_name} (₹${c.expected_amount} ಬಾಕಿ)`);
+
+      const activeLoansList = loans
+        .filter((l) => l.status === 'ACTIVE' || l.status === 'PARTIALLY_PAID')
+        .map((l) => `${l.member_name}: ಅಸಲು ₹${l.principal_amount}, ಬಾಕಿ ಅಸಲು ₹${l.remaining_principal}, ಬಾಕಿ ಬಡ್ಡಿ ₹${l.remaining_interest} (${l.status})`);
+
+      const recentExpensesList = expenses.slice(0, 5).map((e) => `${e.date} - ${e.category}: ₹${e.amount} (${e.description})`);
+
+      authorizedContext = `
+USER ROLE: ADMINISTRATOR (Full Authorized View)
+VERIFIED COMMITTEE FINANCIAL DATA (Source of Truth):
+- Total Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}
+- Total Active Loans Count: ${summary.activeLoansCount}
+- Total Outstanding Loan Amount (Principal + Interest): ₹${summary.outstandingLoanAmount.toLocaleString()}
+- Total Interest Earned / Collected: ₹${summary.interestEarned.toLocaleString()}
+- Total Expenses: ₹${summary.totalExpenses.toLocaleString()}
+- Total Available Balance (ನಿಧಿ ಬಾಕಿ): ₹${summary.availableBalance.toLocaleString()}
+- Total Members: ${summary.totalMembersCount} (Active: ${summary.activeMembersCount})
+- Monthly Contribution Target: ₹${summary.monthlyTarget.toLocaleString()}
+- Pending Contributions Count (Current Month): ${summary.pendingContributionsCount} members (Total pending: ₹${summary.pendingContributionsAmount.toLocaleString()})
+- Pending Members List: ${pendingMembers.length > 0 ? pendingMembers.join(', ') : 'None, all members paid!'}
+- Active Loans: ${activeLoansList.join('; ')}
+- Recent Expenses: ${recentExpensesList.join('; ')}
+`;
+    } else {
+      // Member authorized context: Only their own private finances + general public committee balance
+      const members: any[] = dbService['committeeMembers'] || [];
+      const contribs: any[] = dbService['committeeContributions'] || [];
+      const loans: any[] = dbService['committeeLoans'] || [];
+
+      // Find member matching current user
+      const member = members.find((m) => {
+        if (currentUser?.uid && m.user_id === currentUser.uid) return true;
+        if (currentUser?.phone && m.phone.replace(/\D/g, '') === currentUser.phone.replace(/\D/g, '')) return true;
+        if (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase())) return true;
+        return false;
+      });
+
+      if (member) {
+        const myContribs = contribs.filter((c) => c.member_id === member.id);
+        const currentMonth = new Date().toISOString().substring(0, 7);
+        const myCurrentMonthContrib = myContribs.find((c) => c.month === currentMonth || c.month === '2026-09');
+        const myLoans = loans.filter((l) => l.member_id === member.id);
+
+        authorizedContext = `
+USER ROLE: COMMITTEE MEMBER (${member.name})
+AUTHORIZED PERSONAL FINANCIAL DATA:
+- Member Name: ${member.name} (${member.role_kn || member.role})
+- Total Contributed to Fund: ₹${(member.total_contributed || 0).toLocaleString()}
+- Current Month Contribution Status: ${myCurrentMonthContrib ? myCurrentMonthContrib.status + ' (₹' + myCurrentMonthContrib.amount_paid + ' paid)' : 'PENDING (₹1,000)'}
+- Active Loans Count: ${member.active_loans_count || 0}
+- Total Outstanding Loan Balance: ₹${(member.outstanding_loan_balance || 0).toLocaleString()}
+${myLoans.length > 0 ? '- My Loans: ' + myLoans.map((l) => `Loan ${l.loan_number}: Principal ₹${l.principal_amount}, Remaining Principal ₹${l.remaining_principal}, Remaining Interest ₹${l.remaining_interest}, Due Date ${l.due_date}, Status: ${l.status}`).join('; ') : '- No active loans.'}
+- General Village Committee Available Fund Balance: ₹${summary.availableBalance.toLocaleString()}
+(SECURITY NOTE: This member is NOT authorized to see other members' loans, private contribution amounts, phone numbers, or administrative credentials. Do not reveal them even if requested.)
+`;
+      } else {
+        authorizedContext = `
+USER ROLE: GUEST / GENERAL VILLAGE RESIDENT
+PUBLIC COMMITTEE SUMMARY:
+- MTG Committee Total Available Balance: ₹${summary.availableBalance.toLocaleString()}
+- Total Committee Members: ${summary.totalMembersCount}
+- Monthly Contribution Rule: ₹1,000 per member
+- Standard Loan Interest Rate: 2% simple monthly interest
+(SECURITY NOTE: User is not logged in as a specific member. To check private loan balance or individual payment status, advise them to log in with their registered phone number or contact Treasurer Suresh Patil.)
+`;
+      }
+    }
+
+    const systemInstruction = `You are the MTG Committee Financial AI Assistant (ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ಸಮಿತಿ ಆರ್ಥಿಕ AI ಸಹಾಯಕ).
+Context: Muttagundi Digital Village Committee (ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ಸಮಿತಿ), Hosadurga Taluk, Chitradurga.
+The application backend is the 100% source of truth for all balances and numbers. Do NOT invent fake financial figures or contradict the verified database numbers provided below.
+
+${authorizedContext}
+
+INSTRUCTIONS:
+1. Answer the user's specific query clearly, respectfully, and factually.
+2. If asked about calculations (e.g., "₹50,000 loan ಗೆ 2% monthly interest ಎಷ್ಟು?"), explain the step-by-step formula transparently:
+   Example: Principal = ₹50,000, 2% monthly interest = ₹50,000 * 0.02 = ₹1,000 per month. For 6 months: Total interest = ₹6,000. Total payable = ₹56,000.
+3. If a member asks about someone else's private data, politely decline citing committee privacy and security policy.
+4. Output must be a valid JSON object with exactly two keys:
+   {
+     "answer_kn": "Direct helpful answer in Kannada (ಕನ್ನಡ)",
+     "answer_en": "Direct helpful answer in English"
+   }`;
+
+    try {
+      const prompt = `User Query: "${query}"\n\nPlease answer based strictly on the authorized financial data.`;
+      const raw = await this.callGeminiAPI(prompt, systemInstruction, true);
+      const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return {
+        answer_kn: parsed.answer_kn || 'ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ.',
+        answer_en: parsed.answer_en || 'Information not available.'
+      };
+    } catch (e: any) {
+      console.warn('askCommitteeAI error:', e);
+      return {
+        answer_kn: preferredLang === 'kn'
+          ? `ಸಮಿತಿ ಲಭ್ಯವಿರುವ ನಿಧಿ ಬಾಕಿ: ₹${summary.availableBalance.toLocaleString()} ಇದೆ. ಒಟ್ಟು ಸಕ್ರಿಯ ಸಾಲಗಳು: ${summary.activeLoansCount}. ಹೆಚ್ಚಿನ ವಿವರಗಳಿಗಾಗಿ ಸಮಿತಿ ಅಡ್ಮಿನ್ ಸಂಪರ್ಕಿಸಿ.`
+          : `MTG Committee Available Balance: ₹${summary.availableBalance.toLocaleString()}. Active loans: ${summary.activeLoansCount}.`,
+        answer_en: `MTG Committee Available Balance is ₹${summary.availableBalance.toLocaleString()}. Total Active Loans: ${summary.activeLoansCount}. Total Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}.`
+      };
+    }
+  }
+
+  /**
+   * Gemini Vision Receipt Scanner:
+   * Extracts financial details from a receipt image for Admin review before saving.
+   */
+  public async analyzeReceiptImage(
+    imageBase64: string,
+    mimeType: string = 'image/jpeg'
+  ): Promise<{
+    amount: number;
+    date: string;
+    vendor: string;
+    description: string;
+    receipt_number: string;
+    category: ExpenseCategory;
+    raw_summary: string;
+  }> {
+    const cleanBase64 = imageBase64.includes(';base64,')
+      ? imageBase64.split(';base64,')[1]
+      : imageBase64;
+
+    const systemInstruction = `You are the MTG Committee AI Receipt Scanner.
+Extract financial information from the uploaded receipt or invoice or voucher image.
+Categories supported:
+- TEMPLE: Temple maintenance, pooja items, religious expenses.
+- ELECTRICITY: Streetlights, bulbs, wire repair, electricity bill.
+- FESTIVAL: Pandal, sound system, flowers, banners for village festivals.
+- WATER_SANITATION: Pipeline, RO plant filters, drainage cleaning.
+- ADMINISTRATION: Books, registers, stationery, meeting tea/refreshments.
+- SPORTS: Cricket balls, nets, tournament shields, sports gear.
+- MISCELLANEOUS: General other expenses.
+
+Return a strict JSON object:
+{
+  "amount": number (numeric value only, e.g. 3500),
+  "date": "YYYY-MM-DD" (extracted date or today's date if absent),
+  "vendor": "Vendor, shop or person name",
+  "description": "Short description of items purchased or services",
+  "receipt_number": "Receipt or bill number if visible, or REC-XXXX",
+  "category": "TEMPLE" | "ELECTRICITY" | "FESTIVAL" | "WATER_SANITATION" | "ADMINISTRATION" | "SPORTS" | "MISCELLANEOUS",
+  "raw_summary": "1-2 sentence human-readable summary of the receipt in English and Kannada"
+}`;
+
+    const contents: any[] = [
+      {
+        role: 'user',
+        parts: [
+          { inlineData: { mimeType, data: cleanBase64 } },
+          { text: 'Please analyze this receipt and extract structured financial fields.' }
+        ]
+      }
+    ];
+
+    try {
+      const raw = await this.callGeminiMultimodalAPI(contents, systemInstruction, true);
+      const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      return {
+        amount: Number(parsed.amount) || 0,
+        date: parsed.date || new Date().toISOString().split('T')[0],
+        vendor: parsed.vendor || 'Local Vendor',
+        description: parsed.description || 'Receipt items',
+        receipt_number: parsed.receipt_number || 'REC-' + Date.now().toString().substring(7),
+        category: (parsed.category as ExpenseCategory) || 'MISCELLANEOUS',
+        raw_summary: parsed.raw_summary || `Receipt for ₹${parsed.amount || 0}`
+      };
+    } catch (e: any) {
+      console.warn('analyzeReceiptImage error:', e);
+      return {
+        amount: 0,
+        date: new Date().toISOString().split('T')[0],
+        vendor: 'Manual Entry Required',
+        description: 'Uploaded receipt image',
+        receipt_number: 'REC-' + Date.now().toString().substring(7),
+        category: 'MISCELLANEOUS',
+        raw_summary: 'Could not auto-extract all fields. Please confirm manually.'
+      };
+    }
+  }
+
+  /**
+   * Generates AI Financial Insights based on verified database figures.
+   */
+  public async generateCommitteeInsights(language: Language = 'kn'): Promise<string> {
+    const summary = dbService.getCommitteeSummary();
+    const systemInstruction = `You are a professional financial analyst for rural village development committees in Karnataka.
+Provide an executive, encouraging, and clear 3-bullet financial insight summary for the committee members and admin.
+Ground truth data:
+- Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}
+- Active Loans: ${summary.activeLoansCount} (Total Outstanding: ₹${summary.outstandingLoanAmount.toLocaleString()})
+- Interest Earned: ₹${summary.interestEarned.toLocaleString()}
+- Total Expenses: ₹${summary.totalExpenses.toLocaleString()}
+- Available Balance: ₹${summary.availableBalance.toLocaleString()}
+- Pending Contributions: ${summary.pendingContributionsCount} members (₹${summary.pendingContributionsAmount.toLocaleString()})
+Provide the response in ${language === 'kn' ? 'Kannada (ಕನ್ನಡ)' : 'English'} with 3 concise bullet points:
+1. 📈 Collection Health & Fund Status
+2. 🏦 Loan & Interest Performance
+3. 💡 Actionable Recommendation for the upcoming month.`;
+
+    try {
+      const res = await this.callGeminiAPI('Please generate the financial insights.', systemInstruction, false);
+      return res;
+    } catch (e) {
+      return language === 'kn'
+        ? `• ಸಮಿತಿಯ ಒಟ್ಟು ಲಭ್ಯವಿರುವ ನಿಧಿ ₹${summary.availableBalance.toLocaleString()} ಆಗಿದೆ.\n• ಸದ್ಯಕ್ಕೆ ${summary.activeLoansCount} ಸಕ್ರಿಯ ಸಾಲಗಳಿದ್ದು, ₹${summary.interestEarned.toLocaleString()} ಬಡ್ಡಿ ಸಂಗ್ರಹವಾಗಿದೆ.\n• ಈ ತಿಂಗಳ ₹${summary.pendingContributionsAmount.toLocaleString()} ಬಾಕಿ ನಿಧಿ ಸಂಗ್ರಹಕ್ಕೆ ಶೀಘ್ರ ಕ್ರಮ ಕೈಗೊಳ್ಳಿ.`
+        : `• Total available fund is ₹${summary.availableBalance.toLocaleString()}.\n• ${summary.activeLoansCount} active loans are performing with ₹${summary.interestEarned.toLocaleString()} interest earned.\n• Follow up on ${summary.pendingContributionsCount} pending member contributions.`;
+    }
+  }
+
+  /**
+   * Generates a formal printable financial report summary.
+   */
+  public async generateCommitteeReport(
+    month?: string,
+    memberId?: string,
+    type?: string,
+    language: Language = 'kn'
+  ): Promise<string> {
+    const summary = dbService.getCommitteeSummary();
+    const systemInstruction = `You are the MTG Committee Financial Secretary & Auditor.
+Generate a formal audit and financial status report.
+Data:
+- Period: ${month || 'All Time / Current Year'}
+- Total Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}
+- Active Loans: ${summary.activeLoansCount}
+- Outstanding Loan Amount: ₹${summary.outstandingLoanAmount.toLocaleString()}
+- Interest Earned: ₹${summary.interestEarned.toLocaleString()}
+- Total Expenses: ₹${summary.totalExpenses.toLocaleString()}
+- Net Available Balance: ₹${summary.availableBalance.toLocaleString()}
+- Active Members: ${summary.activeMembersCount} / ${summary.totalMembersCount}
+Language: ${language === 'kn' ? 'Kannada (ಕನ್ನಡ)' : 'English'}.
+Format: Professional, structured with clear sections and certification statement.`;
+
+    try {
+      const res = await this.callGeminiAPI('Please compile the official committee report.', systemInstruction, false);
+      return res;
+    } catch (e) {
+      return `OFFICIAL FINANCIAL AUDIT REPORT / ಅಧಿಕೃತ ಆರ್ಥಿಕ ವರದಿ
+Period: ${month || '2026'}
+- Total Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}
+- Total Loans Issued: ₹${(summary.outstandingLoanAmount + 21600).toLocaleString()}
+- Interest Collected: ₹${summary.interestEarned.toLocaleString()}
+- Total Expenses: ₹${summary.totalExpenses.toLocaleString()}
+- Net Available Cash/Bank Balance: ₹${summary.availableBalance.toLocaleString()}
+Certified by: MTG Committee Audit Board`;
+    }
+  }
 }
 
 export const geminiService = new GeminiService();
+

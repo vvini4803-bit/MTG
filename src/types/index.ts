@@ -465,7 +465,8 @@ export type ViewTab =
   | 'analytics'
   | 'map'
   | 'village_3d'
-  | 'photo_analyzer';
+  | 'photo_analyzer'
+  | 'committee';
 
 export interface Conversation {
   id: string;
@@ -508,3 +509,172 @@ export interface UserPrivacySettings {
   profile_visibility: 'PUBLIC' | 'VILLAGE_MEMBERS';
   online_status_visible: boolean;
 }
+
+// ==========================================
+// 🏛️ MTG COMMITTEE & FINANCIAL MANAGEMENT
+// ==========================================
+
+export type CommitteeRole =
+  | 'PRESIDENT'
+  | 'VICE_PRESIDENT'
+  | 'SECRETARY'
+  | 'TREASURER'
+  | 'DIRECTOR'
+  | 'MEMBER';
+
+export interface CommitteeMember {
+  id: string;
+  user_id?: string;
+  name: string;
+  name_kn?: string;
+  phone: string;
+  address: string;
+  joining_date: string;
+  role: CommitteeRole;
+  role_kn?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  photo_url?: string;
+  total_contributed: number;
+  active_loans_count: number;
+  outstanding_loan_balance: number;
+  created_at: string;
+}
+
+export type ContributionStatus = 'PAID' | 'PENDING' | 'PARTIAL';
+
+export interface CommitteeContribution {
+  id: string;
+  member_id: string;
+  member_name: string;
+  month: string; // 'YYYY-MM' e.g. '2026-09'
+  month_label_en: string;
+  month_label_kn: string;
+  expected_amount: number;
+  amount_paid: number;
+  status: ContributionStatus;
+  payment_date?: string;
+  reference_id?: string;
+  receipt_url?: string;
+  notes?: string;
+  collected_by?: string;
+  created_at: string;
+}
+
+export type LoanStatus = 'ACTIVE' | 'PARTIALLY_PAID' | 'FULLY_PAID' | 'OVERDUE';
+
+export interface CommitteeLoan {
+  id: string;
+  loan_number: string; // e.g. 'LN-2026-001'
+  member_id: string;
+  member_name: string;
+  principal_amount: number;
+  loan_date: string;
+  interest_rate_percent: number; // e.g. 2 for 2% monthly
+  interest_type: 'SIMPLE_MONTHLY' | 'FLAT_YEARLY';
+  tenure_months: number;
+  monthly_due_amount: number;
+  due_date: string;
+  total_interest_payable: number;
+  total_amount_payable: number;
+  amount_paid: number;
+  remaining_principal: number;
+  remaining_interest: number;
+  status: LoanStatus;
+  purpose?: string;
+  repayments: LoanRepayment[];
+  created_at: string;
+}
+
+export interface LoanRepayment {
+  id: string;
+  loan_id: string;
+  member_id: string;
+  member_name: string;
+  amount: number;
+  principal_portion: number;
+  interest_portion: number;
+  payment_date: string;
+  reference_id?: string;
+  receipt_url?: string;
+  received_by: string;
+  notes?: string;
+  created_at: string;
+}
+
+export type ExpenseCategory =
+  | 'TEMPLE'
+  | 'ELECTRICITY'
+  | 'FESTIVAL'
+  | 'WATER_SANITATION'
+  | 'ADMINISTRATION'
+  | 'SPORTS'
+  | 'MISCELLANEOUS';
+
+export interface CommitteeExpense {
+  id: string;
+  category: ExpenseCategory;
+  category_kn: string;
+  amount: number;
+  date: string;
+  description: string;
+  paid_by: string;
+  receipt_url?: string;
+  created_by: string;
+  created_at: string;
+}
+
+export type TransactionType =
+  | 'FUND_CONTRIBUTION'
+  | 'LOAN_ISSUED'
+  | 'LOAN_REPAYMENT'
+  | 'INTEREST_PAYMENT'
+  | 'EXPENSE'
+  | 'OTHER_INCOME'
+  | 'ADJUSTMENT';
+
+export interface CommitteeTransaction {
+  id: string;
+  date: string;
+  time: string;
+  member_id?: string;
+  member_name?: string;
+  type: TransactionType;
+  type_kn: string;
+  amount: number;
+  direction: 'IN' | 'OUT';
+  description: string;
+  reference_id?: string;
+  receipt_url?: string;
+  created_by: string;
+  status: 'COMPLETED' | 'PENDING' | 'CANCELLED';
+  created_at: string;
+}
+
+export interface CommitteeAuditLog {
+  id: string;
+  action: string;
+  action_kn: string;
+  actor_id: string;
+  actor_name: string;
+  target_id: string;
+  target_type: string;
+  previous_value?: string;
+  new_value?: string;
+  details?: string;
+  timestamp: string;
+}
+
+export interface CommitteeSummary {
+  totalFundCollected: number;
+  activeLoansCount: number;
+  outstandingLoanAmount: number;
+  interestEarned: number;
+  totalExpenses: number;
+  availableBalance: number;
+  pendingContributionsCount: number;
+  pendingContributionsAmount: number;
+  totalMembersCount: number;
+  activeMembersCount: number;
+  monthlyTarget: number;
+}
+
