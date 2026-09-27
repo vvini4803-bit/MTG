@@ -151,8 +151,6 @@ export const App: React.FC = () => {
     itemTitle?: string;
   }>({ isOpen: false, itemType: 'POST', itemId: '', itemTitle: '' });
 
-  // Accordion state inside Home for village heritage
-  const [openHeritageTab, setOpenHeritageTab] = useState<'NONE' | 'STATS' | 'HISTORY' | 'ACHIEVERS'>('NONE');
 
   // Private messaging state
   const [unreadMsgCount, setUnreadMsgCount] = useState<number>(0);
@@ -274,12 +272,6 @@ export const App: React.FC = () => {
     }
   }, [isAuthModalOpen]);
 
-  useEffect(() => {
-    if (openHeritageTab !== 'NONE') {
-      const dismiss = backNavigation.pushModal('heritageTab', () => setOpenHeritageTab('NONE'));
-      return () => dismiss();
-    }
-  }, [openHeritageTab]);
 
   useEffect(() => {
     if (adminSubtab) {
@@ -1301,130 +1293,6 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            {/* ℹ️ ABOUT OUR VILLAGE, 📖 HISTORY & 🏆 ACHIEVERS (NATURAL ACCORDION ON HOME) */}
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '20px',
-                padding: '20px',
-                marginBottom: '24px'
-              }}
-            >
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 900, margin: '0 0 14px 0', color: '#FFFFFF' }}>
-                {isKannada ? 'ಗ್ರಾಮದ ಮಾಹಿತಿ & ಇತಿಹಾಸ' : 'Village Heritage & Statistics'}
-              </h2>
-
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                <button
-                  onClick={() => setOpenHeritageTab(openHeritageTab === 'STATS' ? 'NONE' : 'STATS')}
-                  style={{
-                    background: openHeritageTab === 'STATS' ? '#10B981' : 'rgba(255,255,255,0.06)',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '8px 16px',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  ℹ️ {isKannada ? 'ಗ್ರಾಮ ಅಂಕಿಅಂಶ' : 'Village Stats'}
-                </button>
-                <button
-                  onClick={() => setOpenHeritageTab(openHeritageTab === 'HISTORY' ? 'NONE' : 'HISTORY')}
-                  style={{
-                    background: openHeritageTab === 'HISTORY' ? '#10B981' : 'rgba(255,255,255,0.06)',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '8px 16px',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  📖 {isKannada ? 'ಇತಿಹಾಸ & ಕಥೆಗಳು' : 'History & Story'}
-                </button>
-                <button
-                  onClick={() => setOpenHeritageTab(openHeritageTab === 'ACHIEVERS' ? 'NONE' : 'ACHIEVERS')}
-                  style={{
-                    background: openHeritageTab === 'ACHIEVERS' ? '#10B981' : 'rgba(255,255,255,0.06)',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '8px 16px',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  🏆 {isKannada ? 'ನಮ್ಮ ಸಾಧಕರು' : 'Our Achievers'}
-                </button>
-              </div>
-
-              {/* Accordion Content 1: Statistics */}
-              {openHeritageTab === 'STATS' && (
-                <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '16px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '12px' }}>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{isKannada ? 'ಒಟ್ಟು ಜನಸಂಖ್ಯೆ' : 'Population'}</span>
-                      <strong style={{ fontSize: '1.25rem', color: '#34D399', display: 'block' }}>{villageStats.population.toLocaleString()}</strong>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{isKannada ? 'ಮನೆಗಳು' : 'Households'}</span>
-                      <strong style={{ fontSize: '1.25rem', color: '#FBBF24', display: 'block' }}>{villageStats.households}</strong>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{isKannada ? 'ಸಾಕ್ಷರತಾ ಪ್ರಮಾಣ' : 'Literacy Rate'}</span>
-                      <strong style={{ fontSize: '1.25rem', color: '#60A5FA', display: 'block' }}>{villageStats.literacy_rate}%</strong>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{isKannada ? 'ಕೃಷಿ ಭೂಮಿ' : 'Farming Land'}</span>
-                      <strong style={{ fontSize: '1.25rem', color: '#A78BFA', display: 'block' }}>{villageStats.agricultural_land_acres} {isKannada ? 'ಎಕರೆ' : 'Acres'}</strong>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.74rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldCheck size={14} color="#10B981" />
-                    <span>{isKannada ? 'ಮೂಲ: ಗ್ರಾಮ ಪಂಚಾಯತಿ ಅಧಿಕೃತ ದಾಖಲೆಗಳು • ಕೊನೆಯ ಪರಿಶೀಲನೆ: ಅಕ್ಟೋಬರ್ 2026' : 'Source: Official Panchayat Census • Last verified: Oct 2026'}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Accordion Content 2: History */}
-              {openHeritageTab === 'HISTORY' && (
-                <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '16px', fontSize: '0.88rem', lineHeight: 1.6, color: '#E2E8F0' }}>
-                  <strong style={{ color: '#FBBF24', display: 'block', marginBottom: '6px' }}>
-                    {isKannada ? 'ಗ್ರಾಮದ ಹಿನ್ನೆಲೆ (ಐತಿಹಾಸಿಕ ವಾಸ್ತವ)' : 'Historical Origins (Verified Facts)'}
-                  </strong>
-                  <p style={{ margin: '0 0 10px 0' }}>
-                    {isKannada
-                      ? 'ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ, ಹೊಸದುರ್ಗ ತಾಲೂಕಿನ ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮವು ಕೃಷಿ, ಧಾರ್ಮಿಕ ಪರಂಪರೆ ಮತ್ತು ಬಾಂಧವ್ಯದ ಹೆಮ್ಮೆಯ ಇತಿಹಾಸವನ್ನು ಹೊಂದಿದೆ.'
-                      : 'Muttagundi village in Hosadurga Taluk, Chitradurga District is recognized for its agrarian traditions, sacred heritage, and strong community unity.'}
-                  </p>
-                  <span style={{ fontSize: '0.72rem', color: '#10B981', background: 'rgba(16,185,129,0.15)', padding: '2px 8px', borderRadius: '4px' }}>
-                    🟢 MUTTAGUNDI HERITAGE
-                  </span>
-                </div>
-              )}
-
-              {/* Accordion Content 3: Achievers */}
-              {openHeritageTab === 'ACHIEVERS' && (
-                <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '16px' }}>
-                  <div style={{ textAlign: 'center', padding: '16px 12px', color: '#94A3B8', fontSize: '0.86rem' }}>
-                    <span style={{ fontSize: '1.8rem', display: 'block', marginBottom: '8px' }}>🏅</span>
-                    <strong style={{ color: '#FFFFFF', display: 'block', marginBottom: '4px' }}>
-                      {isKannada ? 'ಗ್ರಾಮದ ಸಾಧಕರ ನಾಮನಿರ್ದೇಶನ' : 'Village Achievers & Pride'}
-                    </strong>
-                    <span>
-                      {isKannada
-                        ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕೃಷಿ, ಕ್ರೀಡೆ ಅಥವಾ ಶಿಕ್ಷಣ ಕ್ಷೇತ್ರದಲ್ಲಿ ಸಾಧನೆ ಮಾಡಿದವರ ವಿವರಗಳನ್ನು ಶೀಘ್ರದಲ್ಲೇ ಇಲ್ಲಿ ಪ್ರಕಟಿಸಲಾಗುತ್ತದೆ.'
-                        : 'Nominations and profiles of achievers from Muttagundi in agriculture, sports, and education will be listed here.'}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* 💻 DEVELOPER SPOTLIGHT / ಡೆವಲಪರ್ ಪರಿಚಯ */}
             <div
