@@ -55,34 +55,38 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      setErrorMsg('Email or password is incorrect');
+      setErrorMsg(isKannada ? 'ದಯವಿಟ್ಟು ಇಮೇಲ್ ಮತ್ತು ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ' : 'Please enter email and password');
       return;
     }
     setIsLoading(true);
     setErrorMsg(null);
 
-    if (emailMode === 'REGISTER') {
-      const res = await signUpWithEmail(email, password);
-      setIsLoading(false);
-      if (res.success) {
-        onSuccess();
-      } else if (res.unverifiedEmail) {
-        setVerificationEmail(res.unverifiedEmail);
-        setUnverifiedEmail(res.unverifiedEmail);
-      } else if (res.error) {
-        setErrorMsg(res.error);
+    try {
+      if (emailMode === 'REGISTER') {
+        const res = await signUpWithEmail(email, password);
+        if (res.success) {
+          onSuccess();
+        } else if (res.unverifiedEmail) {
+          setVerificationEmail(res.unverifiedEmail);
+          setUnverifiedEmail(res.unverifiedEmail);
+        } else if (res.error) {
+          setErrorMsg(res.error);
+        }
+      } else {
+        const res = await signInWithEmail(email, password);
+        if (res.unverifiedEmail) {
+          setVerificationEmail(res.unverifiedEmail);
+          setUnverifiedEmail(res.unverifiedEmail);
+        } else if (res.error) {
+          setErrorMsg(res.error);
+        } else if (res.success) {
+          onSuccess();
+        }
       }
-    } else {
-      const res = await signInWithEmail(email, password);
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Authentication error occurred');
+    } finally {
       setIsLoading(false);
-      if (res.unverifiedEmail) {
-        setVerificationEmail(res.unverifiedEmail);
-        setUnverifiedEmail(res.unverifiedEmail);
-      } else if (res.error) {
-        setErrorMsg(res.error);
-      } else if (res.success) {
-        onSuccess();
-      }
     }
   };
 
