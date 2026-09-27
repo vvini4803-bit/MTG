@@ -856,16 +856,16 @@ export const App: React.FC = () => {
 
             {/* 🔴 LIVE VILLAGE UPDATE (Interactive Live Banner - Click shows new update) */}
             {(() => {
-              const latestNews = dbService.getNews();
-              const liveItem = (latestNews.length > 0 && latestNews[liveNewsIndex % latestNews.length])
-                ? latestNews[liveNewsIndex % latestNews.length]
-                : (latestNews.length > 0 ? latestNews[0] : (dbService.getNews()[0] || null));
+              const livePool = latestNews.length > 0 ? latestNews : dbService.getNews();
+              const liveItem = (livePool.length > 0 && livePool[liveNewsIndex % livePool.length])
+                ? livePool[liveNewsIndex % livePool.length]
+                : (livePool.length > 0 ? livePool[0] : (dbService.getNews()[0] || null));
 
               const handleOpenLiveUpdate = (e?: React.MouseEvent | React.KeyboardEvent) => {
                 if (e) {
                   e.stopPropagation();
                 }
-                const activeItem = liveItem || (latestNews.length > 0 ? latestNews[0] : null) || (dbService.getNews()[0] || null);
+                const activeItem = liveItem || (livePool.length > 0 ? livePool[0] : null) || (dbService.getNews()[0] || null);
                 if (activeItem) {
                   setSelectedNews(activeItem);
                 } else {
@@ -939,7 +939,7 @@ export const App: React.FC = () => {
                           }}
                         />
                         <span>{isKannada ? '🔴 ಇತ್ತೀಚಿನ ಲೈವ್ ಅಪ್‌ಡೇಟ್' : '🔴 RECENT LIVE UPDATE'}</span>
-                        {latestNews.length > 1 && (
+                        {livePool.length > 1 && (
                           <span
                             style={{
                               background: 'rgba(255, 255, 255, 0.2)',
@@ -951,7 +951,7 @@ export const App: React.FC = () => {
                               marginLeft: '2px'
                             }}
                           >
-                            {(liveNewsIndex % latestNews.length) + 1}/{latestNews.length}
+                            {(liveNewsIndex % livePool.length) + 1}/{livePool.length}
                           </span>
                         )}
                       </div>
@@ -1133,12 +1133,12 @@ export const App: React.FC = () => {
                         );
                       })()}
 
-                      {latestNews.length > 1 && (
+                      {livePool.length > 1 && (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setLiveNewsIndex((prev) => (prev + 1) % latestNews.length);
+                            setLiveNewsIndex((prev) => (prev + 1) % livePool.length);
                           }}
                           style={{
                             background: 'rgba(255, 255, 255, 0.08)',

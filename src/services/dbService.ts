@@ -643,6 +643,25 @@ class DatabaseService {
           break;
         }
 
+        case 'COMMENT_DELETED': {
+          const { commentId, postId } = envelope.payload || {};
+          if (!commentId) return;
+          const target = this.comments.find((c) => c.id === commentId);
+          if (target) {
+            this.comments = this.comments.filter((c) => c.id !== commentId);
+            this.saveCollection('comments', this.comments);
+            const pId = postId || target.post_id;
+            const post = this.news.find((n) => n.id === pId);
+            if (post) {
+              post.comments_count = Math.max(0, (post.comments_count || 1) - 1);
+              this.saveCollection('news', [...this.news]);
+              this.emit('news', this.news);
+            }
+            this.emit(`comments_${pId}`, this.comments.filter((c) => c.post_id === pId));
+          }
+          break;
+        }
+
         case 'CROP_ADDED': {
           const crop: CropItem = envelope.payload;
           if (!crop || !crop.id) return;
@@ -877,6 +896,36 @@ class DatabaseService {
               this.saveCollection('messages', this.messages);
               this.emit(`messages_${conversationId}`, this.messages.filter((m) => m.conversation_id === conversationId));
             }
+          }
+          break;
+        }
+
+        case 'MESSAGE_DELETED': {
+          const { messageId, conversationId } = envelope.payload || {};
+          if (!messageId) return;
+          const idx = this.messages.findIndex((m) => m.id === messageId);
+          if (idx >= 0) {
+            this.messages.splice(idx, 1);
+            this.saveCollection('messages', [...this.messages]);
+            const conv = this.conversations.find((c) => c.id === conversationId);
+            if (conv) {
+              const remainingMsgs = this.messages
+                .filter((m) => m.conversation_id === conversationId)
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+              if (remainingMsgs.length > 0) {
+                const top = remainingMsgs[0];
+                conv.last_message_text = top.media_url && !top.text ? '📷 Photo' : top.text;
+                conv.last_sender_id = top.sender_id;
+                conv.last_message_at = top.created_at;
+              } else {
+                conv.last_message_text = '';
+              }
+              this.saveCollection('conversations', [...this.conversations]);
+              this.emit('conversations', this.conversations);
+            }
+            this.emit('messages', this.messages);
+            this.emit(`messages_${conversationId}`, this.messages.filter((m) => m.conversation_id === conversationId));
+            this.emit('unread_messages', this.messages);
           }
           break;
         }
@@ -1383,13 +1432,49 @@ class DatabaseService {
 
     this.saveCollection('news', [...this.news]);
     this.emit('news', this.news);
+
     if (isFirebaseConfigured && db) {
-      updateDoc(doc(db, 'news', item.id), {
-        likes_count: item.likes_count,
-        liked_by: item.liked_by
+      setDoc(
+        doc(db, 'news', item.id),
+        {
+          likes_count: item.likes_count,
+          liked_by: item.liked_by
+        },
+        { merge: true }
+      ).catch(() => {});
+    }
+
+    realtimeSync.broadcast('NEWS_LIKED', { newsId, uid, isLiked: !alreadyLiked });
+
+    // Notify author of post if liked by someone else
+    if (!alreadyLiked && item.author_id && item.author_id !== uid) {
+      const activeUserStr = typeof window !== 'undefined' ? localStorage.getItem('gramasiri_active_user') : null;
+      let likerName = 'A resident';
+      let likerNameKn = 'ಗ್ರಾಮಸ್ಥರು';
+      if (activeUserStr) {
+        try {
+          const parsed = JSON.parse(activeUserStr);
+          if (parsed.name) likerName = parsed.name;
+          if (parsed.name_kn || parsed.name) likerNameKn = parsed.name_kn || parsed.name;
+        } catch {}
+      } else {
+        const guestName = typeof window !== 'undefined' ? localStorage.getItem('gramasiri_resident_name') : null;
+        if (guestName) {
+          likerName = guestName;
+          likerNameKn = guestName;
+        }
+      }
+
+      this.addNotification({
+        user_id: item.author_id,
+        title_en: `❤️ ${likerName} liked your post`,
+        title_kn: `❤️ ${likerNameKn} ನಿಮ್ಮ ಪೋಸ್ಟ್ ಇಷ್ಟಪಟ್ಟಿದ್ದಾರೆ`,
+        message_en: `Your news update "${item.title_en}" received a new like!`,
+        message_kn: `ನಿಮ್ಮ "${item.title_kn}" ಸುದ್ದಿಗೆ ಹೊಸ ಮೆಚ್ಚುಗೆ (Like) ಬಂದಿದೆ!`,
+        type: 'SOCIAL',
+        link_tab: 'news'
       }).catch(() => {});
     }
-    realtimeSync.broadcast('NEWS_LIKED', { newsId, uid, isLiked: !alreadyLiked });
   }
 
   public async deleteNews(newsId: string, uid: string, role: string): Promise<boolean> {
@@ -1453,40 +1538,78 @@ class DatabaseService {
 
   // --- COMMENTS ---
   public subscribeComments(postId: string, callback: (comments: CommentItem[]) => void): () => void {
+    const getFiltered = () =>
+      this.comments
+        .filter((c) => c.post_id === postId)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    // 1. Immediately provide cached/local comments
+    callback(getFiltered());
+
+    // 2. Subscribe to local EventEmitter for instant optimistic UI updates on add & like
+    const unsubLocal = this.subscribe(`comments_${postId}`, getFiltered(), () => {
+      callback(getFiltered());
+    });
+
+    // 3. Subscribe to Firestore real-time onSnapshot WITHOUT requiring composite index
+    let unsubFirestore: (() => void) | null = null;
     if (isFirebaseConfigured && db) {
       try {
         const q = query(
           collection(db, 'comments'),
-          where('post_id', '==', postId),
-          orderBy('created_at', 'asc')
+          where('post_id', '==', postId)
         );
-        return onSnapshot(
+        unsubFirestore = onSnapshot(
           q,
           (snapshot) => {
-            const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as CommentItem));
-            if (items.length > 0) {
-              callback(items);
-            } else {
-              callback(this.comments.filter((c) => c.post_id === postId));
+            let changed = false;
+            snapshot.docChanges().forEach((change) => {
+              const remote = { id: change.doc.id, ...change.doc.data() } as CommentItem;
+              if (change.type === 'removed') {
+                const prevLen = this.comments.length;
+                this.comments = this.comments.filter((c) => c.id !== remote.id);
+                if (this.comments.length !== prevLen) {
+                  changed = true;
+                }
+              } else {
+                const idx = this.comments.findIndex((c) => c.id === remote.id);
+                if (idx >= 0) {
+                  if (JSON.stringify(this.comments[idx]) !== JSON.stringify(remote)) {
+                    this.comments[idx] = { ...this.comments[idx], ...remote };
+                    changed = true;
+                  }
+                } else {
+                  this.comments.push(remote);
+                  changed = true;
+                }
+              }
+            });
+            if (changed) {
+              this.saveCollection('comments', this.comments);
+              callback(getFiltered());
             }
           },
           (err) => {
-            console.warn('Firestore comments listener error (using local):', err);
-            callback(this.comments.filter((c) => c.post_id === postId));
+            console.warn('Firestore comments query fallback:', err);
           }
         );
       } catch (e) {
         console.warn('Firestore comments query fallback:', e);
       }
     }
-    const filtered = this.comments.filter((c) => c.post_id === postId);
-    return this.subscribe(`comments_${postId}`, filtered, callback);
+
+    return () => {
+      unsubLocal();
+      if (unsubFirestore) {
+        unsubFirestore();
+      }
+    };
   }
 
   public async addComment(comment: Omit<CommentItem, 'id' | 'created_at' | 'likes_count' | 'liked_by' | 'reports_count'>): Promise<CommentItem> {
     const newComment: CommentItem = {
       ...comment,
-      id: 'c_' + Date.now(),
+      id: 'c_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       created_at: new Date().toISOString(),
       likes_count: 0,
       liked_by: [],
@@ -1511,7 +1634,20 @@ class DatabaseService {
       this.saveCollection('news', [...this.news]);
       this.emit('news', this.news);
       if (isFirebaseConfigured && db) {
-        updateDoc(doc(db, 'news', post.id), { comments_count: post.comments_count }).catch(() => {});
+        setDoc(doc(db, 'news', post.id), { comments_count: post.comments_count }, { merge: true }).catch(() => {});
+      }
+
+      // Send notification to author of post if commented by someone else
+      if (post.author_id && post.author_id !== comment.author_id) {
+        this.addNotification({
+          user_id: post.author_id,
+          title_en: `💬 New comment from ${comment.author_name}`,
+          title_kn: `💬 ${comment.author_name} ಅವರಿಂದ ಹೊಸ ಪ್ರತಿಕ್ರಿಯೆ`,
+          message_en: `On "${post.title_en}": ${comment.text.substring(0, 60)}...`,
+          message_kn: `"${post.title_kn}" ಸುದ್ದಿಗೆ: ${comment.text.substring(0, 60)}...`,
+          type: 'SOCIAL',
+          link_tab: 'news'
+        }).catch(() => {});
       }
     }
 
@@ -1521,7 +1657,7 @@ class DatabaseService {
       this.saveCollection('gallery', [...this.gallery]);
       this.emit('gallery', this.gallery);
       if (isFirebaseConfigured && db) {
-        updateDoc(doc(db, 'gallery', photo.id), { comments_count: photo.comments_count }).catch(() => {});
+        setDoc(doc(db, 'gallery', photo.id), { comments_count: photo.comments_count }, { merge: true }).catch(() => {});
       }
     }
 
@@ -1531,7 +1667,7 @@ class DatabaseService {
       this.saveCollection('stories', [...this.stories]);
       this.emit('stories', this.stories);
       if (isFirebaseConfigured && db) {
-        updateDoc(doc(db, 'stories', story.id), { comments_count: story.comments_count }).catch(() => {});
+        setDoc(doc(db, 'stories', story.id), { comments_count: story.comments_count }, { merge: true }).catch(() => {});
       }
     }
 
@@ -1558,13 +1694,54 @@ class DatabaseService {
 
     this.saveCollection('comments', [...this.comments]);
     if (isFirebaseConfigured && db) {
-      updateDoc(doc(db, 'comments', item.id), {
-        likes_count: item.likes_count,
-        liked_by: item.liked_by
-      }).catch(() => {});
+      setDoc(
+        doc(db, 'comments', item.id),
+        {
+          likes_count: item.likes_count,
+          liked_by: item.liked_by
+        },
+        { merge: true }
+      ).catch(() => {});
     }
     this.emit(`comments_${item.post_id}`, this.comments.filter((c) => c.post_id === item.post_id));
     realtimeSync.broadcast('COMMENT_LIKED', { commentId, postId: item.post_id, uid, isLiked: !alreadyLiked });
+  }
+
+  public async deleteComment(commentId: string, uid: string, role: string): Promise<boolean> {
+    const item = this.comments.find((c) => c.id === commentId);
+    if (!item) return false;
+
+    // Only comment author or admin/moderator can delete
+    if (item.author_id !== uid && !['SUPER_ADMIN', 'ADMIN', 'MODERATOR'].includes(role)) {
+      throw new Error('Unauthorized deletion attempt.');
+    }
+
+    this.comments = this.comments.filter((c) => c.id !== commentId);
+    this.saveCollection('comments', this.comments);
+
+    // Decrement post comment count
+    const post = this.news.find((n) => n.id === item.post_id);
+    if (post) {
+      post.comments_count = Math.max(0, (post.comments_count || 1) - 1);
+      this.saveCollection('news', [...this.news]);
+      this.emit('news', this.news);
+      if (isFirebaseConfigured && db) {
+        setDoc(doc(db, 'news', post.id), { comments_count: post.comments_count }, { merge: true }).catch(() => {});
+      }
+    }
+
+    this.emit(`comments_${item.post_id}`, this.comments.filter((c) => c.post_id === item.post_id));
+    realtimeSync.broadcast('COMMENT_DELETED', { commentId, postId: item.post_id });
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await deleteDoc(doc(db, 'comments', commentId));
+      } catch (e) {
+        console.warn('Firestore deleteComment error:', e);
+      }
+    }
+
+    return true;
   }
 
   // --- EVENTS ---
@@ -1923,31 +2100,47 @@ class DatabaseService {
 
   // --- GALLERY ---
   public subscribeGallery(callback: (gal: GalleryItem[]) => void): () => void {
+    callback(this.gallery);
+    const unsubLocal = this.subscribe('gallery', this.gallery, callback);
+
+    let unsubFirestore: (() => void) | null = null;
     if (isFirebaseConfigured && db) {
       try {
         const q = query(collection(db, 'gallery'), orderBy('created_at', 'desc'));
-        return onSnapshot(
+        unsubFirestore = onSnapshot(
           q,
           (snapshot) => {
-            const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as GalleryItem));
-            if (items.length > 0) {
-              this.gallery = items;
-              this.saveCollection('gallery', items);
-              callback(items);
-            } else {
+            const remoteItems = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as GalleryItem));
+            if (remoteItems.length > 0) {
+              const remoteIds = new Set(remoteItems.map((r) => r.id));
+              const merged = [...remoteItems];
+              for (const local of this.gallery) {
+                if (!remoteIds.has(local.id)) {
+                  merged.push(local);
+                }
+              }
+              merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+              this.gallery = merged;
+              this.saveCollection('gallery', this.gallery);
+              this.emit('gallery', this.gallery);
               callback(this.gallery);
             }
           },
           (err) => {
             console.warn('Firestore gallery listener fallback:', err);
-            callback(this.gallery);
           }
         );
       } catch (err) {
         console.warn('Firestore gallery query fallback:', err);
       }
     }
-    return this.subscribe('gallery', this.gallery, callback);
+
+    return () => {
+      unsubLocal();
+      if (unsubFirestore) {
+        unsubFirestore();
+      }
+    };
   }
 
   public async addGalleryItem(item: Omit<GalleryItem, 'id' | 'likes_count' | 'liked_by' | 'created_at'>): Promise<GalleryItem> {
@@ -2006,10 +2199,14 @@ class DatabaseService {
     savePhotoPermanently(item).catch(() => {});
 
     if (isFirebaseConfigured && db) {
-      updateDoc(doc(db, 'gallery', item.id), {
-        likes_count: item.likes_count,
-        liked_by: item.liked_by
-      }).catch(() => {});
+      setDoc(
+        doc(db, 'gallery', item.id),
+        {
+          likes_count: item.likes_count,
+          liked_by: item.liked_by
+        },
+        { merge: true }
+      ).catch(() => {});
     }
 
     realtimeSync.broadcast('PHOTO_LIKED', { photoId: itemId, uid, isLiked: !alreadyLiked });
@@ -2644,9 +2841,54 @@ class DatabaseService {
         .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
     };
 
-    return this.subscribe('conversations', getFiltered(), () => {
+    callback(getFiltered());
+
+    const unsubLocal = this.subscribe('conversations', getFiltered(), () => {
       callback(getFiltered());
     });
+
+    let unsubFirestore: (() => void) | null = null;
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(
+          collection(db, 'conversations'),
+          where('participants', 'array-contains', userId)
+        );
+        unsubFirestore = onSnapshot(
+          q,
+          (snapshot) => {
+            let changed = false;
+            snapshot.docs.forEach((doc) => {
+              const remoteConv = { id: doc.id, ...doc.data() } as Conversation;
+              const idx = this.conversations.findIndex((c) => c.id === remoteConv.id);
+              if (idx >= 0) {
+                if (new Date(remoteConv.updated_at).getTime() >= new Date(this.conversations[idx].updated_at).getTime()) {
+                  this.conversations[idx] = { ...this.conversations[idx], ...remoteConv };
+                  changed = true;
+                }
+              } else {
+                this.conversations.push(remoteConv);
+                changed = true;
+              }
+            });
+            if (changed) {
+              this.saveCollection('conversations', this.conversations);
+              callback(getFiltered());
+            }
+          },
+          (err) => console.warn('Firestore user conversations note:', err)
+        );
+      } catch (e) {
+        console.warn('Firestore user conversations listener error:', e);
+      }
+    }
+
+    return () => {
+      unsubLocal();
+      if (unsubFirestore) {
+        unsubFirestore();
+      }
+    };
   }
 
   public subscribeMessages(conversationId: string, callback: (msgs: ChatMessage[]) => void): () => void {
@@ -2655,6 +2897,8 @@ class DatabaseService {
         .filter((m) => m.conversation_id === conversationId)
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
+    callback(getFiltered());
+
     const unsubSpecific = this.subscribe(`messages_${conversationId}`, getFiltered(), () => {
       callback(getFiltered());
     });
@@ -2662,9 +2906,56 @@ class DatabaseService {
       callback(getFiltered());
     });
 
+    let unsubFirestore: (() => void) | null = null;
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(
+          collection(db, 'messages'),
+          where('conversation_id', '==', conversationId)
+        );
+        unsubFirestore = onSnapshot(
+          q,
+          (snapshot) => {
+            let changed = false;
+            snapshot.docChanges().forEach((change) => {
+              const remoteMsg = { id: change.doc.id, ...change.doc.data() } as ChatMessage;
+              if (change.type === 'removed') {
+                const prevLen = this.messages.length;
+                this.messages = this.messages.filter((m) => m.id !== remoteMsg.id);
+                if (this.messages.length !== prevLen) {
+                  changed = true;
+                }
+              } else {
+                const existingIdx = this.messages.findIndex((m) => m.id === remoteMsg.id);
+                if (existingIdx >= 0) {
+                  if (JSON.stringify(this.messages[existingIdx]) !== JSON.stringify(remoteMsg)) {
+                    this.messages[existingIdx] = remoteMsg;
+                    changed = true;
+                  }
+                } else {
+                  this.messages.push(remoteMsg);
+                  changed = true;
+                }
+              }
+            });
+            if (changed) {
+              this.saveCollection('messages', this.messages);
+              callback(getFiltered());
+            }
+          },
+          (err) => console.warn('Firestore messages for conv note:', err)
+        );
+      } catch (e) {
+        console.warn('Firestore messages for conv listener error:', e);
+      }
+    }
+
     return () => {
       unsubSpecific();
       unsubGeneral();
+      if (unsubFirestore) {
+        unsubFirestore();
+      }
     };
   }
 
@@ -2942,6 +3233,23 @@ class DatabaseService {
         conv.last_message_text = '';
       }
       this.saveCollection('conversations', [...this.conversations]);
+    }
+
+    this.emit('messages', this.messages);
+    this.emit(`messages_${conversationId}`, this.messages.filter((m) => m.conversation_id === conversationId));
+    this.emit('conversations', this.conversations);
+    this.emit('unread_messages', this.messages);
+    realtimeSync.broadcast('MESSAGE_DELETED', { messageId, conversationId });
+
+    if (isFirebaseConfigured && db) {
+      try {
+        deleteDoc(doc(db, 'messages', messageId)).catch(() => {});
+        if (conv) {
+          setDoc(doc(db, 'conversations', conv.id), cleanFirestoreData(conv), { merge: true }).catch(() => {});
+        }
+      } catch (e) {
+        console.warn('Firestore deleteMessage note:', e);
+      }
     }
 
     return true;

@@ -50,15 +50,27 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const effectiveUid = getEffectiveUserId(currentUser);
+  const [activeNews, setActiveNews] = useState<NewsItem | null>(news);
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [likesCount, setLikesCount] = useState<number>(0);
 
   React.useEffect(() => {
-    if (news) {
-      setIsLiked(Array.isArray(news.liked_by) && news.liked_by.includes(effectiveUid));
-      setLikesCount(news.likes_count || 0);
-    }
-  }, [news, effectiveUid]);
+    if (!news) return;
+    setActiveNews(news);
+    setIsLiked(Array.isArray(news.liked_by) && news.liked_by.includes(effectiveUid));
+    setLikesCount(news.likes_count || 0);
+
+    const unsub = dbService.subscribeNews((items) => {
+      const found = items.find((n) => n.id === news.id);
+      if (found) {
+        setActiveNews(found);
+        setIsLiked(Array.isArray(found.liked_by) && found.liked_by.includes(effectiveUid));
+        setLikesCount(found.likes_count || 0);
+      }
+    });
+
+    return () => unsub();
+  }, [news?.id, effectiveUid]);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -68,19 +80,21 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
   }, [isOpen]);
 
   const handleToggleLike = async () => {
-    if (!news) return;
+    const currentItem = activeNews || news;
+    if (!currentItem) return;
     triggerHapticFeedback();
     const nextLiked = !isLiked;
     setIsLiked(nextLiked);
     setLikesCount((prev) => Math.max(0, prev + (nextLiked ? 1 : -1)));
-    await dbService.toggleLikeNews(news.id, effectiveUid);
+    await dbService.toggleLikeNews(currentItem.id, effectiveUid);
   };
 
   if (!isOpen || !news) return null;
 
-  const title = language === 'kn' ? news.title_kn : news.title_en;
-  const content = language === 'kn' ? news.content_kn : news.content_en;
-  const weekStatus = getOneWeekStatus(news.created_at);
+  const displayItem = activeNews || news;
+  const title = language === 'kn' ? displayItem.title_kn : displayItem.title_en;
+  const content = language === 'kn' ? displayItem.content_kn : displayItem.content_en;
+  const weekStatus = getOneWeekStatus(displayItem.created_at);
 
   const handleSpeech = () => {
     if (isSpeaking) {
@@ -476,13 +490,13 @@ export const NewsDetailModal: React.FC<NewsDetailModalProps> = ({
             <button
               onClick={() => {
                 onClose();
-                onOpenComments(news);
+                onOpenComments(displayItem);
               }}
               className="btn-secondary"
               style={{ fontSize: '0.82rem', minHeight: '40px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               <MessageSquare size={16} />
-              <span>{isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'} ({news.comments_count || 0})</span>
+              <span>{isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆಗಳು' : 'Comments'} ({displayItem.comments_count || 0})</span>
             </button>
 
             <button

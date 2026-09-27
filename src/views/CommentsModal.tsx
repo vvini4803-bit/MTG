@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { dbService } from '../services/dbService';
 import { getEffectiveUserId, getEffectiveUserName, triggerHapticFeedback } from '../services/deviceIdentity';
 import { NewsItem, CommentItem } from '../types';
-import { X, Send, Heart, Flag, MessageSquare, User, Sparkles } from 'lucide-react';
+import { X, Send, Heart, Flag, MessageSquare, User, Sparkles, Trash2 } from 'lucide-react';
 
 interface CommentsModalProps {
   news: { id: string; title_en: string; title_kn?: string; [key: string]: any } | null;
@@ -24,7 +24,9 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
 
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentText, setCommentText] = useState('');
-  const [guestName, setGuestName] = useState('');
+  const [guestName, setGuestName] = useState(() => {
+    return (typeof window !== 'undefined' ? localStorage.getItem('gramasiri_resident_name') || '' : '');
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const effectiveUid = getEffectiveUserId(currentUser);
@@ -47,6 +49,12 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
       ? currentUser.name
       : (guestName.trim() || getEffectiveUserName(currentUser, isKannada));
 
+    if (!currentUser && guestName.trim()) {
+      try {
+        localStorage.setItem('gramasiri_resident_name', guestName.trim());
+      } catch {}
+    }
+
     const authorRole = currentUser ? currentUser.role : 'USER';
 
     await dbService.addComment({
@@ -66,6 +74,15 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
     e.stopPropagation();
     triggerHapticFeedback();
     await dbService.toggleLikeComment(commentId, effectiveUid);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!window.confirm(isKannada ? 'ಈ ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವೇ?' : 'Delete this comment?')) return;
+    try {
+      await dbService.deleteComment(commentId, effectiveUid, currentUser?.role || 'USER');
+    } catch (err: any) {
+      alert(err.message || 'Cannot delete comment');
+    }
   };
 
   return (
@@ -283,24 +300,47 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
                       <span>{c.likes_count || 0}</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => onOpenReportModal('COMMENT', c.id, c.text.substring(0, 30))}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        fontSize: '0.72rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                      title="Report abusive comment"
-                    >
-                      <Flag size={12} />
-                      <span>{isKannada ? 'ವರದಿ' : 'Report'}</span>
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {(c.author_id === effectiveUid || ['SUPER_ADMIN', 'ADMIN', 'MODERATOR'].includes(currentUser?.role || '')) && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteComment(c.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#F87171',
+                            cursor: 'pointer',
+                            fontSize: '0.72rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}
+                          title={isKannada ? 'ಪ್ರತಿಕ್ರಿಯೆ ಅಳಿಸಿ' : 'Delete comment'}
+                        >
+                          <Trash2 size={12} />
+                          <span>{isKannada ? 'ಅಳಿಸಿ' : 'Delete'}</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => onOpenReportModal('COMMENT', c.id, c.text.substring(0, 30))}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontSize: '0.72rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                        title="Report abusive comment"
+                      >
+                        <Flag size={12} />
+                        <span>{isKannada ? 'ವರದಿ' : 'Report'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
