@@ -14,6 +14,7 @@ import {
   User,
   Sparkles
 } from 'lucide-react';
+import { GoogleEcosystemModal } from './GoogleEcosystemModal';
 
 interface NavbarProps {
   currentTab: ViewTab;
@@ -32,6 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { currentUser, role, isAdmin } = useAuth();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
   useEffect(() => {
     const savedTheme = (localStorage.getItem('gramasiri_theme') as 'dark' | 'light') || 'dark';
@@ -58,7 +60,15 @@ export const Navbar: React.FC<NavbarProps> = ({
     : (import.meta.env.VITE_VILLAGE_NAME_EN || 'Muttagundi');
 
   return (
-    <header className="header-glass">
+    <header className="header-glass" style={{ position: 'relative' }}>
+      {/* Official Google 4-Color Accent Strip */}
+      <div
+        style={{
+          height: '3px',
+          width: '100%',
+          background: 'linear-gradient(90deg, #4285F4 0%, #4285F4 25%, #EA4335 25%, #EA4335 50%, #FBBC05 50%, #FBBC05 75%, #34A853 75%, #34A853 100%)'
+        }}
+      />
       <div className="container" style={{
         display: 'flex',
         alignItems: 'center',
@@ -93,19 +103,52 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}>
                 {villageName}
               </span>
-              <span style={{
-                fontSize: '0.68rem',
-                padding: '1px 6px',
-                borderRadius: '4px',
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: '#34D399',
-                fontWeight: 700
-              }}>
-                SUPER APP
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsGoogleModalOpen(true);
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.64rem',
+                  padding: '2px 7px',
+                  borderRadius: '6px',
+                  background: 'rgba(66, 133, 244, 0.16)',
+                  border: '1px solid rgba(66, 133, 244, 0.4)',
+                  color: '#93C5FD',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+                title={isKannada ? 'ಗೂಗಲ್ ತಂತ್ರಜ್ಞಾನ ಪರಿಸರ ವಿವರಗಳು' : 'Google Ecosystem Details'}
+              >
+                <span style={{ display: 'flex', gap: '2px' }}>
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#4285F4' }} />
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#EA4335' }} />
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#FBBC05' }} />
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#34A853' }} />
+                </span>
+                <span>GOOGLE AI</span>
               </span>
             </div>
-            <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', lineHeight: 1 }}>
-              {isKannada ? 'ನಮ್ಮ ಗ್ರಾಮ — ನಮ್ಮ ಭವಿಷ್ಯ' : 'Official Community Portal'}
+            <p
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsGoogleModalOpen(true);
+              }}
+              style={{
+                fontSize: '0.67rem',
+                color: '#93C5FD',
+                lineHeight: 1.1,
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              <span>{isKannada ? '⚡ ಗೂಗಲ್ ಕ್ಲೌಡ್ & ಜೆಮಿನಿ AI' : '⚡ Powered by Google Cloud & Gemini AI'}</span>
             </p>
           </div>
         </div>
@@ -380,6 +423,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
       </div>
+
+      <GoogleEcosystemModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        isKannada={isKannada}
+      />
     </header>
   );
 };

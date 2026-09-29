@@ -77,6 +77,20 @@ export const FirstAiVillageModal: React.FC<FirstAiVillageModalProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Google 4-Color Accent Strip */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            borderTopLeftRadius: '24px',
+            borderTopRightRadius: '24px',
+            background: 'linear-gradient(90deg, #4285F4 0%, #4285F4 25%, #EA4335 25%, #EA4335 50%, #FBBC05 50%, #FBBC05 75%, #34A853 75%, #34A853 100%)'
+          }}
+        />
+
         {/* Close Button */}
         <button
           onClick={onClose}

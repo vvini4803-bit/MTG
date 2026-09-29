@@ -28,6 +28,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { FirstAiVillageModal } from '../components/home/FirstAiVillageModal';
+import { GoogleEcosystemModal } from '../components/layout/GoogleEcosystemModal';
 
 interface SettingsScreenProps {
   onNavigateTab?: (tab: string) => void;
@@ -42,6 +43,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
   const [cacheCleared, setCacheCleared] = useState(false);
   const [soundTested, setSoundTested] = useState(false);
   const [isAiMilestoneOpen, setIsAiMilestoneOpen] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
   // Mobile Push Notifications State
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
@@ -858,6 +860,37 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
                     : "Karnataka & India's 1st Digital Village AI App — View"}
                 </span>
               </div>
+
+              {/* Google Ecosystem & AI Architecture Button */}
+              <div
+                onClick={() => setIsGoogleModalOpen(true)}
+                role="button"
+                tabIndex={0}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginTop: '8px',
+                  background: 'linear-gradient(135deg, rgba(66, 133, 244, 0.2) 0%, rgba(52, 168, 83, 0.15) 100%)',
+                  border: '1px solid rgba(66, 133, 244, 0.45)',
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <div style={{ display: 'flex', gap: '2px' }}>
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#4285F4' }} />
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#EA4335' }} />
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#FBBC05' }} />
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#34A853' }} />
+                </div>
+                <span style={{ fontSize: '0.78rem', color: '#BFDBFE', fontWeight: 800 }}>
+                  {isKannada
+                    ? 'ಗೂಗಲ್ ಕ್ಲೌಡ್ & ಜೆಮಿನಿ AI ತಂತ್ರಜ್ಞಾನ ವ್ಯವಸ್ಥೆ — ವಿವರ ನೋಡಿ'
+                    : 'Google Cloud & Gemini AI Architecture — View'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -866,6 +899,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
       <FirstAiVillageModal
         isOpen={isAiMilestoneOpen}
         onClose={() => setIsAiMilestoneOpen(false)}
+        isKannada={isKannada}
+      />
+
+      <GoogleEcosystemModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
         isKannada={isKannada}
       />
     </div>

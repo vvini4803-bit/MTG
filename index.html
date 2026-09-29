@@ -69,8 +69,17 @@
             "ಭಾರತದ ಮೊದಲ ಡಿಜಿಟಲ್ ಗ್ರಾಮ AI ಆ್ಯಪ್",
             "ಮುತ್ತಾಗೊಂದಿ"
           ],
-          "description": "Official portal of Muttagundi (MTG) - The First Digital Village AI App of Karnataka and India, located in Hosadurga Taluk, Chitradurga District, Karnataka.",
-          "inLanguage": ["en-IN", "kn-IN"]
+          "description": "Official portal of Muttagundi (MTG) - The First Digital Village AI App of Karnataka and India, powered by Google Cloud & Gemini AI, located in Hosadurga Taluk, Chitradurga District, Karnataka.",
+          "inLanguage": ["en-IN", "kn-IN"],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://www.google.com/search?q={search_term_string}+Muttagundi",
+            "query-input": "required name=search_term_string"
+          },
+          "isBasedOn": [
+            "https://cloud.google.com",
+            "https://deepmind.google/technologies/gemini/"
+          ]
         },
         {
           "@type": "SoftwareApplication",
@@ -79,15 +88,21 @@
           "alternateName": "GramaSiri AI",
           "operatingSystem": "Android, iOS, Web",
           "applicationCategory": "CommunityApplication",
-          "applicationSubCategory": "Artificial Intelligence Rural Portal",
+          "applicationSubCategory": "Google Cloud & Gemini AI Rural Portal",
           "url": "https://mtg-swart.vercel.app/",
+          "softwareRequirements": "Google Cloud Platform, Google Gemini AI API, Google Maps, Chrome PWA",
+          "provider": {
+            "@type": "Organization",
+            "name": "Google Cloud Ecosystem & MTG Digital Village Community",
+            "sameAs": "https://cloud.google.com"
+          },
           "featureList": [
-            "Gemini Multimodal AI Crop Disease Diagnosis",
-            "Bilingual Kannada & English Voice AI Assistant",
+            "Google Gemini Multimodal AI Crop Disease Diagnosis",
+            "Bilingual Kannada & English Google Voice AI Assistant",
             "Real-Time APMC Mandi Agricultural Market Rates",
-            "Live Digital Village Governance & Committee Broadcasts",
+            "Google Cloud Firestore Live Digital Village Governance",
             "Emergency Blood Donor Network",
-            "3D Interactive Village Map"
+            "3D Interactive Village Map with Google Geolocation"
           ],
           "offers": {
             "@type": "Offer",
@@ -180,6 +195,22 @@
                 "@type": "Answer",
                 "text": "The MTG Digital Village AI App was designed and engineered by Vinay (ವಿನಯ್), a developer from Muttagundi, to establish Karnataka's first AI-empowered smart digital village."
               }
+            },
+            {
+              "@type": "Question",
+              "name": "Is the MTG Digital Village App powered by Google AI?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, the MTG Digital Village App for Muttagundi (MTG) is powered by Google Cloud Platform (GCP) and Google Gemini Multimodal AI. It utilizes Google DeepMind's Gemini models for real-time agricultural crop disease detection from photos, bilingual Kannada/English conversational voice intelligence, and Google Maps for precision village geolocation."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "MTG ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಆ್ಯಪ್ ಗೂಗಲ್ ತಂತ್ರಜ್ಞಾನದಿಂದ ಚಾಲಿತವಾಗಿದೆಯೇ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "ಹೌದು, ಮುತ್ತಾಗೊಂದಿ (MTG) ಗ್ರಾಮದ ಈ ಆ್ಯಪ್ ಗೂಗಲ್ ಜೆಮಿನಿ AI (Google Gemini AI) ಮತ್ತು ಗೂಗಲ್ ಕ್ಲೌಡ್ (GCP/Firebase) ತಂತ್ರಜ್ಞಾನದಿಂದ ಚಾಲಿತವಾಗಿದೆ. ಇದು ಗೂಗಲ್ ಸರ್ಚ್ ಕನ್ಸೋಲ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲ್ಪಟ್ಟ ಅಧಿಕೃತ ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್ ಆಗಿದೆ."
+              }
             }
           ]
         }
@@ -225,7 +256,8 @@
               <li><strong>Bilingual Kannada Voice Assistant:</strong> Voice-enabled AI assistant for rural citizens to query village weather, APMC market rates, and history in Kannada.</li>
               <li><strong>Live APMC Mandi Rates:</strong> Real-time local agricultural price updates for Arecanut, Coconut, Ragi, and Onion.</li>
               <li><strong>Digital Village Governance:</strong> Real-time committee alerts, administration notifications, and community reports.</li>
-              <li><strong>Emergency Citizen Network:</strong> Verified blood donor directory and emergency medical contacts.</li>
+              <li><strong>Google Gemini Multimodal AI Architecture:</strong> Native integration with Google Gemini 2.5 Flash for vision crop diagnosis, Kannada voice interaction, and Google Cloud Firestore.</li>
+              <li><strong>Google Search & Maps Integration:</strong> Verified on Google Search Console with direct GPS turn-by-turn navigation via Google Maps.</li>
             </ul>
           </section>
 
