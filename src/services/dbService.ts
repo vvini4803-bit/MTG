@@ -29,7 +29,8 @@ import {
   CommitteeExpense,
   CommitteeTransaction,
   CommitteeAuditLog,
-  CommitteeSummary
+  CommitteeSummary,
+  CommitteeRole
 } from '../types';
 import {
   SEED_NEWS,
@@ -355,13 +356,24 @@ class DatabaseService {
     this.userBlocks = this.loadCollection('user_blocks', []);
     this.notifications = this.loadCollection('notifications', []);
 
-    // 🏛️ Initialize MTG Committee Financial Collections
-    this.committeeMembers = this.loadCollection('committee_members', SEED_COMMITTEE_MEMBERS);
-    this.committeeContributions = this.loadCollection('committee_contributions', SEED_COMMITTEE_CONTRIBUTIONS);
-    this.committeeLoans = this.loadCollection('committee_loans', SEED_COMMITTEE_LOANS);
-    this.committeeExpenses = this.loadCollection('committee_expenses', SEED_COMMITTEE_EXPENSES);
-    this.committeeTransactions = this.loadCollection('committee_transactions', SEED_COMMITTEE_TRANSACTIONS);
-    this.committeeAuditLogs = this.loadCollection('committee_audit_logs', SEED_COMMITTEE_AUDIT_LOGS);
+    // 🏛️ Initialize MTG Committee Financial Collections (Real Database Records Only)
+    const cleanCommitteeKey = 'gramasiri_committee_real_v3';
+    if (!localStorage.getItem(cleanCommitteeKey)) {
+      localStorage.removeItem('gramasiri_committee_members');
+      localStorage.removeItem('gramasiri_committee_contributions');
+      localStorage.removeItem('gramasiri_committee_loans');
+      localStorage.removeItem('gramasiri_committee_expenses');
+      localStorage.removeItem('gramasiri_committee_transactions');
+      localStorage.removeItem('gramasiri_committee_audit_logs');
+      localStorage.setItem(cleanCommitteeKey, 'true');
+    }
+
+    this.committeeMembers = this.loadCollection('committee_members', []);
+    this.committeeContributions = this.loadCollection('committee_contributions', []);
+    this.committeeLoans = this.loadCollection('committee_loans', []);
+    this.committeeExpenses = this.loadCollection('committee_expenses', []);
+    this.committeeTransactions = this.loadCollection('committee_transactions', []);
+    this.committeeAuditLogs = this.loadCollection('committee_audit_logs', []);
 
     // Ensure all stored user updates are auto-verified and have 1-week active status
     this.ensureAutoVerificationAndRetention();
@@ -3447,28 +3459,42 @@ class DatabaseService {
   // ==========================================
 
   public getCommitteeSummary(): CommitteeSummary {
-    const totalFundCollected = this.committeeContributions.reduce((acc, c) => acc + (c.amount_paid || 0), 0);
+    const confirmedContributions = this.committeeContributions
+      .filter((c) => c.status === 'PAID')
+      .reduce((acc, c) => acc + (c.amount_paid || 0), 0);
+
+    const otherIncome = this.committeeTransactions
+      .filter((t) => t.type === 'OTHER_INCOME' && t.direction === 'IN' && t.status === 'COMPLETED')
+      .reduce((acc, t) => acc + (t.amount || 0), 0);
+
+    const totalExpenses = this.committeeExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
+    const totalLoansIssued = this.committeeLoans.reduce((acc, l) => acc + (l.principal_amount || 0), 0);
+
+    // Total Fund per Requirement 4: SUM(actual confirmed member contributions) + other verified income - actual expenses - actual loan disbursements
+    const totalFundCollected = confirmedContributions + otherIncome - totalExpenses - totalLoansIssued;
+
     const activeLoans = this.committeeLoans.filter((l) => l.status === 'ACTIVE' || l.status === 'PARTIALLY_PAID' || l.status === 'OVERDUE');
     const activeLoansCount = activeLoans.length;
-    const outstandingLoanAmount = activeLoans.reduce((acc, l) => acc + (l.remaining_principal || 0) + (l.remaining_interest || 0), 0);
-    const interestEarned = this.committeeLoans.reduce((acc, l) => {
-      const repInterest = (l.repayments || []).reduce((rAcc, r) => rAcc + (r.interest_portion || 0), 0);
-      return acc + repInterest;
-    }, 0);
-    const totalExpenses = this.committeeExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
 
     const totalPrincipalRepaid = this.committeeLoans.reduce((acc, l) => {
       const repPrincipal = (l.repayments || []).reduce((rAcc, r) => rAcc + (r.principal_portion || 0), 0);
       return acc + repPrincipal;
     }, 0);
 
-    const totalLoansIssued = this.committeeLoans.reduce((acc, l) => acc + (l.principal_amount || 0), 0);
+    // Outstanding Loans per Requirement 6: actual loan principal - actual confirmed repayments
+    const outstandingLoanAmount = Math.max(0, totalLoansIssued - totalPrincipalRepaid);
 
-    // Verified available balance formula
-    const availableBalance = Math.max(0, totalFundCollected + totalPrincipalRepaid + interestEarned - totalLoansIssued - totalExpenses);
+    // Interest Earned per Requirement 6: actual confirmed interest payments
+    const interestEarned = this.committeeLoans.reduce((acc, l) => {
+      const repInterest = (l.repayments || []).reduce((rAcc, r) => rAcc + (r.interest_portion || 0), 0);
+      return acc + repInterest;
+    }, 0);
+
+    // Available Balance per Requirement 6: calculated from verified transactions
+    const availableBalance = Math.max(0, confirmedContributions + totalPrincipalRepaid + interestEarned + otherIncome - totalLoansIssued - totalExpenses);
 
     const currentMonth = new Date().toISOString().substring(0, 7);
-    const currentMonthContribs = this.committeeContributions.filter((c) => c.month === currentMonth || c.month === '2026-09');
+    const currentMonthContribs = this.committeeContributions.filter((c) => c.month === currentMonth);
     const pendingContribs = currentMonthContribs.filter((c) => c.status === 'PENDING' || c.amount_paid < c.expected_amount);
     const pendingContributionsCount = pendingContribs.length;
     const pendingContributionsAmount = pendingContribs.reduce((acc, c) => acc + Math.max(0, c.expected_amount - c.amount_paid), 0);
@@ -3488,6 +3514,64 @@ class DatabaseService {
     };
   }
 
+  // --- FIRST ADMIN & ROLE CHECKING ---
+  public hasCommitteeAdmin(): boolean {
+    return this.committeeMembers.some((m) => m.role === 'ADMIN' && m.status === 'ACTIVE');
+  }
+
+  public async setupFirstAdmin(params: {
+    name: string;
+    name_kn?: string;
+    phone: string;
+    email?: string;
+    address?: string;
+    userId?: string;
+  }): Promise<CommitteeMember> {
+    if (this.hasCommitteeAdmin()) {
+      throw new Error('Committee Admin account already exists. Only existing Admin can assign roles.');
+    }
+
+    const firstAdmin: CommitteeMember = {
+      id: 'mem_' + Date.now(),
+      user_id: params.userId,
+      name: params.name.trim(),
+      name_kn: params.name_kn?.trim(),
+      phone: params.phone.trim(),
+      email: params.email?.trim(),
+      address: params.address || 'Muttagundi Village',
+      joining_date: new Date().toISOString().split('T')[0],
+      role: 'ADMIN',
+      role_kn: 'ಅಡ್ಮಿನ್ (ಮುಖ್ಯಸ್ಥರು)',
+      status: 'ACTIVE',
+      total_contributed: 0,
+      active_loans_count: 0,
+      outstanding_loan_balance: 0,
+      created_at: new Date().toISOString()
+    };
+
+    this.committeeMembers = [firstAdmin];
+    this.saveCollection('committee_members', this.committeeMembers);
+
+    await this.addAuditLog({
+      action: 'SETUP_FIRST_ADMIN',
+      action_kn: 'ಮೊದಲ ಸಮಿತಿ ಅಡ್ಮಿನ್ ಸ್ಥಾಪಿಸಲಾಗಿದೆ',
+      actor_id: params.userId || firstAdmin.id,
+      actor_name: firstAdmin.name,
+      actor_role: 'ADMIN',
+      target_id: firstAdmin.id,
+      target_type: 'MEMBER',
+      new_value: `${firstAdmin.name} (ADMIN)`,
+      details: 'Established the initial Committee Admin account.'
+    });
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_members', firstAdmin.id), cleanFirestoreData(firstAdmin)).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_members', item: firstAdmin });
+    return firstAdmin;
+  }
+
   // --- MEMBERS ---
   public subscribeCommitteeMembers(callback: (members: CommitteeMember[]) => void): () => void {
     return this.subscribe('committee_members', this.committeeMembers, callback);
@@ -3496,11 +3580,24 @@ class DatabaseService {
   public async addCommitteeMember(
     member: Omit<CommitteeMember, 'id' | 'created_at' | 'total_contributed' | 'active_loans_count' | 'outstanding_loan_balance'>,
     actorId: string,
-    actorName: string
+    actorName: string,
+    actorRole: CommitteeRole = 'ADMIN'
   ): Promise<CommitteeMember> {
+    if (this.hasCommitteeAdmin() && actorRole !== 'ADMIN' && actorRole !== 'VICE_ADMIN') {
+      throw new Error('Unauthorized: Only Admin or Vice Admin can add members.');
+    }
+    if (actorRole === 'VICE_ADMIN' && member.role === 'ADMIN') {
+      throw new Error('Unauthorized: Vice Admin cannot assign Admin role.');
+    }
+
+    const assignedRole: CommitteeRole = member.role || 'MEMBER';
+    const roleKn = assignedRole === 'ADMIN' ? 'ಅಡ್ಮಿನ್ (ಮುಖ್ಯಸ್ಥರು)' : assignedRole === 'VICE_ADMIN' ? 'ಉಪ ಅಡ್ಮಿನ್' : 'ಸದಸ್ಯರು';
+
     const newMember: CommitteeMember = {
       ...member,
       id: 'mem_' + Date.now(),
+      role: assignedRole,
+      role_kn: member.role_kn || roleKn,
       total_contributed: 0,
       active_loans_count: 0,
       outstanding_loan_balance: 0,
@@ -3515,6 +3612,7 @@ class DatabaseService {
       action_kn: 'ಹೊಸ ಸಮಿತಿ ಸದಸ್ಯರನ್ನು ಸೇರಿಸಲಾಗಿದೆ',
       actor_id: actorId,
       actor_name: actorName,
+      actor_role: actorRole,
       target_id: newMember.id,
       target_type: 'MEMBER',
       new_value: `${newMember.name} (${newMember.role})`
@@ -3532,13 +3630,37 @@ class DatabaseService {
     id: string,
     updates: Partial<CommitteeMember>,
     actorId: string,
-    actorName: string
+    actorName: string,
+    actorRole: CommitteeRole = 'ADMIN'
   ): Promise<CommitteeMember | null> {
+    if (actorRole !== 'ADMIN' && actorRole !== 'VICE_ADMIN') {
+      throw new Error('Unauthorized: Only Admin or Vice Admin can update member information.');
+    }
+
     const idx = this.committeeMembers.findIndex((m) => m.id === id);
     if (idx === -1) return null;
 
     const oldMember = this.committeeMembers[idx];
+
+    // Security constraints for Vice Admin
+    if (actorRole === 'VICE_ADMIN') {
+      if (oldMember.role === 'ADMIN') {
+        throw new Error('Unauthorized: Vice Admin cannot modify Admin account.');
+      }
+      if (updates.role && updates.role !== oldMember.role) {
+        throw new Error('Unauthorized: Only Admin can change roles.');
+      }
+    }
+
+    if (updates.role && updates.role !== oldMember.role && actorRole !== 'ADMIN') {
+      throw new Error('Unauthorized: Only Admin can change member roles.');
+    }
+
     const updated: CommitteeMember = { ...oldMember, ...updates };
+    if (updates.role) {
+      updated.role_kn = updates.role === 'ADMIN' ? 'ಅಡ್ಮಿನ್ (ಮುಖ್ಯಸ್ಥರು)' : updates.role === 'VICE_ADMIN' ? 'ಉಪ ಅಡ್ಮಿನ್' : 'ಸದಸ್ಯರು';
+    }
+
     this.committeeMembers[idx] = updated;
     this.saveCollection('committee_members', [...this.committeeMembers]);
 
@@ -3547,11 +3669,20 @@ class DatabaseService {
       action_kn: 'ಸದಸ್ಯರ ವಿವರ ನವೀಕರಿಸಲಾಗಿದೆ',
       actor_id: actorId,
       actor_name: actorName,
+      actor_role: actorRole,
       target_id: id,
       target_type: 'MEMBER',
-      previous_value: JSON.stringify({ role: oldMember.role, status: oldMember.status }),
-      new_value: JSON.stringify({ role: updated.role, status: updated.status })
+      previous_value: oldMember.role !== updated.role ? `Role: ${oldMember.role}` : `${oldMember.name}`,
+      new_value: oldMember.role !== updated.role ? `Role: ${updated.role}` : `${updated.name}`,
+      details: updates.role ? `Changed role from ${oldMember.role} to ${updated.role}` : undefined
     });
+
+    await this.notifyCommitteeUpdate(
+      `Member Updated: ${updated.name}`,
+      `ಸದಸ್ಯರ ವಿವರ ನವೀಕರಣ: ${updated.name}`,
+      `${actorName} (${actorRole}) updated details for ${updated.name} (${updated.role}).`,
+      `${actorName} (${actorRole}) ${updated.name} ಅವರ ವಿವರಗಳನ್ನು ನವೀಕರಿಸಿದ್ದಾರೆ (${updated.role_kn || updated.role}).`
+    );
 
     if (isFirebaseConfigured && db) {
       setDoc(doc(db, 'committee_members', id), cleanFirestoreData(updated), { merge: true }).catch(() => {});
@@ -3561,11 +3692,83 @@ class DatabaseService {
     return updated;
   }
 
-  public async toggleMemberStatus(id: string, actorId: string, actorName: string): Promise<boolean> {
+  public async notifyCommitteeUpdate(
+    titleEn: string,
+    titleKn: string,
+    messageEn: string,
+    messageKn: string
+  ): Promise<void> {
+    try {
+      await this.addNotification({
+        user_id: 'ALL',
+        title_en: `🏛️ MTG Committee: ${titleEn}`,
+        title_kn: `🏛️ ಎಂಟಿಜಿ ಸಮಿತಿ: ${titleKn}`,
+        message_en: messageEn,
+        message_kn: messageKn,
+        type: 'ADMIN',
+        link_tab: 'committee'
+      });
+    } catch (e) {
+      console.warn('Failed to broadcast committee notification:', e);
+    }
+  }
+
+  public async toggleMemberStatus(id: string, actorId: string, actorName: string, actorRole: CommitteeRole = 'ADMIN'): Promise<boolean> {
+    if (actorRole !== 'ADMIN' && actorRole !== 'VICE_ADMIN') {
+      throw new Error('Unauthorized: Only Admin or Vice Admin can deactivate or activate members.');
+    }
     const member = this.committeeMembers.find((m) => m.id === id);
     if (!member) return false;
+    if (member.role === 'ADMIN') {
+      if (actorRole === 'VICE_ADMIN') {
+        throw new Error('Unauthorized: Vice Admin cannot modify Admin status.');
+      }
+      const activeAdmins = this.committeeMembers.filter(m => m.role === 'ADMIN' && m.status === 'ACTIVE');
+      if (activeAdmins.length <= 1 && member.status === 'ACTIVE') {
+        throw new Error('Cannot deactivate the sole Admin.');
+      }
+    }
     const newStatus = member.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    await this.updateCommitteeMember(id, { status: newStatus }, actorId, actorName);
+    await this.updateCommitteeMember(id, { status: newStatus }, actorId, actorName, actorRole);
+    return true;
+  }
+
+  public async deleteCommitteeMember(id: string, actorId: string, actorName: string, actorRole: CommitteeRole = 'ADMIN'): Promise<boolean> {
+    if (actorRole !== 'ADMIN' && actorRole !== 'VICE_ADMIN') {
+      throw new Error('Unauthorized: Only Admin or Vice Admin can remove members.');
+    }
+    const member = this.committeeMembers.find((m) => m.id === id);
+    if (!member) return false;
+    if (member.role === 'ADMIN') {
+      throw new Error('Cannot delete the main Admin account.');
+    }
+    this.committeeMembers = this.committeeMembers.filter(m => m.id !== id);
+    this.saveCollection('committee_members', this.committeeMembers);
+
+    await this.addAuditLog({
+      action: 'REMOVE_MEMBER',
+      action_kn: 'ಸದಸ್ಯರನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      actor_role: actorRole,
+      target_id: id,
+      target_type: 'MEMBER',
+      previous_value: `${member.name} (${member.role})`,
+      new_value: 'DELETED'
+    });
+
+    await this.notifyCommitteeUpdate(
+      `Member Removed`,
+      `ಸದಸ್ಯರನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ`,
+      `${actorName} (${actorRole}) removed member ${member.name} from MTG Committee.`,
+      `${actorName} (${actorRole}) ${member.name} ಅವರನ್ನು ಸಮಿತಿಯಿಂದ ತೆಗೆದುಹಾಕಿದ್ದಾರೆ.`
+    );
+
+    if (isFirebaseConfigured && db) {
+      deleteDoc(doc(db, 'committee_members', id)).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_members', item: { id, deleted: true } });
     return true;
   }
 
@@ -3658,12 +3861,74 @@ class DatabaseService {
       new_value: `₹${params.amount} by ${memberName} for ${params.month}`
     });
 
+    await this.notifyCommitteeUpdate(
+      `Fund Payment Recorded: ₹${params.amount}`,
+      `ವಂತಿಗೆ ಸಂಗ್ರಹಿಸಲಾಗಿದೆ: ₹${params.amount}`,
+      `${actorName} recorded ₹${params.amount} contribution from ${memberName} for ${params.month}.`,
+      `${actorName} ${memberName} ಅವರಿಂದ ${params.month} ತಿಂಗಳ ₹${params.amount} ವಂತಿಗೆ ದಾಖಲಿಸಿದ್ದಾರೆ.`
+    );
+
     if (isFirebaseConfigured && db) {
       setDoc(doc(db, 'committee_contributions', item.id), cleanFirestoreData(item)).catch(() => {});
     }
 
     realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_contributions', item });
     return item;
+  }
+
+  public async updateCommitteeContribution(
+    id: string,
+    updates: Partial<CommitteeContribution>,
+    actorId: string,
+    actorName: string,
+    actorRole: CommitteeRole = 'ADMIN'
+  ): Promise<CommitteeContribution> {
+    if (actorRole !== 'ADMIN' && actorRole !== 'VICE_ADMIN') {
+      throw new Error('Unauthorized: Only Admin and Vice Admin can update contributions.');
+    }
+    const idx = this.committeeContributions.findIndex((c) => c.id === id);
+    if (idx === -1) throw new Error('Contribution not found');
+    const oldContrib = this.committeeContributions[idx];
+    const updated: CommitteeContribution = { ...oldContrib, ...updates };
+
+    const diff = (updated.amount_paid || 0) - (oldContrib.amount_paid || 0);
+    if (diff !== 0) {
+      const member = this.committeeMembers.find((m) => m.id === updated.member_id);
+      if (member) {
+        member.total_contributed = Math.max(0, (member.total_contributed || 0) + diff);
+        this.saveCollection('committee_members', [...this.committeeMembers]);
+      }
+    }
+
+    this.committeeContributions[idx] = updated;
+    this.saveCollection('committee_contributions', [...this.committeeContributions]);
+
+    await this.addAuditLog({
+      action: 'UPDATE_CONTRIBUTION',
+      action_kn: 'ಮಾಸಿಕ ನಿಧಿ ವಿವರ ನವೀಕರಿಸಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      actor_role: actorRole,
+      target_id: id,
+      target_type: 'CONTRIBUTION',
+      previous_value: `₹${oldContrib.amount_paid} (${oldContrib.status})`,
+      new_value: `₹${updated.amount_paid} (${updated.status})`,
+      details: `Updated by ${actorName} (${actorRole})`
+    });
+
+    await this.notifyCommitteeUpdate(
+      `Fund Contribution Updated`,
+      `ಮಾಸಿಕ ವಂತಿಗೆ ನವೀಕರಿಸಲಾಗಿದೆ`,
+      `${actorName} (${actorRole}) updated contribution for ${updated.member_name} (${updated.month}): ₹${updated.amount_paid} (${updated.status}).`,
+      `${actorName} (${actorRole}) ${updated.member_name} ರ ${updated.month} ತಿಂಗಳ ವಂತಿಕೆಯನ್ನು ನವೀಕರಿಸಿದ್ದಾರೆ: ₹${updated.amount_paid}.`
+    );
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_contributions', id), cleanFirestoreData(updated), { merge: true }).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_contributions', item: updated });
+    return updated;
   }
 
   private createContributionRecord(params: {
@@ -3773,12 +4038,73 @@ class DatabaseService {
       new_value: `${newLoan.loan_number} - ₹${params.principalAmount} to ${member.name}`
     });
 
+    await this.notifyCommitteeUpdate(
+      `New Loan Issued: ₹${params.principalAmount}`,
+      `ಹೊಸ ಸಾಲ ನೀಡಲಾಗಿದೆ: ₹${params.principalAmount}`,
+      `${actorName} approved & issued loan of ₹${params.principalAmount} (${newLoan.loan_number}) to ${member.name}.`,
+      `${actorName} ${member.name} ಅವರಿಗೆ ₹${params.principalAmount} ಸಾಲ (${newLoan.loan_number}) ಮಂಜೂರು ಮಾಡಿದ್ದಾರೆ.`
+    );
+
     if (isFirebaseConfigured && db) {
       setDoc(doc(db, 'committee_loans', newLoan.id), cleanFirestoreData(newLoan)).catch(() => {});
     }
 
     realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_loans', item: newLoan });
     return newLoan;
+  }
+
+  public async updateCommitteeLoan(
+    id: string,
+    updates: Partial<CommitteeLoan>,
+    actorId: string,
+    actorName: string,
+    actorRole: CommitteeRole = 'ADMIN'
+  ): Promise<CommitteeLoan> {
+    if (actorRole !== 'ADMIN' && actorRole !== 'VICE_ADMIN') {
+      throw new Error('Unauthorized: Only Admin and Vice Admin can update loans.');
+    }
+    const idx = this.committeeLoans.findIndex((l) => l.id === id);
+    if (idx === -1) throw new Error('Loan not found');
+    const oldLoan = this.committeeLoans[idx];
+    const updated: CommitteeLoan = { ...oldLoan, ...updates };
+
+    const member = this.committeeMembers.find((m) => m.id === updated.member_id);
+    if (member) {
+      const allMemberLoans = this.committeeLoans.map((l) => (l.id === id ? updated : l)).filter((l) => l.member_id === member.id);
+      member.active_loans_count = allMemberLoans.filter((l) => l.status === 'ACTIVE' || l.status === 'PARTIALLY_PAID').length;
+      member.outstanding_loan_balance = allMemberLoans.reduce((sum, l) => sum + (l.remaining_principal || 0) + (l.remaining_interest || 0), 0);
+      this.saveCollection('committee_members', [...this.committeeMembers]);
+    }
+
+    this.committeeLoans[idx] = updated;
+    this.saveCollection('committee_loans', [...this.committeeLoans]);
+
+    await this.addAuditLog({
+      action: 'UPDATE_LOAN',
+      action_kn: 'ಸಾಲದ ವಿವರ ನವೀಕರಿಸಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      actor_role: actorRole,
+      target_id: id,
+      target_type: 'LOAN',
+      previous_value: `${oldLoan.loan_number}: Principal ₹${oldLoan.principal_amount}, Status: ${oldLoan.status}`,
+      new_value: `${updated.loan_number}: Principal ₹${updated.principal_amount}, Status: ${updated.status}`,
+      details: `Updated by ${actorName} (${actorRole})`
+    });
+
+    await this.notifyCommitteeUpdate(
+      `Loan ${updated.loan_number} Updated`,
+      `ಸಾಲ ${updated.loan_number} ನವೀಕರಿಸಲಾಗಿದೆ`,
+      `${actorName} (${actorRole}) updated loan details for ${updated.member_name} (${updated.loan_number}). Status: ${updated.status}.`,
+      `${actorName} (${actorRole}) ${updated.member_name} ರ ಸಾಲದ ವಿವರಗಳನ್ನು ನವೀಕರಿಸಿದ್ದಾರೆ (${updated.loan_number}). ಸ್ಥಿತಿ: ${updated.status}.`
+    );
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_loans', id), cleanFirestoreData(updated), { merge: true }).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_loans', item: updated });
+    return updated;
   }
 
   public async recordLoanRepayment(params: {
@@ -3894,6 +4220,13 @@ class DatabaseService {
       new_value: `₹${params.amount} on ${loan.loan_number} (Status: ${loan.status})`
     });
 
+    await this.notifyCommitteeUpdate(
+      `Loan Repayment: ₹${params.amount}`,
+      `ಸಾಲ ಮರುಪಾವತಿ: ₹${params.amount}`,
+      `${actorName} recorded repayment of ₹${params.amount} on ${loan.loan_number} (${loan.member_name}). Remaining: ₹${loan.remaining_principal + loan.remaining_interest}.`,
+      `${actorName} ${loan.loan_number} ಸಾಲಕ್ಕೆ ₹${params.amount} ಮರುಪಾವತಿ ದಾಖಲಿಸಿದ್ದಾರೆ (${loan.member_name}). ಬಾಕಿ: ₹${loan.remaining_principal + loan.remaining_interest}.`
+    );
+
     if (isFirebaseConfigured && db) {
       setDoc(doc(db, 'committee_loans', loan.id), cleanFirestoreData(loan), { merge: true }).catch(() => {});
     }
@@ -3946,6 +4279,13 @@ class DatabaseService {
       new_value: `₹${newExpense.amount} for ${newExpense.description}`
     });
 
+    await this.notifyCommitteeUpdate(
+      `New Expense: ₹${newExpense.amount}`,
+      `ಹೊಸ ಸಮಿತಿ ವೆಚ್ಚ: ₹${newExpense.amount}`,
+      `${actorName} recorded committee expense: ₹${newExpense.amount} for ${newExpense.description} (${newExpense.category}).`,
+      `${actorName} ₹${newExpense.amount} ಸಮಿತಿ ವೆಚ್ಚವನ್ನು ದಾಖಲಿಸಿದ್ದಾರೆ: ${newExpense.description}.`
+    );
+
     if (isFirebaseConfigured && db) {
       setDoc(doc(db, 'committee_expenses', newExpense.id), cleanFirestoreData(newExpense)).catch(() => {});
     }
@@ -3954,7 +4294,65 @@ class DatabaseService {
     return newExpense;
   }
 
-  public async deleteExpense(expenseId: string, actorId: string, actorName: string): Promise<boolean> {
+  public async updateCommitteeExpense(
+    id: string,
+    updates: Partial<CommitteeExpense>,
+    actorId: string,
+    actorName: string,
+    actorRole: CommitteeRole = 'ADMIN'
+  ): Promise<CommitteeExpense> {
+    if (actorRole !== 'ADMIN' && actorRole !== 'VICE_ADMIN') {
+      throw new Error('Unauthorized: Only Admin and Vice Admin can update expenses.');
+    }
+    const idx = this.committeeExpenses.findIndex((e) => e.id === id);
+    if (idx === -1) throw new Error('Expense not found');
+    const oldExpense = this.committeeExpenses[idx];
+    const updated: CommitteeExpense = { ...oldExpense, ...updates };
+
+    this.committeeExpenses[idx] = updated;
+    this.saveCollection('committee_expenses', [...this.committeeExpenses]);
+
+    // Also update associated transaction if exists
+    const txn = this.committeeTransactions.find((t) => t.reference_id === id);
+    if (txn) {
+      txn.amount = updated.amount;
+      txn.description = `[${updated.category}] ${updated.description}`;
+      txn.date = updated.date;
+      this.saveCollection('committee_transactions', [...this.committeeTransactions]);
+    }
+
+    await this.addAuditLog({
+      action: 'UPDATE_EXPENSE',
+      action_kn: 'ವೆಚ್ಚದ ವಿವರ ನವೀಕರಿಸಲಾಗಿದೆ',
+      actor_id: actorId,
+      actor_name: actorName,
+      actor_role: actorRole,
+      target_id: id,
+      target_type: 'EXPENSE',
+      previous_value: `₹${oldExpense.amount} - ${oldExpense.description}`,
+      new_value: `₹${updated.amount} - ${updated.description}`,
+      details: `Updated by ${actorName} (${actorRole})`
+    });
+
+    await this.notifyCommitteeUpdate(
+      `Expense Updated: ₹${updated.amount}`,
+      `ಸಮಿತಿ ವೆಚ್ಚ ನವೀಕರಿಸಲಾಗಿದೆ: ₹${updated.amount}`,
+      `${actorName} (${actorRole}) updated expense: ₹${updated.amount} for ${updated.description}.`,
+      `${actorName} (${actorRole}) ಸಮಿತಿ ವೆಚ್ಚವನ್ನು ನವೀಕರಿಸಿದ್ದಾರೆ: ₹${updated.amount} (${updated.description}).`
+    );
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'committee_expenses', id), cleanFirestoreData(updated), { merge: true }).catch(() => {});
+    }
+
+    realtimeSync.broadcast('COMMITTEE_UPDATED', { collectionName: 'committee_expenses', item: updated });
+    return updated;
+  }
+
+  public async deleteExpense(expenseId: string, actorId: string, actorName: string, actorRole: CommitteeRole = 'ADMIN'): Promise<boolean> {
+    if (actorRole !== 'ADMIN' && actorRole !== 'VICE_ADMIN') {
+      throw new Error('Unauthorized: Only Admin and Vice Admin can delete expenses.');
+    }
     const idx = this.committeeExpenses.findIndex((e) => e.id === expenseId);
     if (idx === -1) return false;
     const target = this.committeeExpenses[idx];
@@ -3966,10 +4364,18 @@ class DatabaseService {
       action_kn: 'ವೆಚ್ಚ ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ',
       actor_id: actorId,
       actor_name: actorName,
+      actor_role: actorRole,
       target_id: expenseId,
       target_type: 'EXPENSE',
       previous_value: `₹${target.amount} - ${target.description}`
     });
+
+    await this.notifyCommitteeUpdate(
+      `Expense Removed`,
+      `ಸಮಿತಿ ವೆಚ್ಚ ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ`,
+      `${actorName} (${actorRole}) removed expense of ₹${target.amount} (${target.description}).`,
+      `${actorName} (${actorRole}) ₹${target.amount} ವೆಚ್ಚವನ್ನು ರದ್ದುಗೊಳಿಸಿದ್ದಾರೆ (${target.description}).`
+    );
 
     if (isFirebaseConfigured && db) {
       deleteDoc(doc(db, 'committee_expenses', expenseId)).catch(() => {});

@@ -1,5 +1,6 @@
 import { dbService } from './dbService';
-import { Language, UserProfile, ExpenseCategory } from '../types';
+import { Language, UserProfile, ExpenseCategory, CommitteeRole } from '../types';
+import { isSuperAdminEmail } from '../context/AuthContext';
 
 // Pool of Gemini API keys for seamless quota load balancing and failover
 const API_KEY_POOL = [
@@ -608,7 +609,8 @@ Keep safety rules in mind:
 
   /**
    * Secure, Role-Restricted MTG Committee AI Assistant.
-   * Enforces backend authorization: Only provides relevant, authorized data to Gemini.
+   * Enforces backend authorization: Only provides real, verified data to Gemini.
+   * Never generates or invents fake committee data.
    */
   public async askCommitteeAI(
     query: string,
@@ -616,21 +618,38 @@ Keep safety rules in mind:
     preferredLang: Language = 'kn'
   ): Promise<{ answer_kn: string; answer_en: string }> {
     const summary = dbService.getCommitteeSummary();
-    const isAdmin = currentUser && ['SUPER_ADMIN', 'ADMIN'].includes(currentUser.role);
+    const members: any[] = (dbService as any)['committeeMembers'] || [];
+    const contribs: any[] = (dbService as any)['committeeContributions'] || [];
+    const loans: any[] = (dbService as any)['committeeLoans'] || [];
+    const expenses: any[] = (dbService as any)['committeeExpenses'] || [];
+
+    // Zero-state guard: Return clean message if no committee records exist in database
+    if (summary.totalMembersCount === 0 && summary.totalFundCollected === 0 && loans.length === 0) {
+      return {
+        answer_kn: 'ಯಾವುದೇ ಸಮಿತಿ ಡೇಟಾ ಇನ್ನೂ ಲಭ್ಯವಿಲ್ಲ.',
+        answer_en: 'There is not enough committee data available yet.'
+      };
+    }
+
+    const memberRecord = members.find((m) => {
+      if (currentUser?.uid && m.user_id === currentUser.uid) return true;
+      if (currentUser?.phone && m.phone.replace(/\D/g, '') === currentUser.phone.replace(/\D/g, '')) return true;
+      if (currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase()) return true;
+      return false;
+    });
+
+    const isSystemAdmin = currentUser ? (currentUser.role === 'SUPER_ADMIN' || isSuperAdminEmail(currentUser.email, currentUser.name)) : false;
+    const effectiveRole: CommitteeRole = memberRecord ? memberRecord.role : (isSystemAdmin ? 'ADMIN' : 'MEMBER');
+    const canViewAll = effectiveRole === 'ADMIN' || effectiveRole === 'VICE_ADMIN' || isSystemAdmin;
 
     // Build role-authorized context ONLY (Zero unrestricted database dumps)
     let authorizedContext = '';
 
-    if (isAdmin) {
-      // Admin authorized context: Full verified aggregate finances
-      const members: any[] = dbService['committeeMembers'] || [];
-      const contribs: any[] = dbService['committeeContributions'] || [];
-      const loans: any[] = dbService['committeeLoans'] || [];
-      const expenses: any[] = dbService['committeeExpenses'] || [];
-
+    if (canViewAll) {
+      // Admin / Vice Admin authorized context: Full verified aggregate finances
       const currentMonth = new Date().toISOString().substring(0, 7);
       const pendingMembers = contribs
-        .filter((c) => (c.month === currentMonth || c.month === '2026-09') && c.status === 'PENDING')
+        .filter((c) => c.status === 'PENDING' && (!c.month || c.month === currentMonth))
         .map((c) => `${c.member_name} (₹${c.expected_amount} ಬಾಕಿ)`);
 
       const activeLoansList = loans
@@ -640,8 +659,8 @@ Keep safety rules in mind:
       const recentExpensesList = expenses.slice(0, 5).map((e) => `${e.date} - ${e.category}: ₹${e.amount} (${e.description})`);
 
       authorizedContext = `
-USER ROLE: ADMINISTRATOR (Full Authorized View)
-VERIFIED COMMITTEE FINANCIAL DATA (Source of Truth):
+USER ROLE: ${effectiveRole} (Full Authorized Financial View)
+VERIFIED COMMITTEE FINANCIAL DATA (Source of Truth from Real Database):
 - Total Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}
 - Total Active Loans Count: ${summary.activeLoansCount}
 - Total Outstanding Loan Amount (Principal + Interest): ₹${summary.outstandingLoanAmount.toLocaleString()}
@@ -650,39 +669,27 @@ VERIFIED COMMITTEE FINANCIAL DATA (Source of Truth):
 - Total Available Balance (ನಿಧಿ ಬಾಕಿ): ₹${summary.availableBalance.toLocaleString()}
 - Total Members: ${summary.totalMembersCount} (Active: ${summary.activeMembersCount})
 - Monthly Contribution Target: ₹${summary.monthlyTarget.toLocaleString()}
-- Pending Contributions Count (Current Month): ${summary.pendingContributionsCount} members (Total pending: ₹${summary.pendingContributionsAmount.toLocaleString()})
-- Pending Members List: ${pendingMembers.length > 0 ? pendingMembers.join(', ') : 'None, all members paid!'}
-- Active Loans: ${activeLoansList.join('; ')}
-- Recent Expenses: ${recentExpensesList.join('; ')}
+- Pending Contributions Count: ${summary.pendingContributionsCount} members (Total pending: ₹${summary.pendingContributionsAmount.toLocaleString()})
+- Pending Members List: ${pendingMembers.length > 0 ? pendingMembers.join(', ') : 'None / All recorded members up to date'}
+- Active Loans: ${activeLoansList.length > 0 ? activeLoansList.join('; ') : 'None'}
+- Recent Expenses: ${recentExpensesList.length > 0 ? recentExpensesList.join('; ') : 'None'}
 `;
     } else {
-      // Member authorized context: Only their own private finances + general public committee balance
-      const members: any[] = dbService['committeeMembers'] || [];
-      const contribs: any[] = dbService['committeeContributions'] || [];
-      const loans: any[] = dbService['committeeLoans'] || [];
-
-      // Find member matching current user
-      const member = members.find((m) => {
-        if (currentUser?.uid && m.user_id === currentUser.uid) return true;
-        if (currentUser?.phone && m.phone.replace(/\D/g, '') === currentUser.phone.replace(/\D/g, '')) return true;
-        if (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase())) return true;
-        return false;
-      });
-
-      if (member) {
-        const myContribs = contribs.filter((c) => c.member_id === member.id);
+      if (memberRecord) {
+        // Normal Member authorized context: Only their own private finances + general public committee balance
+        const myContribs = contribs.filter((c) => c.member_id === memberRecord.id);
         const currentMonth = new Date().toISOString().substring(0, 7);
-        const myCurrentMonthContrib = myContribs.find((c) => c.month === currentMonth || c.month === '2026-09');
-        const myLoans = loans.filter((l) => l.member_id === member.id);
+        const myCurrentMonthContrib = myContribs.find((c) => c.month === currentMonth);
+        const myLoans = loans.filter((l) => l.member_id === memberRecord.id);
 
         authorizedContext = `
-USER ROLE: COMMITTEE MEMBER (${member.name})
+USER ROLE: COMMITTEE MEMBER (${memberRecord.name})
 AUTHORIZED PERSONAL FINANCIAL DATA:
-- Member Name: ${member.name} (${member.role_kn || member.role})
-- Total Contributed to Fund: ₹${(member.total_contributed || 0).toLocaleString()}
-- Current Month Contribution Status: ${myCurrentMonthContrib ? myCurrentMonthContrib.status + ' (₹' + myCurrentMonthContrib.amount_paid + ' paid)' : 'PENDING (₹1,000)'}
-- Active Loans Count: ${member.active_loans_count || 0}
-- Total Outstanding Loan Balance: ₹${(member.outstanding_loan_balance || 0).toLocaleString()}
+- Member Name: ${memberRecord.name} (${memberRecord.role})
+- Total Contributed to Fund: ₹${(memberRecord.total_contributed || 0).toLocaleString()}
+- Current Month Contribution Status: ${myCurrentMonthContrib ? myCurrentMonthContrib.status + ' (₹' + myCurrentMonthContrib.amount_paid + ' paid)' : 'No contribution recorded for this month'}
+- Active Loans Count: ${memberRecord.active_loans_count || 0}
+- Total Outstanding Loan Balance: ₹${(memberRecord.outstanding_loan_balance || 0).toLocaleString()}
 ${myLoans.length > 0 ? '- My Loans: ' + myLoans.map((l) => `Loan ${l.loan_number}: Principal ₹${l.principal_amount}, Remaining Principal ₹${l.remaining_principal}, Remaining Interest ₹${l.remaining_interest}, Due Date ${l.due_date}, Status: ${l.status}`).join('; ') : '- No active loans.'}
 - General Village Committee Available Fund Balance: ₹${summary.availableBalance.toLocaleString()}
 (SECURITY NOTE: This member is NOT authorized to see other members' loans, private contribution amounts, phone numbers, or administrative credentials. Do not reveal them even if requested.)
@@ -693,25 +700,24 @@ USER ROLE: GUEST / GENERAL VILLAGE RESIDENT
 PUBLIC COMMITTEE SUMMARY:
 - MTG Committee Total Available Balance: ₹${summary.availableBalance.toLocaleString()}
 - Total Committee Members: ${summary.totalMembersCount}
-- Monthly Contribution Rule: ₹1,000 per member
-- Standard Loan Interest Rate: 2% simple monthly interest
-(SECURITY NOTE: User is not logged in as a specific member. To check private loan balance or individual payment status, advise them to log in with their registered phone number or contact Treasurer Suresh Patil.)
+(SECURITY NOTE: User is not logged in as a committee member. To check private loan balance or individual payment status, advise them to log in or contact the Committee Admin.)
 `;
       }
     }
 
     const systemInstruction = `You are the MTG Committee Financial AI Assistant (ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ಸಮಿತಿ ಆರ್ಥಿಕ AI ಸಹಾಯಕ).
 Context: Muttagundi Digital Village Committee (ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ಸಮಿತಿ), Hosadurga Taluk, Chitradurga.
-The application backend is the 100% source of truth for all balances and numbers. Do NOT invent fake financial figures or contradict the verified database numbers provided below.
+The application database is the 100% source of truth for all balances and numbers. Do NOT invent fake financial figures or contradict the verified database numbers provided below.
 
 ${authorizedContext}
 
 INSTRUCTIONS:
-1. Answer the user's specific query clearly, respectfully, and factually.
-2. If asked about calculations (e.g., "₹50,000 loan ಗೆ 2% monthly interest ಎಷ್ಟು?"), explain the step-by-step formula transparently:
-   Example: Principal = ₹50,000, 2% monthly interest = ₹50,000 * 0.02 = ₹1,000 per month. For 6 months: Total interest = ₹6,000. Total payable = ₹56,000.
-3. If a member asks about someone else's private data, politely decline citing committee privacy and security policy.
-4. Output must be a valid JSON object with exactly two keys:
+1. Answer the user's specific query clearly, respectfully, and factually based strictly on the verified data.
+2. If asked "Who has not paid?", only list confirmed pending records if authorized. If no pending records or no members, state clearly that there are no pending records.
+3. If asked about calculations, explain the exact formula transparently.
+4. If a member asks about someone else's private data, politely decline citing committee privacy and security policy.
+5. If there is no data, respond with: "There is not enough committee data available yet."
+6. Output must be a valid JSON object with exactly two keys:
    {
      "answer_kn": "Direct helpful answer in Kannada (ಕನ್ನಡ)",
      "answer_en": "Direct helpful answer in English"
@@ -723,14 +729,20 @@ INSTRUCTIONS:
       const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleaned);
       return {
-        answer_kn: parsed.answer_kn || 'ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ.',
-        answer_en: parsed.answer_en || 'Information not available.'
+        answer_kn: parsed.answer_kn || (preferredLang === 'kn' ? 'ಯಾವುದೇ ಸಮಿತಿ ಡೇಟಾ ಇನ್ನೂ ಲಭ್ಯವಿಲ್ಲ.' : 'ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ.'),
+        answer_en: parsed.answer_en || 'There is not enough committee data available yet.'
       };
     } catch (e: any) {
       console.warn('askCommitteeAI error:', e);
+      if (summary.totalMembersCount === 0 && summary.totalFundCollected === 0) {
+        return {
+          answer_kn: 'ಯಾವುದೇ ಸಮಿತಿ ಡೇಟಾ ಇನ್ನೂ ಲಭ್ಯವಿಲ್ಲ.',
+          answer_en: 'There is not enough committee data available yet.'
+        };
+      }
       return {
         answer_kn: preferredLang === 'kn'
-          ? `ಸಮಿತಿ ಲಭ್ಯವಿರುವ ನಿಧಿ ಬಾಕಿ: ₹${summary.availableBalance.toLocaleString()} ಇದೆ. ಒಟ್ಟು ಸಕ್ರಿಯ ಸಾಲಗಳು: ${summary.activeLoansCount}. ಹೆಚ್ಚಿನ ವಿವರಗಳಿಗಾಗಿ ಸಮಿತಿ ಅಡ್ಮಿನ್ ಸಂಪರ್ಕಿಸಿ.`
+          ? `ಸಮಿತಿ ಲಭ್ಯವಿರುವ ನಿಧಿ ಬಾಕಿ: ₹${summary.availableBalance.toLocaleString()} ಆಗಿದೆ. ಸಕ್ರಿಯ ಸಾಲಗಳು: ${summary.activeLoansCount}.`
           : `MTG Committee Available Balance: ₹${summary.availableBalance.toLocaleString()}. Active loans: ${summary.activeLoansCount}.`,
         answer_en: `MTG Committee Available Balance is ₹${summary.availableBalance.toLocaleString()}. Total Active Loans: ${summary.activeLoansCount}. Total Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}.`
       };
@@ -822,9 +834,15 @@ Return a strict JSON object:
    */
   public async generateCommitteeInsights(language: Language = 'kn'): Promise<string> {
     const summary = dbService.getCommitteeSummary();
+    if (summary.totalMembersCount === 0 && summary.totalFundCollected === 0) {
+      return language === 'kn'
+        ? 'ಯಾವುದೇ ಸಮಿತಿ ಡೇಟಾ ಇನ್ನೂ ಲಭ್ಯವಿಲ್ಲ.'
+        : 'There is not enough committee data available yet.';
+    }
+
     const systemInstruction = `You are a professional financial analyst for rural village development committees in Karnataka.
 Provide an executive, encouraging, and clear 3-bullet financial insight summary for the committee members and admin.
-Ground truth data:
+Ground truth data (Real database):
 - Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}
 - Active Loans: ${summary.activeLoansCount} (Total Outstanding: ₹${summary.outstandingLoanAmount.toLocaleString()})
 - Interest Earned: ₹${summary.interestEarned.toLocaleString()}
@@ -841,7 +859,7 @@ Provide the response in ${language === 'kn' ? 'Kannada (ಕನ್ನಡ)' : 'Eng
       return res;
     } catch (e) {
       return language === 'kn'
-        ? `• ಸಮಿತಿಯ ಒಟ್ಟು ಲಭ್ಯವಿರುವ ನಿಧಿ ₹${summary.availableBalance.toLocaleString()} ಆಗಿದೆ.\n• ಸದ್ಯಕ್ಕೆ ${summary.activeLoansCount} ಸಕ್ರಿಯ ಸಾಲಗಳಿದ್ದು, ₹${summary.interestEarned.toLocaleString()} ಬಡ್ಡಿ ಸಂಗ್ರಹವಾಗಿದೆ.\n• ಈ ತಿಂಗಳ ₹${summary.pendingContributionsAmount.toLocaleString()} ಬಾಕಿ ನಿಧಿ ಸಂಗ್ರಹಕ್ಕೆ ಶೀಘ್ರ ಕ್ರಮ ಕೈಗೊಳ್ಳಿ.`
+        ? `• ಸಮಿತಿಯ ಒಟ್ಟು ಲಭ್ಯವಿರುವ ನಿಧಿ ₹${summary.availableBalance.toLocaleString()} ಆಗಿದೆ.\n• ಸದ್ಯಕ್ಕೆ ${summary.activeLoansCount} ಸಕ್ರಿಯ ಸಾಲಗಳಿದ್ದು, ₹${summary.interestEarned.toLocaleString()} ಬಡ್ಡಿ ಸಂಗ್ರಹವಾಗಿದೆ.\n• ಬಾಕಿ ಉಳಿದಿರುವ ₹${summary.pendingContributionsAmount.toLocaleString()} ನಿಧಿಯನ್ನು ಶೀಘ್ರ ಸಂಗ್ರಹಿಸಿ.`
         : `• Total available fund is ₹${summary.availableBalance.toLocaleString()}.\n• ${summary.activeLoansCount} active loans are performing with ₹${summary.interestEarned.toLocaleString()} interest earned.\n• Follow up on ${summary.pendingContributionsCount} pending member contributions.`;
     }
   }
@@ -856,8 +874,14 @@ Provide the response in ${language === 'kn' ? 'Kannada (ಕನ್ನಡ)' : 'Eng
     language: Language = 'kn'
   ): Promise<string> {
     const summary = dbService.getCommitteeSummary();
+    if (summary.totalMembersCount === 0 && summary.totalFundCollected === 0) {
+      return language === 'kn'
+        ? 'ಯಾವುದೇ ಸಮಿತಿ ದಾಖಲೆಗಳು ಇನ್ನೂ ಲಭ್ಯವಿಲ್ಲ.'
+        : 'No committee records have been added yet.';
+    }
+
     const systemInstruction = `You are the MTG Committee Financial Secretary & Auditor.
-Generate a formal audit and financial status report.
+Generate a formal audit and financial status report using only real database values.
 Data:
 - Period: ${month || 'All Time / Current Year'}
 - Total Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}
@@ -875,9 +899,9 @@ Format: Professional, structured with clear sections and certification statement
       return res;
     } catch (e) {
       return `OFFICIAL FINANCIAL AUDIT REPORT / ಅಧಿಕೃತ ಆರ್ಥಿಕ ವರದಿ
-Period: ${month || '2026'}
+Period: ${month || new Date().getFullYear().toString()}
 - Total Fund Collected: ₹${summary.totalFundCollected.toLocaleString()}
-- Total Loans Issued: ₹${(summary.outstandingLoanAmount + 21600).toLocaleString()}
+- Active Loans: ${summary.activeLoansCount} (Outstanding Principal: ₹${summary.outstandingLoanAmount.toLocaleString()})
 - Interest Collected: ₹${summary.interestEarned.toLocaleString()}
 - Total Expenses: ₹${summary.totalExpenses.toLocaleString()}
 - Net Available Cash/Bank Balance: ₹${summary.availableBalance.toLocaleString()}

@@ -27,6 +27,7 @@ import {
   Send,
   Sparkles
 } from 'lucide-react';
+import { FirstAiVillageModal } from '../components/home/FirstAiVillageModal';
 
 interface SettingsScreenProps {
   onNavigateTab?: (tab: string) => void;
@@ -40,6 +41,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [cacheCleared, setCacheCleared] = useState(false);
   const [soundTested, setSoundTested] = useState(false);
+  const [isAiMilestoneOpen, setIsAiMilestoneOpen] = useState(false);
 
   // Mobile Push Notifications State
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
@@ -830,10 +832,42 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
                   React • TypeScript • Three.js 3D • Gemini AI
                 </span>
               </div>
+
+              {/* Milestone Banner Button */}
+              <div
+                onClick={() => setIsAiMilestoneOpen(true)}
+                role="button"
+                tabIndex={0}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginTop: '12px',
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(16, 185, 129, 0.18) 100%)',
+                  border: '1px solid rgba(245, 158, 11, 0.45)',
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <span style={{ fontSize: '1.1rem' }}>🏆</span>
+                <span style={{ fontSize: '0.78rem', color: '#FDE68A', fontWeight: 800 }}>
+                  {isKannada
+                    ? 'ಕರ್ನಾಟಕ & ಭಾರತದ ಪ್ರಥಮ ಡಿಜಿಟಲ್ ಗ್ರಾಮ AI ಆ್ಯಪ್ — ಮಾಹಿತಿ ನೋಡಿ'
+                    : "Karnataka & India's 1st Digital Village AI App — View"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <FirstAiVillageModal
+        isOpen={isAiMilestoneOpen}
+        onClose={() => setIsAiMilestoneOpen(false)}
+        isKannada={isKannada}
+      />
     </div>
   );
 };

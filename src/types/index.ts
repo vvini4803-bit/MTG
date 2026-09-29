@@ -514,13 +514,7 @@ export interface UserPrivacySettings {
 // 🏛️ MTG COMMITTEE & FINANCIAL MANAGEMENT
 // ==========================================
 
-export type CommitteeRole =
-  | 'PRESIDENT'
-  | 'VICE_PRESIDENT'
-  | 'SECRETARY'
-  | 'TREASURER'
-  | 'DIRECTOR'
-  | 'MEMBER';
+export type CommitteeRole = 'ADMIN' | 'VICE_ADMIN' | 'MEMBER';
 
 export interface CommitteeMember {
   id: string;
@@ -528,10 +522,12 @@ export interface CommitteeMember {
   name: string;
   name_kn?: string;
   phone: string;
+  email?: string;
   address: string;
   joining_date: string;
   role: CommitteeRole;
   role_kn?: string;
+  designation?: string;
   status: 'ACTIVE' | 'INACTIVE';
   photo_url?: string;
   total_contributed: number;
@@ -646,6 +642,10 @@ export interface CommitteeTransaction {
   reference_id?: string;
   receipt_url?: string;
   created_by: string;
+  user_id?: string;
+  user_role?: CommitteeRole;
+  previous_value?: string;
+  new_value?: string;
   status: 'COMPLETED' | 'PENDING' | 'CANCELLED';
   created_at: string;
 }
@@ -656,6 +656,7 @@ export interface CommitteeAuditLog {
   action_kn: string;
   actor_id: string;
   actor_name: string;
+  actor_role?: CommitteeRole;
   target_id: string;
   target_type: string;
   previous_value?: string;

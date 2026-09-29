@@ -46,12 +46,13 @@ export const DemoBanner: React.FC = () => {
           <button
             onClick={handleToggle}
             style={{
-              background: 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              color: '#FFFFFF',
+              background: 'rgba(16, 185, 129, 0.25)',
+              border: '1.5px solid #10B981',
+              color: '#6EE7B7',
               borderRadius: '4px',
-              padding: '2px 8px',
+              padding: '2px 10px',
               fontSize: '0.72rem',
+              fontWeight: 700,
               cursor: 'pointer'
             }}
           >

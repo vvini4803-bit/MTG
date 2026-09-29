@@ -750,11 +750,11 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                       fontSize: '0.75rem',
                       padding: '5px 12px',
                       borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--glass-border)',
-                      background: role === item.r ? 'var(--accent-emerald)' : 'rgba(255,255,255,0.06)',
-                      color: '#FFFFFF',
+                      border: role === item.r ? '1.5px solid #10B981' : '1px solid rgba(16, 185, 129, 0.35)',
+                      background: role === item.r ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : 'rgba(16, 185, 129, 0.1)',
+                      color: role === item.r ? '#FFFFFF' : '#6EE7B7',
                       cursor: 'pointer',
-                      fontWeight: role === item.r ? 700 : 500
+                      fontWeight: 700
                     }}
                   >
                     {item.label}
@@ -938,8 +938,8 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                       disabled={isUploading}
                       onClick={() => handleSelectPreset(avatar.url)}
                       style={{
-                        background: isSelected ? 'rgba(16, 185, 129, 0.22)' : 'rgba(255, 255, 255, 0.04)',
-                        border: isSelected ? '2px solid var(--accent-emerald)' : '1px solid rgba(255, 255, 255, 0.08)',
+                        background: isSelected ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.08)',
+                        border: isSelected ? '2px solid var(--accent-emerald)' : '1.5px solid rgba(16, 185, 129, 0.3)',
                         borderRadius: '10px',
                         padding: '8px 4px',
                         cursor: 'pointer',
@@ -958,8 +958,8 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                       <span
                         style={{
                           fontSize: '0.66rem',
-                          color: isSelected ? '#10B981' : 'var(--text-secondary)',
-                          fontWeight: isSelected ? 800 : 500,
+                          color: isSelected ? '#10B981' : '#6EE7B7',
+                          fontWeight: isSelected ? 800 : 600,
                           textAlign: 'center',
                           lineHeight: 1.2
                         }}
@@ -979,13 +979,14 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                   type="button"
                   onClick={() => setShowUrlField(true)}
                   style={{
-                    background: 'transparent',
-                    border: '1px dashed rgba(255,255,255,0.2)',
-                    color: 'var(--text-secondary)',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    border: '1.5px dashed #10B981',
+                    color: '#34D399',
                     borderRadius: '8px',
                     padding: '8px 12px',
                     width: '100%',
                     fontSize: '0.78rem',
+                    fontWeight: 700,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
