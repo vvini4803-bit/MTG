@@ -48,7 +48,6 @@ import { CropDetailModal } from './views/CropDetailModal';
 import { TempleDetailModal } from './views/TempleDetailModal';
 import { GalleryDetailModal } from './views/GalleryDetailModal';
 import { SubmitReportModal } from './views/SubmitReportModal';
-import { CommunityPeopleView } from './views/CommunityPeopleView';
 import { ConversationsListView } from './views/ConversationsListView';
 import { ChatModal } from './components/chat/ChatModal';
 import { AuthModal } from './components/auth/AuthModal';
@@ -1637,70 +1636,6 @@ export const App: React.FC = () => {
           />
         )}
 
-        {/* ============================================================ */}
-        {/* 👥 SECTION: COMMUNITY PEOPLE DIRECTORY                       */}
-        {/* ============================================================ */}
-        {currentSection === 'people' && (
-          <div>
-            <div style={{ marginBottom: '14px' }}>
-              <button
-                onClick={() => navigateTo('home')}
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: 'none',
-                  color: '#FFFFFF',
-                  borderRadius: '10px',
-                  padding: '6px 14px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                ← {isKannada ? 'ಮುಖಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ' : 'Back to Home'}
-              </button>
-            </div>
-            <CommunityPeopleView
-              onOpenLogin={() => setIsAuthModalOpen(true)}
-              onOpenChatWithUser={async (user) => {
-                if (!currentUser) {
-                  setIsAuthModalOpen(true);
-                  return;
-                }
-                try {
-                  const conv = await dbService.getOrCreateConversation(
-                    {
-                      uid: currentUser.uid,
-                      name: currentUser.name,
-                      name_kn: currentUser.name_kn,
-                      photoUrl: currentUser.photoUrl,
-                      role: currentUser.role
-                    },
-                    {
-                      uid: user.uid,
-                      name: user.name,
-                      name_kn: user.name_kn,
-                      photoUrl: user.photoUrl,
-                      role: user.role
-                    }
-                  );
-                  setActiveChatConvId(conv.id);
-                  setActiveChatPartner({
-                    uid: user.uid,
-                    name: user.name,
-                    name_kn: user.name_kn,
-                    photoUrl: user.photoUrl,
-                    role: user.role,
-                    community_category: user.community_category
-                  });
-                  setIsChatOpen(true);
-                } catch (err: any) {
-                  alert(err.message || 'Cannot start chat');
-                }
-              }}
-              onBack={() => navigateTo('home')}
-            />
-          </div>
-        )}
 
         {/* ============================================================ */}
         {/* 💬 SECTION: PRIVATE CONVERSATIONS LIST                       */}
@@ -2166,13 +2101,13 @@ export const App: React.FC = () => {
           <span>{isKannada ? 'ಸಮಿತಿ' : 'Committee'}</span>
         </button>
 
-        {/* Tab 4: Muttagondi People (ನಿವಾಸಿಗಳು - Aadhaar Verified Directory) */}
+        {/* Tab 4: Ask AI / Voice Assistant */}
         <button
-          onClick={() => navigateTo('people')}
+          onClick={() => setIsVoiceModalOpen(true)}
           style={{
             background: 'none',
             border: 'none',
-            color: currentSection === 'people' ? '#10B981' : '#94A3B8',
+            color: '#94A3B8',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -2182,21 +2117,24 @@ export const App: React.FC = () => {
             cursor: 'pointer',
             padding: '4px 8px'
           }}
-          title={isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳು (Muttagondi People)' : 'Muttagondi People'}
+          title={isKannada ? 'ಗ್ರಾಮ ಧ್ವನಿ ಸಹಾಯಕ' : 'Village Voice Assistant'}
         >
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Users size={22} color={currentSection === 'people' ? '#10B981' : '#94A3B8'} />
-            <Sparkles
-              size={11}
-              color={currentSection === 'people' ? '#10B981' : '#64748B'}
-              style={{
-                position: 'absolute',
-                top: -3,
-                right: -6
-              }}
-            />
+          <div
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.5)'
+            }}
+          >
+            <Mic size={20} color="#10B981" />
           </div>
-          <span>{isKannada ? 'ನಿವಾಸಿಗಳು' : 'People'}</span>
+          <span>{isKannada ? 'ಧ್ವನಿ AI' : 'Voice AI'}</span>
         </button>
 
         {/* Tab 5: Profile */}
@@ -2355,10 +2293,6 @@ export const App: React.FC = () => {
           conversationId={activeChatConvId}
           partnerUser={activeChatPartner}
           onClose={() => setIsChatOpen(false)}
-          onNavigateToPeople={() => {
-            setIsChatOpen(false);
-            navigateTo('people');
-          }}
         />
       )}
 

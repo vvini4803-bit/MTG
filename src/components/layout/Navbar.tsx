@@ -166,7 +166,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           `}</style>
           {[
             { id: 'home', label: isKannada ? 'ಮುಖಪುಟ' : 'Home' },
-            { id: 'people', label: isKannada ? 'ನಿವಾಸಿಗಳು' : 'People' },
             { id: 'photo_analyzer', label: isKannada ? 'AI ಫೋಟೋ' : 'AI Photo' },
             { id: 'news', label: isKannada ? 'ಸುದ್ದಿ' : 'News' },
             { id: 'events', label: isKannada ? 'ಕಾರ್ಯಕ್ರಮಗಳು' : 'Events' },
