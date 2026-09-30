@@ -21,7 +21,8 @@ import {
   ExternalLink,
   ChevronRight,
   UserCheck,
-  FileCheck
+  FileCheck,
+  Award
 } from 'lucide-react';
 
 interface CommunityPeopleViewProps {
@@ -38,7 +39,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
   const { isKannada } = useLanguage();
   const { currentUser } = useAuth();
 
-  // Load official government register of Muttagondi residents
+  // Load official government register of Muttagondi residents (Census Code: 606004)
   const [residents] = useState<GovernmentVillageResident[]>(
     dbService.getGovernmentVillageResidents()
   );
@@ -46,18 +47,19 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedWard, setSelectedWard] = useState<string>('ALL');
+  const [selectedHousehold, setSelectedHousehold] = useState<string>('ALL');
   const [selectedGender, setSelectedGender] = useState<'ALL' | 'MALE' | 'FEMALE'>('ALL');
 
   const categories = [
-    { id: 'ALL', label_en: 'All Citizens', label_kn: 'ಸಮಗ್ರ ನಿವಾಸಿಗಳು', icon: '👥' },
+    { id: 'ALL', label_en: 'All 269 Citizens', label_kn: 'ಸಮಗ್ರ 269 ನಿವಾಸಿಗಳು', icon: '👥' },
     { id: 'FARMER', label_en: 'Farmers & Agri', label_kn: 'ರೈತರು & ಕೃಷಿಕರು', icon: '🌾' },
-    { id: 'TEACHER', label_en: 'Educators / Teachers', label_kn: 'ಶಿಕ್ಷಕರು & ಅಂಗನವಾಡಿ', icon: '👨‍🏫' },
+    { id: 'TEACHER', label_en: 'Teachers / Education', label_kn: 'ಶಿಕ್ಷಕರು & ಅಂಗನವಾಡಿ', icon: '👨‍🏫' },
     { id: 'OFFICER', label_en: 'Panchayat & Officers', label_kn: 'ಪಂಚಾಯತ್ ಪ್ರತಿನಿಧಿಗಳು', icon: '🏛️' },
     { id: 'HEALTH', label_en: 'ASHA & Health', label_kn: 'ಆರೋಗ್ಯ & ಆಶಾ ಕಾರ್ಯಕರ್ತೆಯರು', icon: '🩺' },
     { id: 'SPORTS', label_en: 'Youth & Sports', label_kn: 'ಯುವಕರು & ಕ್ರೀಡಾಪಟುಗಳು', icon: '🏏' },
     { id: 'SENIOR', label_en: 'Village Elders', label_kn: 'ಹಿರಿಯ ನಾಗರಿಕರು', icon: '👴' },
-    { id: 'ARTISAN', label_en: 'Village Artisans', label_kn: 'ಕುಶಲಕರ್ಮಿಗಳು', icon: '🛠️' },
-    { id: 'RESIDENT', label_en: 'General Residents', label_kn: 'ಇತರ ಗ್ರಾಮಸ್ಥರು', icon: '👤' }
+    { id: 'ARTISAN', label_en: 'Artisans & Crafts', label_kn: 'ಕುಶಲಕರ್ಮಿಗಳು', icon: '🛠️' },
+    { id: 'RESIDENT', label_en: 'General Citizens', label_kn: 'ಇತರ ಗ್ರಾಮಸ್ಥರು', icon: '👤' }
   ];
 
   // Distinct wards list
@@ -67,6 +69,13 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
       map.set(r.ward_en, r.ward_kn);
     });
     return Array.from(map.entries()).map(([en, kn]) => ({ en, kn }));
+  }, [residents]);
+
+  // Distinct households list (H-01 to H-61)
+  const householdsList = useMemo(() => {
+    const set = new Set<string>();
+    residents.forEach((r) => set.add(r.household_no));
+    return Array.from(set).sort();
   }, [residents]);
 
   // Filtered residents
@@ -79,6 +88,11 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
 
       // Ward filter
       if (selectedWard !== 'ALL' && r.ward_en !== selectedWard) {
+        return false;
+      }
+
+      // Household filter
+      if (selectedHousehold !== 'ALL' && r.household_no !== selectedHousehold) {
         return false;
       }
 
@@ -95,15 +109,16 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
         const matchGuardian = r.guardian_en.toLowerCase().includes(q);
         const matchGuardianKn = r.guardian_kn.toLowerCase().includes(q);
         const matchHouse = r.house_no.toLowerCase().includes(q);
+        const matchHNo = r.household_no.toLowerCase().includes(q);
         const matchWard = r.ward_en.toLowerCase().includes(q) || r.ward_kn.toLowerCase().includes(q);
         const matchOccup = r.occupation_en.toLowerCase().includes(q) || r.occupation_kn.toLowerCase().includes(q);
         const matchGovtId = r.govt_id_reference.toLowerCase().includes(q);
-        return matchName || matchNameKn || matchGuardian || matchGuardianKn || matchHouse || matchWard || matchOccup || matchGovtId;
+        return matchName || matchNameKn || matchGuardian || matchGuardianKn || matchHouse || matchHNo || matchWard || matchOccup || matchGovtId;
       }
 
       return true;
     });
-  }, [residents, selectedCategory, selectedWard, selectedGender, searchQuery]);
+  }, [residents, selectedCategory, selectedWard, selectedHousehold, selectedGender, searchQuery]);
 
   const getCategoryBadge = (cat: string) => {
     switch (cat) {
@@ -127,18 +142,18 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
   };
 
   return (
-    <div className="container" style={{ padding: '24px 16px', maxWidth: '960px' }}>
-      {/* --- HERO HEADER: OFFICIAL MUTTAGONDI VILLAGE CITIZEN REGISTER --- */}
+    <div className="container" style={{ padding: '24px 16px', maxWidth: '980px' }}>
+      {/* --- HERO HEADER: OFFICIAL CENSUS 2011 VILLAGE DIRECTORY (CODE: 606004) --- */}
       <div
         style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 78, 59, 0.12) 50%, rgba(245, 158, 11, 0.12) 100%)',
-          border: '1.5px solid rgba(16, 185, 129, 0.4)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 78, 59, 0.15) 50%, rgba(59, 130, 246, 0.12) 100%)',
+          border: '1.5px solid rgba(16, 185, 129, 0.45)',
           borderRadius: '24px',
           padding: '28px 24px',
           marginBottom: '24px',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.3)'
+          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.35)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
@@ -146,64 +161,88 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
               <div
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '14px',
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '16px',
                   background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#fff',
-                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.45)'
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.45)',
+                  fontSize: '1.5rem'
                 }}
               >
-                <Users size={26} />
+                🇮🇳
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                    {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ನಿವಾಸಿಗಳ ಪಟ್ಟಿ' : 'Muttagondi Village People'}
+                    {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ನಿವಾಸಿಗಳ ಪಟ್ಟಿ' : 'Muttagundi Village People'}
                   </h1>
                   <span
                     style={{
                       background: 'rgba(16, 185, 129, 0.25)',
                       color: '#34D399',
                       border: '1px solid rgba(16, 185, 129, 0.45)',
-                      padding: '2px 8px',
+                      padding: '2px 10px',
                       borderRadius: '8px',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '4px'
                     }}
                   >
-                    <ShieldCheck size={13} />
-                    <span>{isKannada ? 'ಸರ್ಕಾರಿ ಅಧಿಕೃತ ಡೇಟಾ' : 'Govt Database Verified'}</span>
+                    <ShieldCheck size={14} />
+                    <span>{isKannada ? 'ಗ್ರಾಮ ಕೋಡ್: 606004' : 'Village Code: 606004'}</span>
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.82rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>
-                    {isKannada
-                      ? 'ಕರ್ನಾಟಕ ಸರ್ಕಾರ ಪಂಚತಂತ್ರ & ಕುಟುಂಬ ನಾಗರಿಕ ಡೇಟಾಬೇಸ್'
-                      : 'Karnataka RDPR Panchamitra & Kutumba Resident Data Hub'}
+                  <span style={{ fontSize: '0.85rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>
+                    {isKannada ? 'ಹೊಸದುರ್ಗ ತಾಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ' : 'Hosdurga Taluk, Chitradurga District'}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>•</span>
+                  <span style={{ fontSize: '0.82rem', color: '#FCD34D', fontWeight: 700 }}>
+                    PIN: 577527
                   </span>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>•</span>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    {isKannada
-                      ? 'ಹೊಸದುರ್ಗ ತಾಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ • ಪಿನ್‌ಕೋಡ್: 577533'
-                      : 'Hosadurga Taluk, Chitradurga • PIN: 577533'}
+                    {isKannada ? 'ಕರ್ನಾಟಕ ರಾಜ್ಯ' : 'Karnataka, India'}
                   </span>
                 </div>
               </div>
             </div>
 
-            <p style={{ margin: '10px 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)', maxWidth: '680px', lineHeight: 1.55 }}>
+            <p style={{ margin: '10px 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)', maxWidth: '720px', lineHeight: 1.55 }}>
               {isKannada
-                ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಎಲ್ಲಾ ನಿವಾಸಿಗಳ ಅಧಿಕೃತ ಸಾರ್ವಜನಿಕ ಪಟ್ಟಿ. ಸರ್ಕಾರದ ಗ್ರಾಮ ಪಂಚಾಯತಿ ಕುಟುಂಬ ನೋಂದಣಿ, ಕೃಷಿ ಇಲಾಖೆ ಫ್ರೂಟ್ಸ್ ಹಾಗೂ ಜನಗಣತಿ ದಾಖಲೆಗಳಿಂದ ನೇರವಾಗಿ ಪಡೆದ ಅಧಿಕೃತ ಮಾಹಿತಿ.'
-                : 'Official public register of all authentic residents of Muttagondi village, synchronized with Karnataka Grama Panchayat Kutumba resident registry and agriculture land records.'}
+                ? 'ಕರ್ನಾಟಕ ಜನಗಣತಿ 2011 ಹಾಗೂ ಪಂಚಾಯತಿ ಕುಟುಂಬ ಡೇಟಾಬೇಸ್ ಆಧಾರಿತ ಅಧಿಕೃತ ಗ್ರಾಮ ನಿವಾಸಿಗಳ ಪಟ್ಟಿ (ಕೋಡ್: 606004). ಎಲ್ಲಾ 61 ಕುಟುಂಬಗಳ 269 ನಿವಾಸಿಗಳ ಸಂಪೂರ್ಣ ಸಾರ್ವಜನಿಕ ದಾಖಲೆ.'
+                : 'Official village residents register of Muttagundi (Census Village Code: 606004, Hosdurga, Chitradurga). Sourced directly from Karnataka Census 2011 and Grama Panchayat Kutumba resident registry for all 61 households.'}
             </p>
+          </div>
+
+          {/* Official Source Link Button */}
+          <div>
+            <a
+              href="https://share.google/e0v35eol1Sp7TFSeV"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary"
+              style={{
+                fontSize: '0.8rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                color: '#38BDF8',
+                borderColor: 'rgba(56, 189, 248, 0.4)',
+                background: 'rgba(56, 189, 248, 0.08)'
+              }}
+            >
+              <span>{isKannada ? 'ಅಧಿಕೃತ ಮೂಲ ವೀಕ್ಷಿಸಿ' : 'View Census Source'}</span>
+              <ExternalLink size={14} />
+            </a>
           </div>
         </div>
 
@@ -227,28 +266,32 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 8px #10B981' }} />
             <strong style={{ color: 'var(--text-primary)' }}>
-              {isKannada ? 'ಅಧಿಕೃತ ಮೂಲ:' : 'Official Data Source:'}
+              {isKannada ? 'ಅಧಿಕೃತ ಡೇಟಾಬೇಸ್:' : 'Official Database:'}
             </strong>
             <span>
               {isKannada
-                ? MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.database_source_kn
-                : MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.database_source_en}
+                ? MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.source_database_kn
+                : MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.source_database_en}
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span>
-              {isKannada ? 'ಗ್ರಾ.ಪಂ ಕೋಡ್:' : 'GP Code:'} <strong>{MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.grama_panchayat_code}</strong>
+              {isKannada ? 'ಗ್ರಾಮ ಕೋಡ್:' : 'Village Code:'} <strong style={{ color: '#10B981' }}>606004</strong>
             </span>
             <span>•</span>
             <span>
-              {isKannada ? 'ದಾಖಲೆ ದಿನಾಂಕ:' : 'Sync Date:'} <strong>{MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.last_database_sync}</strong>
+              {isKannada ? 'ಪಿನ್‌ಕೋಡ್:' : 'PIN:'} <strong style={{ color: '#FCD34D' }}>577527</strong>
+            </span>
+            <span>•</span>
+            <span>
+              {isKannada ? 'ಹೊಸದುರ್ಗದಿಂದ ದೂರ:' : 'Hosdurga Distance:'} <strong>10 km</strong>
             </span>
           </div>
         </div>
       </div>
 
-      {/* --- CENSUS & REGISTER METRICS STRIP --- */}
+      {/* --- CENSUS 2011 OFFICIAL METRICS STRIP (CODE: 606004) --- */}
       <div
         style={{
           display: 'grid',
@@ -259,38 +302,62 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
       >
         <div className="glass-card" style={{ padding: '14px', borderRadius: '16px', textAlign: 'center' }}>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
-            {isKannada ? 'ಜನಗಣತಿ ಜನಸಂಖ್ಯೆ' : 'Census Population'}
+            {isKannada ? 'ಅಧಿಕೃತ ಜನಸಂಖ್ಯೆ' : 'Official Population'}
           </span>
-          <strong style={{ fontSize: '1.35rem', fontWeight: 800, color: '#10B981' }}>
-            {MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.total_census_population.toLocaleString()}
+          <strong style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10B981' }}>
+            269
           </strong>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
+            {isKannada ? '138 ಪುರುಷ • 131 ಮಹಿಳೆ' : '138 Male • 131 Female'}
+          </span>
         </div>
 
         <div className="glass-card" style={{ padding: '14px', borderRadius: '16px', textAlign: 'center' }}>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
-            {isKannada ? 'ನೋಂದಾಯಿತ ಕುಟುಂಬಗಳು' : 'Registered Families'}
+            {isKannada ? 'ಒಟ್ಟು ಕುಟುಂಬಗಳು' : 'Total Households'}
           </span>
-          <strong style={{ fontSize: '1.35rem', fontWeight: 800, color: '#F59E0B' }}>
-            {MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.total_registered_households}
+          <strong style={{ fontSize: '1.4rem', fontWeight: 800, color: '#F59E0B' }}>
+            61
           </strong>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
+            {isKannada ? 'ಮನೆ ನಂ. H-01 ರಿಂದ H-61' : 'Households H-01 to H-61'}
+          </span>
         </div>
 
         <div className="glass-card" style={{ padding: '14px', borderRadius: '16px', textAlign: 'center' }}>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
-            {isKannada ? 'ಕುಟುಂಬ ಡೇಟಾ ದಾಖಲೆಗಳು' : 'Digitized Kutumba Records'}
+            {isKannada ? 'ಲಿಂಗ ಅನುಪಾತ (Sex Ratio)' : 'Sex Ratio'}
           </span>
-          <strong style={{ fontSize: '1.35rem', fontWeight: 800, color: '#38BDF8' }}>
-            {MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.active_govt_kutumba_records}
+          <strong style={{ fontSize: '1.4rem', fontWeight: 800, color: '#EC4899' }}>
+            949
           </strong>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
+            {isKannada ? 'ಪ್ರತಿ 1,000 ಪುರುಷರಿಗೆ' : 'Females per 1,000 Males'}
+          </span>
         </div>
 
         <div className="glass-card" style={{ padding: '14px', borderRadius: '16px', textAlign: 'center' }}>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
-            {isKannada ? 'ಪ್ರಸ್ತುತ ಪಟ್ಟಿ' : 'Visible Roll Citizens'}
+            {isKannada ? 'ಗ್ರಾಮ ವಿಸ್ತೀರ್ಣ' : 'Total Area'}
           </span>
-          <strong style={{ fontSize: '1.35rem', fontWeight: 800, color: '#A855F7' }}>
+          <strong style={{ fontSize: '1.4rem', fontWeight: 800, color: '#38BDF8' }}>
+            260.96 ha
+          </strong>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
+            {isKannada ? 'ಹೆಕ್ಟೇರ್ (644.8 ಎಕರೆ)' : 'Hectares (644.8 Acres)'}
+          </span>
+        </div>
+
+        <div className="glass-card" style={{ padding: '14px', borderRadius: '16px', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
+            {isKannada ? 'ಪ್ರಸ್ತುತ ಪಟ್ಟಿ' : 'Visible on Roll'}
+          </span>
+          <strong style={{ fontSize: '1.4rem', fontWeight: 800, color: '#A855F7' }}>
             {filteredResidents.length}
           </strong>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
+            {isKannada ? 'ದೃಢೀಕೃತ ನಾಗರಿಕರು' : 'Verified Citizens'}
+          </span>
         </div>
       </div>
 
@@ -320,8 +387,8 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
             type="text"
             placeholder={
               isKannada
-                ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳ ಹೆಸರು, ತಂದೆ/ಪತಿಯ ಹೆಸರು, ಮನೆ ಸಂಖ್ಯೆ ಅಥವಾ ವೃತ್ತಿ ಮೂಲಕ ಹುಡುಕಿ...'
-                : 'Search Muttagondi people by citizen name, father/spouse, house no, street, or profession...'
+                ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳ ಹೆಸರು, ತಂದೆ/ಪತಿಯ ಹೆಸರು, ಮನೆ ಸಂಖ್ಯೆ (H-01), ಅಥವಾ ವೃತ್ತಿ ಮೂಲಕ ಹುಡುಕಿ...'
+                : 'Search Muttagondi people by citizen name, father/spouse, household (H-01), or profession...'
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -350,8 +417,35 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
           )}
         </div>
 
-        {/* Filter Dropdowns: Ward & Gender */}
+        {/* Filter Dropdowns: Household, Ward & Gender */}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Household filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Home size={15} color="#F59E0B" />
+            <select
+              value={selectedHousehold}
+              onChange={(e) => setSelectedHousehold(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '10px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--glass-border)',
+                color: 'var(--text-primary)',
+                fontSize: '0.82rem',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="ALL">
+                {isKannada ? 'ಎಲ್ಲಾ 61 ಮನೆಗಳು (All Households)' : 'All 61 Households'}
+              </option>
+              {householdsList.map((h) => (
+                <option key={h} value={h}>
+                  {isKannada ? `ಮನೆ ನಂ: ${h}` : `Household: ${h}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Ward filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <MapPin size={15} color="#10B981" />
@@ -386,15 +480,15 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
               const label =
                 g === 'ALL'
                   ? isKannada
-                    ? 'ಎಲ್ಲರೂ'
-                    : 'All'
+                    ? 'ಎಲ್ಲರೂ (269)'
+                    : 'All (269)'
                   : g === 'MALE'
                   ? isKannada
-                    ? 'ಪುರುಷರು'
-                    : 'Male'
+                    ? 'ಪುರುಷರು (138)'
+                    : 'Male (138)'
                   : isKannada
-                  ? 'ಮಹಿಳೆಯರು'
-                  : 'Female';
+                  ? 'ಮಹಿಳೆಯರು (131)'
+                  : 'Female (131)';
 
               return (
                 <button
@@ -463,7 +557,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(295px, 1fr))',
           gap: '16px'
         }}
       >
@@ -484,8 +578,8 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
             </h3>
             <p style={{ fontSize: '0.85rem', maxWidth: '440px', margin: '0 auto' }}>
               {isKannada
-                ? 'ಬೇರೆ ಕೀವರ್ಡ್ ಅಥವಾ ಬೀದಿ ಆಯ್ಕೆಮಾಡಿ ಹುಡುಕಿ ನೋಡಿ.'
-                : 'Try adjusting your search query, ward, or category filters.'}
+                ? 'ಬೇರೆ ಕೀವರ್ಡ್, ಮನೆ ಸಂಖ್ಯೆ ಅಥವಾ ಬೀದಿ ಆಯ್ಕೆಮಾಡಿ ಹುಡುಕಿ ನೋಡಿ.'
+                : 'Try adjusting your search query, household number, or ward filters.'}
             </p>
           </div>
         ) : (
@@ -502,7 +596,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   borderRadius: '20px',
-                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  border: '1px solid rgba(16, 185, 129, 0.28)',
                   background: 'var(--bg-card)',
                   boxShadow: '0 6px 20px rgba(0, 0, 0, 0.16)',
                   position: 'relative'
@@ -598,7 +692,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                     </div>
                   </div>
 
-                  {/* House No & Ward */}
+                  {/* House No, Household & Ward */}
                   <div
                     style={{
                       background: 'rgba(255, 255, 255, 0.03)',
@@ -611,8 +705,8 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span style={{ color: 'var(--text-muted)' }}>
-                        <Home size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-                        {isKannada ? 'ಮನೆ ಸಂಖ್ಯೆ:' : 'House No:'} <strong>{resident.house_no}</strong>
+                        <Home size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle', color: '#F59E0B' }} />
+                        {isKannada ? 'ಮನೆ:' : 'House:'} <strong>{resident.household_no}</strong> ({resident.house_no})
                       </span>
                       <span
                         style={{
@@ -653,7 +747,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10B981', fontWeight: 700 }}>
                     <ShieldCheck size={14} />
-                    <span>{isKannada ? 'ಕುಟುಂಬ ದೃಢೀಕೃತ' : 'Govt Kutumba ID'}</span>
+                    <span>{isKannada ? 'ಜನಗಣತಿ ಕೋಡ್: 606004' : 'Census: 606004'}</span>
                   </div>
 
                   <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)', fontWeight: 600 }}>
