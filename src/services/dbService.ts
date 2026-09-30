@@ -2972,9 +2972,76 @@ class DatabaseService {
   /**
    * Returns official government register of Muttagondi village residents
    * Integrated with Karnataka Kutumba & Grama Panchayat Citizen database.
+   * Loads from persistent storage if customized/imported by village administrators.
    */
   public getGovernmentVillageResidents(): GovernmentVillageResident[] {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('gramasiri_government_residents');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (err) {
+        console.warn('[dbService] getGovernmentVillageResidents parse error:', err);
+      }
+    }
     return MUTTAGONDI_GOVERNMENT_PEOPLE;
+  }
+
+  /**
+   * Persists a custom/imported list of real village residents (e.g. from CEO Karnataka Electoral Roll / Kellodu GP)
+   */
+  public saveGovernmentVillageResidents(residents: GovernmentVillageResident[]): void {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('gramasiri_government_residents', JSON.stringify(residents));
+      } catch (err) {
+        console.warn('[dbService] saveGovernmentVillageResidents error:', err);
+      }
+    }
+  }
+
+  /**
+   * Adds a single verified real resident to the village directory
+   */
+  public addGovernmentVillageResident(resident: GovernmentVillageResident): void {
+    const current = this.getGovernmentVillageResidents();
+    const updated = [resident, ...current];
+    this.saveGovernmentVillageResidents(updated);
+  }
+
+  /**
+   * Updates an existing resident's information
+   */
+  public updateGovernmentVillageResident(resident: GovernmentVillageResident): void {
+    const current = this.getGovernmentVillageResidents();
+    const idx = current.findIndex(r => r.id === resident.id);
+    if (idx >= 0) {
+      const updated = [...current];
+      updated[idx] = resident;
+      this.saveGovernmentVillageResidents(updated);
+    }
+  }
+
+  /**
+   * Deletes a resident record from the active roll
+   */
+  public deleteGovernmentVillageResident(id: string): void {
+    const current = this.getGovernmentVillageResidents();
+    const updated = current.filter(r => r.id !== id);
+    this.saveGovernmentVillageResidents(updated);
+  }
+
+  /**
+   * Resets the village residents list back to the Census 2011 baseline
+   */
+  public resetGovernmentVillageResidents(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gramasiri_government_residents');
+    }
   }
 
   // --- CONVERSATIONS & MESSAGING ---
