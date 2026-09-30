@@ -9,6 +9,22 @@ export type UserRole =
   | 'VERIFIED_CONTRIBUTOR'
   | 'USER';
 
+export interface AadhaarVerificationRecord {
+  is_verified: boolean;
+  masked_aadhaar: string; // e.g. "XXXX-XXXX-8921" (NEVER store or display full 12 digits!)
+  verified_village: string; // "Muttagundi"
+  verified_taluk: string; // "Hosadurga"
+  verified_district: string; // "Chitradurga"
+  verified_pincode: string; // "577533"
+  ward_or_street?: string; // e.g. "Kalleshwara Temple Road"
+  ward_or_street_kn?: string; // e.g. "ಕಲ್ಲೇಶ್ವರ ದೇವಸ್ಥಾನ ರಸ್ತೆ"
+  verification_token: string; // Cryptographic verification token
+  verification_date: string; // ISO timestamp
+  consent_timestamp: string; // Consent record timestamp
+  consent_text_agreed: boolean;
+  verification_method: 'GOVT_UIDAI_EKIC_SANDBOX' | 'DIGILOCKER_AUTHORIZED_GATEWAY' | 'OFFICIAL_PANCHAYAT_VERIFICATION';
+}
+
 export interface UserProfile {
   uid: string;
   name: string;
@@ -28,6 +44,10 @@ export interface UserProfile {
   allow_find_me?: boolean;
   privacy_find?: 'EVERYONE' | 'VILLAGE_MEMBERS' | 'NOBODY';
   privacy_message?: 'EVERYONE' | 'VILLAGE_MEMBERS' | 'NOBODY';
+  aadhaar_verification?: AadhaarVerificationRecord;
+  is_muttagondi_resident?: boolean;
+  ward_or_street?: string;
+  ward_or_street_kn?: string;
 }
 
 export type VerificationStatus =

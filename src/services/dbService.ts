@@ -16,6 +16,7 @@ import {
   NotificationItem,
   AuditLog,
   UserProfile,
+  AadhaarVerificationRecord,
   CommentItem,
   VerificationStatus,
   Conversation,
@@ -2899,6 +2900,71 @@ class DatabaseService {
         // STRICT PRIVACY PROTECTION: Never expose phone or email in public community directory
         phone: '',
         email: ''
+      }));
+  }
+
+  /**
+   * Save Aadhaar village residence verification for user
+   */
+  public async setAadhaarResidenceVerification(
+    uid: string,
+    record: AadhaarVerificationRecord,
+    isMuttagondi: boolean
+  ): Promise<void> {
+    const user = this.users.find((u) => u.uid === uid);
+    if (user) {
+      user.aadhaar_verification = record;
+      user.is_muttagondi_resident = isMuttagondi;
+      if (record.ward_or_street) {
+        user.ward_or_street = record.ward_or_street;
+      }
+      if (record.ward_or_street_kn) {
+        user.ward_or_street_kn = record.ward_or_street_kn;
+      }
+      this.saveCollection('users', [...this.users]);
+
+      if (isFirebaseConfigured && db) {
+        try {
+          const userDoc = doc(db, 'users', uid);
+          await updateDoc(userDoc, {
+            aadhaar_verification: record,
+            is_muttagondi_resident: isMuttagondi,
+            ward_or_street: record.ward_or_street || '',
+            ward_or_street_kn: record.ward_or_street_kn || ''
+          });
+        } catch (err) {
+          console.warn('[dbService] setAadhaarResidenceVerification firestore sync:', err);
+        }
+      }
+    }
+  }
+
+  /**
+   * Returns list of Muttagondi People (Aadhaar verified residents & village community)
+   * Enforces strict UIDAI privacy: NEVER exposes full Aadhaar numbers, masked Aadhaar is hidden,
+   * sensitive biometrics are impossible to query.
+   */
+  public getMuttagondiPeople(currentUserId?: string, onlyAadhaarVerified: boolean = false): UserProfile[] {
+    const publicUsers = this.getPublicCommunityUsers(currentUserId);
+    return publicUsers
+      .filter((u) => {
+        if (onlyAadhaarVerified) {
+          return u.aadhaar_verification?.is_verified === true && u.is_muttagondi_resident === true;
+        }
+        // Include residents of Muttagondi
+        return u.is_muttagondi_resident !== false;
+      })
+      .map((u) => ({
+        ...u,
+        phone: '', // Stripped for privacy
+        email: '', // Stripped for privacy
+        // Ensure sensitive fields are NEVER leaked in public list
+        aadhaar_verification: u.aadhaar_verification
+          ? {
+              ...u.aadhaar_verification,
+              masked_aadhaar: 'XXXX-XXXX-****' // Sanitized for public directory
+            }
+          : undefined
       }));
   }
 

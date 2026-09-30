@@ -39,7 +39,7 @@ export const isSuperAdminEmail = (email?: string | null, name?: string | null): 
   return n === 'vvini4803' || n === 'vvini';
 };
 
-// Clean Default Users (Village Admin & Moderator for initial login)
+// Clean Default Users (Village Admin, Officers & Verified Muttagondi Residents)
 export const SEED_USERS: UserProfile[] = [
   {
     uid: 'admin_vvini4803',
@@ -59,7 +59,25 @@ export const SEED_USERS: UserProfile[] = [
     community_category: 'PROFESSIONAL',
     allow_find_me: true,
     privacy_find: 'EVERYONE',
-    privacy_message: 'EVERYONE'
+    privacy_message: 'EVERYONE',
+    is_muttagondi_resident: true,
+    ward_or_street: 'Kalleshwara Temple Road',
+    ward_or_street_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ದೇವಸ್ಥಾನ ರಸ್ತೆ',
+    aadhaar_verification: {
+      is_verified: true,
+      masked_aadhaar: 'XXXX-XXXX-4968',
+      verified_village: 'Muttagundi',
+      verified_taluk: 'Hosadurga',
+      verified_district: 'Chitradurga',
+      verified_pincode: '577533',
+      ward_or_street: 'Kalleshwara Temple Road',
+      ward_or_street_kn: 'ಶ್ರೀ ಕಲ್ಲೇಶ್ವರ ದೇವಸ್ಥಾನ ರಸ್ತೆ',
+      verification_token: 'MTG-UIDAI-VERIFIED-748325',
+      verification_date: '2026-09-20T10:00:00.000Z',
+      consent_timestamp: '2026-09-20T09:58:30.000Z',
+      consent_text_agreed: true,
+      verification_method: 'GOVT_UIDAI_EKIC_SANDBOX'
+    }
   },
   {
     uid: 'admin_101',
@@ -79,7 +97,25 @@ export const SEED_USERS: UserProfile[] = [
     community_category: 'PROFESSIONAL',
     allow_find_me: true,
     privacy_find: 'EVERYONE',
-    privacy_message: 'EVERYONE'
+    privacy_message: 'EVERYONE',
+    is_muttagondi_resident: true,
+    ward_or_street: 'Panchayat Bhavan Road',
+    ward_or_street_kn: 'ಪಂಚಾಯತ್ ಭವನ ರಸ್ತೆ',
+    aadhaar_verification: {
+      is_verified: true,
+      masked_aadhaar: 'XXXX-XXXX-1011',
+      verified_village: 'Muttagundi',
+      verified_taluk: 'Hosadurga',
+      verified_district: 'Chitradurga',
+      verified_pincode: '577533',
+      ward_or_street: 'Panchayat Bhavan Road',
+      ward_or_street_kn: 'ಪಂಚಾಯತ್ ಭವನ ರಸ್ತೆ',
+      verification_token: 'MTG-UIDAI-VERIFIED-912044',
+      verification_date: '2026-09-18T11:20:00.000Z',
+      consent_timestamp: '2026-09-18T11:18:00.000Z',
+      consent_text_agreed: true,
+      verification_method: 'GOVT_UIDAI_EKIC_SANDBOX'
+    }
   },
   {
     uid: 'usr_ramesh_farmer',
@@ -98,7 +134,25 @@ export const SEED_USERS: UserProfile[] = [
     community_category: 'FARMER',
     allow_find_me: true,
     privacy_find: 'EVERYONE',
-    privacy_message: 'EVERYONE'
+    privacy_message: 'EVERYONE',
+    is_muttagondi_resident: true,
+    ward_or_street: 'Farmers Colony (Krishi Beedhi)',
+    ward_or_street_kn: 'ರೈತರ ಕಾಲೋನಿ (ಕೃಷಿ ಬೀದಿ)',
+    aadhaar_verification: {
+      is_verified: true,
+      masked_aadhaar: 'XXXX-XXXX-6284',
+      verified_village: 'Muttagundi',
+      verified_taluk: 'Hosadurga',
+      verified_district: 'Chitradurga',
+      verified_pincode: '577533',
+      ward_or_street: 'Farmers Colony (Krishi Beedhi)',
+      ward_or_street_kn: 'ರೈತರ ಕಾಲೋನಿ (ಕೃಷಿ ಬೀದಿ)',
+      verification_token: 'MTG-UIDAI-VERIFIED-381920',
+      verification_date: '2026-09-22T08:15:00.000Z',
+      consent_timestamp: '2026-09-22T08:12:00.000Z',
+      consent_text_agreed: true,
+      verification_method: 'GOVT_UIDAI_EKIC_SANDBOX'
+    }
   },
   {
     uid: 'usr_manju_sports',
@@ -117,7 +171,25 @@ export const SEED_USERS: UserProfile[] = [
     community_category: 'SPORTS',
     allow_find_me: true,
     privacy_find: 'EVERYONE',
-    privacy_message: 'EVERYONE'
+    privacy_message: 'EVERYONE',
+    is_muttagondi_resident: true,
+    ward_or_street: 'Sports Ground Road',
+    ward_or_street_kn: 'ಕ್ರೀಡಾಂಗಣ ರಸ್ತೆ',
+    aadhaar_verification: {
+      is_verified: true,
+      masked_aadhaar: 'XXXX-XXXX-9931',
+      verified_village: 'Muttagundi',
+      verified_taluk: 'Hosadurga',
+      verified_district: 'Chitradurga',
+      verified_pincode: '577533',
+      ward_or_street: 'Sports Ground Road',
+      ward_or_street_kn: 'ಕ್ರೀಡಾಂಗಣ ರಸ್ತೆ',
+      verification_token: 'MTG-UIDAI-VERIFIED-554210',
+      verification_date: '2026-09-24T14:30:00.000Z',
+      consent_timestamp: '2026-09-24T14:28:00.000Z',
+      consent_text_agreed: true,
+      verification_method: 'GOVT_UIDAI_EKIC_SANDBOX'
+    }
   },
   {
     uid: 'usr_sowmya_teacher',
@@ -136,7 +208,25 @@ export const SEED_USERS: UserProfile[] = [
     community_category: 'TEACHER',
     allow_find_me: true,
     privacy_find: 'EVERYONE',
-    privacy_message: 'EVERYONE'
+    privacy_message: 'EVERYONE',
+    is_muttagondi_resident: true,
+    ward_or_street: 'School Beedhi (Govt LPS Road)',
+    ward_or_street_kn: 'ಶಾಲೆ ಬೀದಿ (ಸರ್ಕಾರಿ ಶಾಲೆ ರಸ್ತೆ)',
+    aadhaar_verification: {
+      is_verified: true,
+      masked_aadhaar: 'XXXX-XXXX-4420',
+      verified_village: 'Muttagundi',
+      verified_taluk: 'Hosadurga',
+      verified_district: 'Chitradurga',
+      verified_pincode: '577533',
+      ward_or_street: 'School Beedhi (Govt LPS Road)',
+      ward_or_street_kn: 'ಶಾಲೆ ಬೀದಿ (ಸರ್ಕಾರಿ ಶಾಲೆ ರಸ್ತೆ)',
+      verification_token: 'MTG-UIDAI-VERIFIED-883109',
+      verification_date: '2026-09-25T16:00:00.000Z',
+      consent_timestamp: '2026-09-25T15:57:00.000Z',
+      consent_text_agreed: true,
+      verification_method: 'GOVT_UIDAI_EKIC_SANDBOX'
+    }
   },
   {
     uid: 'usr_basavaraj_resident',
@@ -155,7 +245,25 @@ export const SEED_USERS: UserProfile[] = [
     community_category: 'RESIDENT',
     allow_find_me: true,
     privacy_find: 'EVERYONE',
-    privacy_message: 'EVERYONE'
+    privacy_message: 'EVERYONE',
+    is_muttagondi_resident: true,
+    ward_or_street: 'Main Grama Beedhi',
+    ward_or_street_kn: 'ಮುಖ್ಯ ಗ್ರಾಮ ಬೀದಿ',
+    aadhaar_verification: {
+      is_verified: true,
+      masked_aadhaar: 'XXXX-XXXX-1954',
+      verified_village: 'Muttagundi',
+      verified_taluk: 'Hosadurga',
+      verified_district: 'Chitradurga',
+      verified_pincode: '577533',
+      ward_or_street: 'Main Grama Beedhi',
+      ward_or_street_kn: 'ಮುಖ್ಯ ಗ್ರಾಮ ಬೀದಿ',
+      verification_token: 'MTG-UIDAI-VERIFIED-601932',
+      verification_date: '2026-09-26T12:00:00.000Z',
+      consent_timestamp: '2026-09-26T11:58:00.000Z',
+      consent_text_agreed: true,
+      verification_method: 'GOVT_UIDAI_EKIC_SANDBOX'
+    }
   }
 ];
 

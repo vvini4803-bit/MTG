@@ -3,6 +3,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { dbService } from '../services/dbService';
 import { UserProfile } from '../types';
+import { AadhaarResidentVerificationModal } from '../components/people/AadhaarResidentVerificationModal';
 import {
   Search,
   Users,
@@ -17,7 +18,10 @@ import {
   Check,
   Filter,
   UserCheck,
-  Sparkles
+  Sparkles,
+  MapPin,
+  Award,
+  ChevronDown
 } from 'lucide-react';
 
 interface CommunityPeopleViewProps {
@@ -37,10 +41,13 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [filterVerifiedOnly, setFilterVerifiedOnly] = useState<boolean>(false);
+  const [selectedWard, setSelectedWard] = useState<string>('ALL');
   const [showPrivacySettings, setShowPrivacySettings] = useState(false);
   const [showBlockedList, setShowBlockedList] = useState(false);
   const [blockedUids, setBlockedUids] = useState<string[]>([]);
   const [settingsSavedMsg, setSettingsSavedMsg] = useState(false);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
   // User's own privacy preferences
   const [myAllowFindMe, setMyAllowFindMe] = useState<boolean>(currentUser?.allow_find_me !== false);
@@ -49,23 +56,23 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
   const [myCategory, setMyCategory] = useState<string>(currentUser?.community_category || 'RESIDENT');
 
   // Load public users and blocked list
-  useEffect(() => {
-    const refreshData = () => {
-      const publicUsers = dbService.getPublicCommunityUsers(currentUser?.uid);
-      setUsers(publicUsers);
+  const refreshData = () => {
+    const publicUsers = dbService.getMuttagondiPeople(currentUser?.uid, false);
+    setUsers(publicUsers);
 
-      if (currentUser) {
-        setBlockedUids(dbService.getBlockedUsers(currentUser.uid));
-        const profile = dbService.getUserProfile(currentUser.uid);
-        if (profile) {
-          setMyAllowFindMe(profile.allow_find_me !== false);
-          setMyPrivacyFind(profile.privacy_find || 'EVERYONE');
-          setMyPrivacyMessage(profile.privacy_message || 'EVERYONE');
-          setMyCategory(profile.community_category || 'RESIDENT');
-        }
+    if (currentUser) {
+      setBlockedUids(dbService.getBlockedUsers(currentUser.uid));
+      const profile = dbService.getUserProfile(currentUser.uid);
+      if (profile) {
+        setMyAllowFindMe(profile.allow_find_me !== false);
+        setMyPrivacyFind(profile.privacy_find || 'EVERYONE');
+        setMyPrivacyMessage(profile.privacy_message || 'EVERYONE');
+        setMyCategory(profile.community_category || 'RESIDENT');
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     refreshData();
 
     // Subscribe to user list changes
@@ -88,18 +95,18 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
     setSettingsSavedMsg(true);
     setTimeout(() => setSettingsSavedMsg(false), 2000);
     // Refresh directory
-    setUsers(dbService.getPublicCommunityUsers(currentUser.uid));
+    refreshData();
   };
 
   const handleUnblock = async (uid: string) => {
     if (!currentUser) return;
     await dbService.unblockUser(currentUser.uid, uid);
     setBlockedUids(dbService.getBlockedUsers(currentUser.uid));
-    setUsers(dbService.getPublicCommunityUsers(currentUser.uid));
+    refreshData();
   };
 
   const categories = [
-    { id: 'ALL', label_en: 'All Residents', label_kn: 'ಎಲ್ಲಾ ಗ್ರಾಮಸ್ಥರು', icon: '👥' },
+    { id: 'ALL', label_en: 'All Categories', label_kn: 'ಎಲ್ಲಾ ವರ್ಗಗಳು', icon: '👥' },
     { id: 'FARMER', label_en: 'Farmers', label_kn: 'ರೈತರು', icon: '🌾' },
     { id: 'SPORTS', label_en: 'Sports / Youth', label_kn: 'ಕ್ರೀಡೆ / ಯುವಕರು', icon: '🏏' },
     { id: 'STUDENT', label_en: 'Students', label_kn: 'ವಿದ್ಯಾರ್ಥಿಗಳು', icon: '🎓' },
@@ -109,9 +116,31 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
     { id: 'PROFESSIONAL', label_en: 'Professionals', label_kn: 'ಉದ್ಯೋಗಿಗಳು', icon: '💼' }
   ];
 
+  // Available village wards for filter
+  const wardsList = useMemo(() => {
+    const set = new Set<string>();
+    users.forEach((u) => {
+      if (u.ward_or_street) set.add(u.ward_or_street);
+    });
+    return Array.from(set);
+  }, [users]);
+
+  // Current user's verification status
+  const isMyProfileVerified = currentUser?.aadhaar_verification?.is_verified === true;
+
   // Filtered residents list
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
+      // Verified only filter
+      if (filterVerifiedOnly) {
+        if (u.aadhaar_verification?.is_verified !== true) return false;
+      }
+
+      // Ward filter
+      if (selectedWard !== 'ALL') {
+        if (u.ward_or_street !== selectedWard) return false;
+      }
+
       // Category filter
       if (selectedCategory !== 'ALL') {
         if (u.community_category !== selectedCategory) return false;
@@ -125,12 +154,18 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
         const matchBio = u.bio?.toLowerCase().includes(q);
         const matchBioKn = u.bio_kn?.toLowerCase().includes(q);
         const matchCat = u.community_category?.toLowerCase().includes(q);
-        return matchName || matchNameKn || matchBio || matchBioKn || matchCat;
+        const matchWard = u.ward_or_street?.toLowerCase().includes(q);
+        const matchWardKn = u.ward_or_street_kn?.toLowerCase().includes(q);
+        return matchName || matchNameKn || matchBio || matchBioKn || matchCat || matchWard || matchWardKn;
       }
 
       return true;
     });
-  }, [users, selectedCategory, searchQuery]);
+  }, [users, filterVerifiedOnly, selectedWard, selectedCategory, searchQuery]);
+
+  const verifiedResidentsCount = useMemo(() => {
+    return users.filter((u) => u.aadhaar_verification?.is_verified === true).length;
+  }, [users]);
 
   const getCategoryBadge = (cat?: string) => {
     switch (cat) {
@@ -149,133 +184,154 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
       case 'PROFESSIONAL':
         return { label: isKannada ? '💼 ಉದ್ಯೋಗಿ' : '💼 Professional', color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.12)' };
       default:
-        return { label: isKannada ? '👤 ಗ್ರಾಮಸ್ಥರು' : '👤 Resident', color: 'var(--text-secondary)', bg: 'rgba(255, 255, 255, 0.08)' };
+        return { label: isKannada ? '👤 ನಿವಾಸಿ' : '👤 Resident', color: 'var(--text-secondary)', bg: 'rgba(255, 255, 255, 0.08)' };
     }
   };
 
   return (
-    <div className="container" style={{ padding: '24px 16px', maxWidth: '860px' }}>
-      {/* --- HERO HEADER --- */}
+    <div className="container" style={{ padding: '24px 16px', maxWidth: '920px' }}>
+      {/* --- HERO HEADER: MUTTAGONDI PEOPLE --- */}
       <div
         style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '24px 20px',
-          marginBottom: '20px',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.08) 50%, rgba(245, 158, 11, 0.1) 100%)',
+          border: '1.5px solid rgba(16, 185, 129, 0.35)',
+          borderRadius: '24px',
+          padding: '28px 24px',
+          marginBottom: '24px',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.25)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
               <div
                 style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  background: 'var(--accent-emerald)',
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '14px',
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#fff'
+                  color: '#fff',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)'
                 }}
               >
-                <Users size={22} />
+                <Users size={26} />
               </div>
               <div>
-                <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {isKannada ? '👥 ನಮ್ಮ ಗ್ರಾಮಸ್ಥರು' : '👥 Our People'}
+                <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                  {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳು' : 'Muttagondi People'}
                 </h1>
-                <span style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)', fontWeight: 600 }}>
-                  {isKannada ? 'ಗ್ರಾಮ ಸಮುದಾಯ ಸಂಪರ್ಕ ವೇದಿಕೆ' : 'Village Community & People Directory'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>
+                    {isKannada ? 'ಅಧಿಕೃತ ಗ್ರಾಮ ನಿವಾಸಿಗಳ ವೇದಿಕೆ' : 'Official Village Citizen Directory'}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>•</span>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                    Hosadurga Taluk, Chitradurga
+                  </span>
+                </div>
               </div>
             </div>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '580px' }}>
+
+            <p style={{ margin: '8px 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)', maxWidth: '640px', lineHeight: 1.5 }}>
               {isKannada
-                ? 'ಗ್ರಾಮದ ನೋಂದಾಯಿತ ರೈತರು, ಕ್ರೀಡಾಪಟುಗಳು, ಶಿಕ್ಷಕರು ಹಾಗೂ ಸಾಧಕರನ್ನು ಹುಡುಕಿ ಮತ್ತು ಸುರಕ್ಷಿತವಾಗಿ ಸಂದೇಶ ಕಳುಹಿಸಿ.'
-                : 'Discover and connect with verified village farmers, sports champions, teachers, and achievers.'}
+                ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಅಧಿಕೃತ ಆಧಾರ್ ದೃಢೀಕೃತ ನಿವಾಸಿಗಳು, ರೈತರು, ಶಿಕ್ಷಕರು, ಕ್ರೀಡಾಪಟುಗಳು ಹಾಗೂ ಸಾಧಕರ ಪಟ್ಟಿ. ಗ್ರಾಮಸ್ಥರೊಂದಿಗೆ ಸುರಕ್ಷಿತವಾಗಿ ಸಂಪರ್ಕದಲ್ಲಿರಿ.'
+                : 'Official directory of verified Muttagondi residents, farmers, educators, sports stars, and achievers authenticated via residence e-KYC.'}
             </p>
           </div>
 
-          {/* Privacy Settings Toggle Button */}
-          {currentUser && (
-            <button
-              onClick={() => setShowPrivacySettings(!showPrivacySettings)}
-              className="btn-secondary"
-              style={{
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 14px'
-              }}
-            >
-              <Settings size={16} />
-              <span>{isKannada ? 'ನನ್ನ ಗೌಪ್ಯತೆ ಸೆಟ್ಟಿಂಗ್ಸ್' : 'My Privacy Controls'}</span>
-            </button>
-          )}
+          {/* Action CTAs on Top Right */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {currentUser ? (
+              <>
+                <button
+                  onClick={() => setIsVerificationModalOpen(true)}
+                  className="btn-primary"
+                  style={{
+                    fontSize: '0.84rem',
+                    padding: '8px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: isMyProfileVerified
+                      ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                      : 'linear-gradient(135deg, #10B981 0%, #F59E0B 100%)',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+                  }}
+                >
+                  <ShieldCheck size={18} />
+                  <span>
+                    {isMyProfileVerified
+                      ? isKannada
+                        ? '✓ ಆಧಾರ್ ದೃಢೀಕೃತ ನಿವಾಸಿ'
+                        : '✓ Verified Resident'
+                      : isKannada
+                      ? '+ ಆಧಾರ್ ನಿವಾಸ ದೃಢೀಕರಣ'
+                      : '+ Verify My Residence'}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setShowPrivacySettings(!showPrivacySettings)}
+                  className="btn-secondary"
+                  style={{
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px'
+                  }}
+                  title={isKannada ? 'ಗೌಪ್ಯತೆ ನಿಯಂತ್ರಣಗಳು' : 'Privacy Settings'}
+                >
+                  <Settings size={16} />
+                  <span>{isKannada ? 'ಗೌಪ್ಯತೆ' : 'Privacy'}</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={onOpenLogin}
+                className="btn-primary"
+                style={{
+                  fontSize: '0.84rem',
+                  padding: '8px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <ShieldCheck size={18} />
+                <span>{isKannada ? 'ಲಾಗಿನ್ & ನಿವಾಸ ದೃಢೀಕರಣ' : 'Login & Verify Residence'}</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Strict Privacy Guarantee Box */}
+        {/* UIDAI Strict Privacy & Legal Guarantee Badge */}
         <div
           style={{
-            marginTop: '16px',
-            padding: '8px 14px',
-            background: 'rgba(0, 0, 0, 0.25)',
+            marginTop: '20px',
+            padding: '10px 16px',
+            background: 'rgba(0, 0, 0, 0.3)',
             borderRadius: 'var(--radius-md)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            fontSize: '0.75rem',
-            color: 'var(--text-secondary)'
+            gap: '10px',
+            fontSize: '0.78rem',
+            color: 'var(--text-secondary)',
+            border: '1px solid rgba(255, 255, 255, 0.08)'
           }}
         >
-          <Lock size={14} color="#10B981" />
+          <Lock size={16} color="#10B981" style={{ flexShrink: 0 }} />
           <span>
             {isKannada
-              ? 'ಗೌಪ್ಯತೆ ರಕ್ಷಣೆ: ಸಾರ್ವಜನಿಕ ಡೈರೆಕ್ಟರಿಯಲ್ಲಿ ಯಾರ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಅಥವಾ ಇಮೇಲ್ ಎಂದಿಗೂ ಬಹಿರಂಗಗೊಳ್ಳುವುದಿಲ್ಲ.'
-              : 'Privacy Protected: Resident phone numbers, emails, and exact home addresses are strictly confidential.'}
+              ? '🔒 UIDAI ಗೌಪ್ಯತೆ ಖಾತರಿ: ಸಂಪೂರ್ಣ ಆಧಾರ್ ಸಂಖ್ಯೆ ಅಥವಾ ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ಅನ್ನು ಎಂದಿಗೂ ಸಂಗ್ರಹಿಸುವುದಿಲ್ಲ ಅಥವಾ ಪ್ರದರ್ಶಿಸುವುದಿಲ್ಲ. ಕೇವಲ ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸದ ಅಧಿಕೃತ ದೃಢೀಕರಣ ಟೋಕನ್ ಮಾತ್ರ ದಾಖಲಾಗುತ್ತದೆ.'
+              : '🔒 UIDAI Privacy Guarantee: Full 12-digit Aadhaar numbers and biometric data are never collected, stored, or displayed. Only voluntary residence verification tokens are recorded.'}
           </span>
         </div>
-
-        {/* Guest Join Prompt Banner */}
-        {!currentUser && (
-          <div
-            style={{
-              marginTop: '16px',
-              padding: '14px 18px',
-              borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(59, 130, 246, 0.12) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '14px',
-              flexWrap: 'wrap'
-            }}
-          >
-            <div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: '0 0 2px', color: '#FFFFFF' }}>
-                {isKannada ? '👋 ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮಸ್ಥರ ಡೈರೆಕ್ಟರಿ' : '👋 Join Muttagundi Village Directory'}
-              </h4>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
-                {isKannada
-                  ? 'ಇತರ ಸದಸ್ಯರಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸಲು ಮತ್ತು ನೈಜ ಸಮಯದಲ್ಲಿ ಸಂವಹನ ನಡೆಸಲು ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ನೋಂದಾಯಿಸಿ.'
-                  : 'Register your resident profile to chat, message, and interact with fellow villagers in real time.'}
-              </p>
-            </div>
-            <button
-              onClick={onOpenLogin}
-              className="btn-primary"
-              style={{ padding: '6px 16px', fontSize: '0.82rem', whiteSpace: 'nowrap' }}
-            >
-              {isKannada ? '+ ಸದಸ್ಯರಾಗಿ ನೋಂದಾಯಿಸಿ' : '+ Register Profile'}
-            </button>
-          </div>
-        )}
       </div>
 
       {/* --- USER PRIVACY CONTROLS PANEL --- */}
@@ -381,7 +437,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
               }}
             >
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px' }}>
-                {isKannada ? 'ನನ್ನ ಸಮುದಾಯ ವರ್ಗ (ಐಚ್ಛಿಕ)' : 'My Community Role / Category'}
+                {isKannada ? 'ನನ್ನ ಸಮುದಾಯ ವರ್ಗ' : 'My Community Category'}
               </label>
               <select
                 value={myCategory}
@@ -450,8 +506,8 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                 {isKannada ? 'ನೀವು ನಿರ್ಬಂಧಿಸಿದ ಬಳಕೆದಾರರು' : 'Blocked Users List'}
               </h4>
               {blockedUids.length === 0 ? (
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
-                  {isKannada ? 'ಯಾರನ್ನೂ ನಿರ್ಬಂಧಿಸಿಲ್ಲ.' : 'You have not blocked any users.'}
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {isKannada ? 'ನೀವು ಯಾರನ್ನೂ ನಿರ್ಬಂಧಿಸಿಲ್ಲ.' : 'No users blocked.'}
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -463,25 +519,22 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         padding: '6px 10px',
-                        background: 'rgba(239, 68, 68, 0.08)',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.78rem'
+                        background: 'rgba(0,0,0,0.2)',
+                        borderRadius: 'var(--radius-sm)'
                       }}
                     >
-                      <span>ID: {bUid}</span>
+                      <span style={{ fontSize: '0.78rem' }}>{bUid}</span>
                       <button
                         onClick={() => handleUnblock(bUid)}
                         style={{
-                          background: '#EF4444',
+                          background: 'none',
                           border: 'none',
-                          color: '#fff',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          fontSize: '0.72rem',
+                          color: '#10B981',
+                          fontSize: '0.75rem',
                           cursor: 'pointer'
                         }}
                       >
-                        {isKannada ? 'ಅನ್‌ಬ್ಲಾಕ್' : 'Unblock'}
+                        {isKannada ? 'ಅನ್‌ಬ್ಲಾಕ್ ಮಾಡಿ' : 'Unblock'}
                       </button>
                     </div>
                   ))}
@@ -492,6 +545,104 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
         </div>
       )}
 
+      {/* --- QUICK STATS & AADHAAR VERIFICATION TOGGLE BAR --- */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          marginBottom: '18px',
+          flexWrap: 'wrap'
+        }}
+      >
+        {/* Toggle Pills: All Residents vs Aadhaar Verified Only */}
+        <div
+          style={{
+            display: 'flex',
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: '4px',
+            borderRadius: '12px',
+            border: '1px solid var(--glass-border)'
+          }}
+        >
+          <button
+            onClick={() => setFilterVerifiedOnly(false)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: 'none',
+              background: !filterVerifiedOnly ? 'var(--accent-emerald)' : 'transparent',
+              color: !filterVerifiedOnly ? '#FFFFFF' : 'var(--text-secondary)',
+              fontSize: '0.82rem',
+              fontWeight: !filterVerifiedOnly ? 700 : 500,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Users size={14} />
+            <span>{isKannada ? `ಎಲ್ಲಾ ನಿವಾಸಿಗಳು (${users.length})` : `All Residents (${users.length})`}</span>
+          </button>
+
+          <button
+            onClick={() => setFilterVerifiedOnly(true)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: 'none',
+              background: filterVerifiedOnly ? 'var(--accent-emerald)' : 'transparent',
+              color: filterVerifiedOnly ? '#FFFFFF' : 'var(--text-secondary)',
+              fontSize: '0.82rem',
+              fontWeight: filterVerifiedOnly ? 700 : 500,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <ShieldCheck size={15} color={filterVerifiedOnly ? '#FFFFFF' : '#10B981'} />
+            <span>
+              {isKannada
+                ? `✓ ಆಧಾರ್ ದೃಢೀಕೃತ (${verifiedResidentsCount})`
+                : `✓ Aadhaar Verified (${verifiedResidentsCount})`}
+            </span>
+          </button>
+        </div>
+
+        {/* Ward / Street Filter Dropdown */}
+        {wardsList.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MapPin size={15} color="#10B981" />
+            <select
+              value={selectedWard}
+              onChange={(e) => setSelectedWard(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '10px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--glass-border)',
+                color: 'var(--text-primary)',
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="ALL">
+                {isKannada ? 'ಎಲ್ಲಾ ಬೀದಿಗಳು / ವಾರ್ಡ್‌ಗಳು' : 'All Wards / Streets'}
+              </option>
+              {wardsList.map((ward) => (
+                <option key={ward} value={ward}>
+                  {ward}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
       {/* --- SEARCH BAR --- */}
       <div
         style={{
@@ -500,7 +651,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
           gap: '10px',
           background: 'var(--bg-card)',
           border: '1px solid var(--glass-border)',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: 'var(--radius-lg)',
           padding: '10px 16px',
           marginBottom: '16px'
         }}
@@ -508,13 +659,13 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
         <Search size={18} color="var(--text-muted)" />
         <input
           type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={
             isKannada
-              ? 'ಹೆಸರು ಅಥವಾ ವೃತ್ತಿ ಮೂಲಕ ಹುಡುಕಿ... (Search by name or category)'
-              : 'Search people by name, role, or interest...'
+              ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳ ಹೆಸರು, ಬೀದಿ, ಅಥವಾ ವೃತ್ತಿ ಮೂಲಕ ಹುಡುಕಿ...'
+              : 'Search Muttagondi people by name, street, or category...'
           }
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           style={{
             flex: 1,
             background: 'transparent',
@@ -547,7 +698,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
           gap: '8px',
           overflowX: 'auto',
           paddingBottom: '8px',
-          marginBottom: '20px',
+          marginBottom: '22px',
           scrollbarWidth: 'none'
         }}
       >
@@ -593,47 +744,66 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
             className="glass-card"
             style={{
               gridColumn: '1 / -1',
-              padding: '40px 20px',
+              padding: '44px 20px',
               textAlign: 'center',
-              color: 'var(--text-muted)'
+              color: 'var(--text-muted)',
+              borderRadius: '20px'
             }}
           >
-            <Users size={40} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-            <h3 style={{ color: 'var(--text-primary)', marginBottom: '6px' }}>
-              {isKannada ? 'ಯಾವುದೇ ಗ್ರಾಮಸ್ಥರು ಕಂಡುಬಂದಿಲ್ಲ' : 'No Residents Found'}
+            <Users size={44} style={{ margin: '0 auto 12px', opacity: 0.5, color: '#10B981' }} />
+            <h3 style={{ color: 'var(--text-primary)', marginBottom: '6px', fontSize: '1.1rem' }}>
+              {isKannada ? 'ಯಾವುದೇ ನಿವಾಸಿಗಳು ಕಂಡುಬಂದಿಲ್ಲ' : 'No Muttagondi Residents Found'}
             </h3>
-            <p style={{ fontSize: '0.85rem' }}>
+            <p style={{ fontSize: '0.85rem', maxWidth: '440px', margin: '0 auto 16px' }}>
               {isKannada
-                ? 'ಬೇರೆ ಕೀವರ್ಡ್ ಅಥವಾ ವರ್ಗದೊಂದಿಗೆ ಹುಡುಕಿ ನೋಡಿ, ಅಥವಾ ಹೊಸ ಸದಸ್ಯರಾಗಿ ನೋಂದಾಯಿಸಿ.'
-                : 'Try adjusting your search query, or register as a village resident.'}
+                ? 'ಬೇರೆ ಕೀವರ್ಡ್ ಅಥವಾ ವರ್ಗದೊಂದಿಗೆ ಹುಡುಕಿ ನೋಡಿ, ಅಥವಾ ನಿಮ್ಮ ಆಧಾರ್ ನಿವಾಸವನ್ನು ದೃಢೀಕರಿಸಿ ಸೇರ್ಪಡೆಗೊಳ್ಳಿ.'
+                : 'Try adjusting your search filters, or verify your residence to join the directory.'}
             </p>
-            <button
-              onClick={onOpenLogin}
-              className="btn-primary"
-              style={{ marginTop: '16px', padding: '8px 20px', fontSize: '0.85rem' }}
-            >
-              {isKannada ? '+ ಮೊದಲ ಸದಸ್ಯರಾಗಿ ನೋಂದಾಯಿಸಿ' : '+ Register as First Member'}
-            </button>
+            {currentUser ? (
+              <button
+                onClick={() => setIsVerificationModalOpen(true)}
+                className="btn-primary"
+                style={{ padding: '8px 22px', fontSize: '0.88rem' }}
+              >
+                {isKannada ? '+ ನನ್ನ ನಿವಾಸ ದೃಢೀಕರಿಸಿ' : '+ Verify My Residence'}
+              </button>
+            ) : (
+              <button
+                onClick={onOpenLogin}
+                className="btn-primary"
+                style={{ padding: '8px 22px', fontSize: '0.88rem' }}
+              >
+                {isKannada ? '+ ಮೊದಲ ಸದಸ್ಯರಾಗಿ ನೋಂದಾಯಿಸಿ' : '+ Register as First Resident'}
+              </button>
+            )}
           </div>
         ) : (
           filteredUsers.map((user) => {
             const isMe = currentUser?.uid === user.uid;
             const badge = getCategoryBadge(user.community_category);
+            const isVerified = user.aadhaar_verification?.is_verified === true;
 
             return (
               <div
                 key={user.uid}
                 className="glass-card"
                 style={{
-                  padding: '18px',
+                  padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  borderRadius: 'var(--radius-lg)',
+                  borderRadius: '20px',
                   border: isMe
-                    ? '1px solid rgba(16, 185, 129, 0.4)'
+                    ? '1.5px solid rgba(16, 185, 129, 0.5)'
+                    : isVerified
+                    ? '1px solid rgba(16, 185, 129, 0.25)'
                     : '1px solid var(--glass-border)',
-                  background: isMe ? 'rgba(16, 185, 129, 0.05)' : 'var(--bg-card)',
+                  background: isMe
+                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.03) 100%)'
+                    : 'var(--bg-card)',
+                  boxShadow: isVerified
+                    ? '0 6px 20px rgba(0, 0, 0, 0.18)'
+                    : 'none',
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                 }}
               >
@@ -646,19 +816,19 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                         src={user.photoUrl}
                         alt={user.name}
                         style={{
-                          width: '52px',
-                          height: '52px',
+                          width: '54px',
+                          height: '54px',
                           borderRadius: '50%',
                           objectFit: 'cover',
-                          border: '2px solid var(--glass-border)',
+                          border: isVerified ? '2.5px solid #10B981' : '2px solid var(--glass-border)',
                           flexShrink: 0
                         }}
                       />
                     ) : (
                       <div
                         style={{
-                          width: '52px',
-                          height: '52px',
+                          width: '54px',
+                          height: '54px',
                           borderRadius: '50%',
                           background: badge.color,
                           color: '#fff',
@@ -666,8 +836,9 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 700,
-                          fontSize: '1.2rem',
-                          flexShrink: 0
+                          fontSize: '1.25rem',
+                          flexShrink: 0,
+                          border: isVerified ? '2.5px solid #10B981' : 'none'
                         }}
                       >
                         {user.name.charAt(0)}
@@ -680,7 +851,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                         <h3
                           style={{
                             margin: 0,
-                            fontSize: '1rem',
+                            fontSize: '1.02rem',
                             fontWeight: 700,
                             color: 'var(--text-primary)'
                           }}
@@ -703,7 +874,32 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                         )}
                       </div>
 
-                      {/* Voluntary Category Badge */}
+                      {/* Official Verified Resident Seal Badge */}
+                      {isVerified && (
+                        <div style={{ marginTop: '4px' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              background: 'rgba(16, 185, 129, 0.14)',
+                              color: '#10B981',
+                              border: '1px solid rgba(16, 185, 129, 0.35)',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: '12px'
+                            }}
+                          >
+                            <ShieldCheck size={13} />
+                            <span>
+                              {isKannada ? 'ಆಧಾರ್ ದೃಢೀಕೃತ ನಿವಾಸಿ' : 'Aadhaar Verified Resident'}
+                            </span>
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Category Badge */}
                       <div style={{ marginTop: '4px' }}>
                         <span
                           style={{
@@ -722,17 +918,43 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                     </div>
                   </div>
 
+                  {/* Village Ward / Street Location Pin */}
+                  {(user.ward_or_street || user.ward_or_street_kn) && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '0.75rem',
+                        color: 'var(--accent-emerald)',
+                        marginBottom: '8px',
+                        background: 'rgba(16, 185, 129, 0.06)',
+                        padding: '4px 8px',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      <MapPin size={13} style={{ flexShrink: 0 }} />
+                      <span style={{ fontWeight: 600 }}>
+                        {isKannada && user.ward_or_street_kn
+                          ? user.ward_or_street_kn
+                          : user.ward_or_street}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Bio snippet */}
                   <p
                     style={{
                       margin: '0 0 14px',
                       fontSize: '0.82rem',
-                      lineHeight: 1.4,
+                      lineHeight: 1.45,
                       color: 'var(--text-secondary)',
                       minHeight: '34px'
                     }}
                   >
-                    {isKannada && user.bio_kn ? user.bio_kn : user.bio || (isKannada ? 'ಗ್ರಾಮಸ್ಥರು' : 'Village resident')}
+                    {isKannada && user.bio_kn
+                      ? user.bio_kn
+                      : user.bio || (isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮಸ್ಥರು' : 'Muttagondi village resident')}
                   </p>
                 </div>
 
@@ -745,10 +967,15 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                         fontSize: '0.78rem',
                         color: 'var(--accent-emerald)',
                         fontWeight: 600,
-                        padding: '6px 0'
+                        padding: '6px 0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
                       }}
                     >
-                      {isKannada ? '✓ ಇದು ನಿಮ್ಮ ಪ್ರೊಫೈಲ್' : '✓ This is your profile'}
+                      <Check size={14} />
+                      <span>{isKannada ? 'ನಿಮ್ಮ ನಿವಾಸಿ ಪ್ರೊಫೈಲ್' : 'Your resident profile'}</span>
                     </div>
                   ) : (
                     <button
@@ -763,7 +990,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                       style={{
                         width: '100%',
                         padding: '8px 12px',
-                        fontSize: '0.85rem',
+                        fontSize: '0.84rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -771,7 +998,7 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                       }}
                     >
                       <MessageSquare size={16} />
-                      <span>{isKannada ? 'ಸಂದೇಶ ಕಳುಹಿಸಿ' : 'Send Message'}</span>
+                      <span>{isKannada ? 'ಖಾಸಗಿ ಸಂದೇಶ ಕಳುಹಿಸಿ' : 'Send Message'}</span>
                     </button>
                   )}
                 </div>
@@ -780,6 +1007,17 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
           })
         )}
       </div>
+
+      {/* Aadhaar Resident Verification Modal */}
+      {isVerificationModalOpen && (
+        <AadhaarResidentVerificationModal
+          isOpen={isVerificationModalOpen}
+          onClose={() => setIsVerificationModalOpen(false)}
+          onVerificationSuccess={() => {
+            refreshData();
+          }}
+        />
+      )}
     </div>
   );
 };

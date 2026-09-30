@@ -364,6 +364,84 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
 
+        {/* 👥 MUTTAGONDI PEOPLE CARD (Aadhaar Verified Village Directory • e-KYC) */}
+        <div
+          onClick={() => onNavigateTab('people')}
+          className="glass-card glass-card-interactive card-3d"
+          style={{
+            marginBottom: '32px',
+            padding: '20px 24px',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(59, 130, 246, 0.12) 100%)',
+            border: '1.5px solid rgba(16, 185, 129, 0.4)',
+            borderRadius: '20px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+            transition: 'all 0.25s ease'
+          }}
+          title={isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳ ಡೈರೆಕ್ಟರಿ ತೆರೆಯಿರಿ' : 'Open Muttagondi People Directory'}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div
+              style={{
+                width: '54px',
+                height: '54px',
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.8rem',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                flexShrink: 0
+              }}
+            >
+              🇮🇳
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
+                  👥 {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳು' : 'MUTTAGONDI PEOPLE'}
+                </h3>
+                <span
+                  style={{
+                    fontSize: '0.68rem',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    background: 'rgba(16, 185, 129, 0.25)',
+                    color: '#34D399',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    fontWeight: 700
+                  }}
+                >
+                  {isKannada ? 'ಆಧಾರ್ e-KYC ದೃಢೀಕೃತ' : 'AADHAAR e-KYC VERIFIED'}
+                </span>
+              </div>
+              <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                {isKannada
+                  ? 'ಗ್ರಾಮದ ಅಧಿಕೃತ ನಿವಾಸಿಗಳು, ರೈತರು, ಶಿಕ್ಷಕರು, ಕ್ರೀಡಾಪಟುಗಳು ಮತ್ತು ಸಾಧಕರ ಡೈರೆಕ್ಟರಿ'
+                  : 'Official verified village directory of authentic residents, farmers, educators, and achievers'}
+              </p>
+            </div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#10B981',
+              fontWeight: 800,
+              fontSize: '0.85rem'
+            }}
+          >
+            <span>{isKannada ? 'ವೀಕ್ಷಿಸಿ' : 'View'}</span>
+            <ChevronRight size={18} />
+          </div>
+        </div>
+
         {/* 🔴 LIVE NOW SECTION (if any live match or event) */}
         {(liveMatch || liveEvent) && (
           <section style={{ marginBottom: '40px' }}>
