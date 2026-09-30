@@ -417,13 +417,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     fontWeight: 700
                   }}
                 >
-                  {isKannada ? 'ಆಧಾರ್ e-KYC ದೃಢೀಕೃತ' : 'AADHAAR e-KYC VERIFIED'}
+                  {isKannada ? 'ಸರ್ಕಾರಿ & ಕುಟುಂಬ ಡೇಟಾಬೇಸ್' : 'GOVT & KUTUMBA DATABASE'}
                 </span>
               </div>
               <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                 {isKannada
-                  ? 'ಗ್ರಾಮದ ಅಧಿಕೃತ ನಿವಾಸಿಗಳು, ರೈತರು, ಶಿಕ್ಷಕರು, ಕ್ರೀಡಾಪಟುಗಳು ಮತ್ತು ಸಾಧಕರ ಡೈರೆಕ್ಟರಿ'
-                  : 'Official verified village directory of authentic residents, farmers, educators, and achievers'}
+                  ? 'ಗ್ರಾಮ ಪಂಚಾಯತಿ & ಕುಟುಂಬ ಡೇಟಾಬೇಸ್‌ನಿಂದ ನೇರ ಸಂಪರ್ಕಿತ ಅಧಿಕೃತ ನಿವಾಸಿಗಳ ಪಟ್ಟಿ'
+                  : 'Official village resident roll connected directly to Grama Panchayat & Kutumba database'}
               </p>
             </div>
           </div>

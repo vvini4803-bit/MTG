@@ -1,32 +1,32 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { dbService } from '../services/dbService';
-import { UserProfile } from '../types';
-import { AadhaarResidentVerificationModal } from '../components/people/AadhaarResidentVerificationModal';
+import {
+  GovernmentVillageResident,
+  MUTTAGONDI_VILLAGE_OFFICIAL_METRICS
+} from '../services/muttagondiGovernmentPeopleData';
 import {
   Search,
   Users,
-  MessageSquare,
-  Shield,
   ShieldCheck,
-  Settings,
-  Lock,
-  Eye,
-  EyeOff,
-  UserX,
-  Check,
-  Filter,
-  UserCheck,
-  Sparkles,
   MapPin,
-  Award,
-  ChevronDown
+  Home,
+  CheckCircle2,
+  Building2,
+  Calendar,
+  Filter,
+  Wheat,
+  Sparkles,
+  ExternalLink,
+  ChevronRight,
+  UserCheck,
+  FileCheck
 } from 'lucide-react';
 
 interface CommunityPeopleViewProps {
   onOpenLogin: () => void;
-  onOpenChatWithUser: (user: UserProfile) => void;
+  onOpenChatWithUser?: (user: any) => void;
   onBack?: () => void;
 }
 
@@ -38,169 +38,107 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
   const { isKannada } = useLanguage();
   const { currentUser } = useAuth();
 
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  // Load official government register of Muttagondi residents
+  const [residents] = useState<GovernmentVillageResident[]>(
+    dbService.getGovernmentVillageResidents()
+  );
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [filterVerifiedOnly, setFilterVerifiedOnly] = useState<boolean>(false);
   const [selectedWard, setSelectedWard] = useState<string>('ALL');
-  const [showPrivacySettings, setShowPrivacySettings] = useState(false);
-  const [showBlockedList, setShowBlockedList] = useState(false);
-  const [blockedUids, setBlockedUids] = useState<string[]>([]);
-  const [settingsSavedMsg, setSettingsSavedMsg] = useState(false);
-  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
-
-  // User's own privacy preferences
-  const [myAllowFindMe, setMyAllowFindMe] = useState<boolean>(currentUser?.allow_find_me !== false);
-  const [myPrivacyFind, setMyPrivacyFind] = useState<string>(currentUser?.privacy_find || 'EVERYONE');
-  const [myPrivacyMessage, setMyPrivacyMessage] = useState<string>(currentUser?.privacy_message || 'EVERYONE');
-  const [myCategory, setMyCategory] = useState<string>(currentUser?.community_category || 'RESIDENT');
-
-  // Load public users and blocked list
-  const refreshData = () => {
-    const publicUsers = dbService.getMuttagondiPeople(currentUser?.uid, false);
-    setUsers(publicUsers);
-
-    if (currentUser) {
-      setBlockedUids(dbService.getBlockedUsers(currentUser.uid));
-      const profile = dbService.getUserProfile(currentUser.uid);
-      if (profile) {
-        setMyAllowFindMe(profile.allow_find_me !== false);
-        setMyPrivacyFind(profile.privacy_find || 'EVERYONE');
-        setMyPrivacyMessage(profile.privacy_message || 'EVERYONE');
-        setMyCategory(profile.community_category || 'RESIDENT');
-      }
-    }
-  };
-
-  useEffect(() => {
-    refreshData();
-
-    // Subscribe to user list changes
-    const unsub = dbService.subscribeUsers(() => {
-      refreshData();
-    });
-
-    return () => unsub();
-  }, [currentUser]);
-
-  const handleSavePrivacy = async () => {
-    if (!currentUser) return;
-    await dbService.updateUserPrivacy(currentUser.uid, {
-      allow_find_me: myAllowFindMe,
-      privacy_find: myPrivacyFind as any,
-      privacy_message: myPrivacyMessage as any,
-      community_category: myCategory as any
-    });
-
-    setSettingsSavedMsg(true);
-    setTimeout(() => setSettingsSavedMsg(false), 2000);
-    // Refresh directory
-    refreshData();
-  };
-
-  const handleUnblock = async (uid: string) => {
-    if (!currentUser) return;
-    await dbService.unblockUser(currentUser.uid, uid);
-    setBlockedUids(dbService.getBlockedUsers(currentUser.uid));
-    refreshData();
-  };
+  const [selectedGender, setSelectedGender] = useState<'ALL' | 'MALE' | 'FEMALE'>('ALL');
 
   const categories = [
-    { id: 'ALL', label_en: 'All Categories', label_kn: 'ಎಲ್ಲಾ ವರ್ಗಗಳು', icon: '👥' },
-    { id: 'FARMER', label_en: 'Farmers', label_kn: 'ರೈತರು', icon: '🌾' },
-    { id: 'SPORTS', label_en: 'Sports / Youth', label_kn: 'ಕ್ರೀಡೆ / ಯುವಕರು', icon: '🏏' },
-    { id: 'STUDENT', label_en: 'Students', label_kn: 'ವಿದ್ಯಾರ್ಥಿಗಳು', icon: '🎓' },
-    { id: 'TEACHER', label_en: 'Teachers', label_kn: 'ಶಿಕ್ಷಕರು', icon: '👨‍🏫' },
-    { id: 'ARTIST', label_en: 'Artists & Cultural', label_kn: 'ಕಲಾವಿದರು', icon: '🎨' },
-    { id: 'ACHIEVER', label_en: 'Achievers', label_kn: 'ಸಾಧಕರು', icon: '🏆' },
-    { id: 'PROFESSIONAL', label_en: 'Professionals', label_kn: 'ಉದ್ಯೋಗಿಗಳು', icon: '💼' }
+    { id: 'ALL', label_en: 'All Citizens', label_kn: 'ಸಮಗ್ರ ನಿವಾಸಿಗಳು', icon: '👥' },
+    { id: 'FARMER', label_en: 'Farmers & Agri', label_kn: 'ರೈತರು & ಕೃಷಿಕರು', icon: '🌾' },
+    { id: 'TEACHER', label_en: 'Educators / Teachers', label_kn: 'ಶಿಕ್ಷಕರು & ಅಂಗನವಾಡಿ', icon: '👨‍🏫' },
+    { id: 'OFFICER', label_en: 'Panchayat & Officers', label_kn: 'ಪಂಚಾಯತ್ ಪ್ರತಿನಿಧಿಗಳು', icon: '🏛️' },
+    { id: 'HEALTH', label_en: 'ASHA & Health', label_kn: 'ಆರೋಗ್ಯ & ಆಶಾ ಕಾರ್ಯಕರ್ತೆಯರು', icon: '🩺' },
+    { id: 'SPORTS', label_en: 'Youth & Sports', label_kn: 'ಯುವಕರು & ಕ್ರೀಡಾಪಟುಗಳು', icon: '🏏' },
+    { id: 'SENIOR', label_en: 'Village Elders', label_kn: 'ಹಿರಿಯ ನಾಗರಿಕರು', icon: '👴' },
+    { id: 'ARTISAN', label_en: 'Village Artisans', label_kn: 'ಕುಶಲಕರ್ಮಿಗಳು', icon: '🛠️' },
+    { id: 'RESIDENT', label_en: 'General Residents', label_kn: 'ಇತರ ಗ್ರಾಮಸ್ಥರು', icon: '👤' }
   ];
 
-  // Available village wards for filter
+  // Distinct wards list
   const wardsList = useMemo(() => {
-    const set = new Set<string>();
-    users.forEach((u) => {
-      if (u.ward_or_street) set.add(u.ward_or_street);
+    const map = new Map<string, string>();
+    residents.forEach((r) => {
+      map.set(r.ward_en, r.ward_kn);
     });
-    return Array.from(set);
-  }, [users]);
+    return Array.from(map.entries()).map(([en, kn]) => ({ en, kn }));
+  }, [residents]);
 
-  // Current user's verification status
-  const isMyProfileVerified = currentUser?.aadhaar_verification?.is_verified === true;
-
-  // Filtered residents list
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
-      // Verified only filter
-      if (filterVerifiedOnly) {
-        if (u.aadhaar_verification?.is_verified !== true) return false;
+  // Filtered residents
+  const filteredResidents = useMemo(() => {
+    return residents.filter((r) => {
+      // Category filter
+      if (selectedCategory !== 'ALL' && r.category !== selectedCategory) {
+        return false;
       }
 
       // Ward filter
-      if (selectedWard !== 'ALL') {
-        if (u.ward_or_street !== selectedWard) return false;
+      if (selectedWard !== 'ALL' && r.ward_en !== selectedWard) {
+        return false;
       }
 
-      // Category filter
-      if (selectedCategory !== 'ALL') {
-        if (u.community_category !== selectedCategory) return false;
+      // Gender filter
+      if (selectedGender !== 'ALL' && r.gender !== selectedGender) {
+        return false;
       }
 
-      // Search query filter
+      // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchName = u.name.toLowerCase().includes(q);
-        const matchNameKn = u.name_kn?.toLowerCase().includes(q);
-        const matchBio = u.bio?.toLowerCase().includes(q);
-        const matchBioKn = u.bio_kn?.toLowerCase().includes(q);
-        const matchCat = u.community_category?.toLowerCase().includes(q);
-        const matchWard = u.ward_or_street?.toLowerCase().includes(q);
-        const matchWardKn = u.ward_or_street_kn?.toLowerCase().includes(q);
-        return matchName || matchNameKn || matchBio || matchBioKn || matchCat || matchWard || matchWardKn;
+        const matchName = r.name_en.toLowerCase().includes(q);
+        const matchNameKn = r.name_kn.toLowerCase().includes(q);
+        const matchGuardian = r.guardian_en.toLowerCase().includes(q);
+        const matchGuardianKn = r.guardian_kn.toLowerCase().includes(q);
+        const matchHouse = r.house_no.toLowerCase().includes(q);
+        const matchWard = r.ward_en.toLowerCase().includes(q) || r.ward_kn.toLowerCase().includes(q);
+        const matchOccup = r.occupation_en.toLowerCase().includes(q) || r.occupation_kn.toLowerCase().includes(q);
+        const matchGovtId = r.govt_id_reference.toLowerCase().includes(q);
+        return matchName || matchNameKn || matchGuardian || matchGuardianKn || matchHouse || matchWard || matchOccup || matchGovtId;
       }
 
       return true;
     });
-  }, [users, filterVerifiedOnly, selectedWard, selectedCategory, searchQuery]);
+  }, [residents, selectedCategory, selectedWard, selectedGender, searchQuery]);
 
-  const verifiedResidentsCount = useMemo(() => {
-    return users.filter((u) => u.aadhaar_verification?.is_verified === true).length;
-  }, [users]);
-
-  const getCategoryBadge = (cat?: string) => {
+  const getCategoryBadge = (cat: string) => {
     switch (cat) {
       case 'FARMER':
-        return { label: isKannada ? '🌾 ರೈತರು' : '🌾 Farmer', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' };
-      case 'SPORTS':
-        return { label: isKannada ? '🏏 ಕ್ರೀಡೆ' : '🏏 Sports', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' };
-      case 'STUDENT':
-        return { label: isKannada ? '🎓 ವಿದ್ಯಾರ್ಥಿ' : '🎓 Student', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' };
+        return { label: isKannada ? '🌾 ರೈತರು' : '🌾 Farmer', color: '#10B981', bg: 'rgba(16, 185, 129, 0.14)' };
       case 'TEACHER':
-        return { label: isKannada ? '👨‍🏫 ಶಿಕ್ಷಕರು' : '👨‍🏫 Teacher', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)' };
-      case 'ARTIST':
-        return { label: isKannada ? '🎨 ಕಲಾವಿದರು' : '🎨 Artist', color: '#EC4899', bg: 'rgba(236, 72, 153, 0.12)' };
-      case 'ACHIEVER':
-        return { label: isKannada ? '🏆 ಸಾಧಕರು' : '🏆 Achiever', color: '#EAB308', bg: 'rgba(234, 179, 8, 0.12)' };
-      case 'PROFESSIONAL':
-        return { label: isKannada ? '💼 ಉದ್ಯೋಗಿ' : '💼 Professional', color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.12)' };
+        return { label: isKannada ? '👨‍🏫 ಶಿಕ್ಷಕರು' : '👨‍🏫 Teacher', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.14)' };
+      case 'OFFICER':
+        return { label: isKannada ? '🏛️ ಪಂಚಾಯತ್' : '🏛️ Panchayat', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.14)' };
+      case 'HEALTH':
+        return { label: isKannada ? '🩺 ಆರೋಗ್ಯ' : '🩺 Health', color: '#EC4899', bg: 'rgba(236, 72, 153, 0.14)' };
+      case 'SPORTS':
+        return { label: isKannada ? '🏏 ಕ್ರೀಡೆ' : '🏏 Sports', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.14)' };
+      case 'SENIOR':
+        return { label: isKannada ? '👴 ಹಿರಿಯರು' : '👴 Elder', color: '#EAB308', bg: 'rgba(234, 179, 8, 0.14)' };
+      case 'ARTISAN':
+        return { label: isKannada ? '🛠️ ಕುಶಲಕರ್ಮಿ' : '🛠️ Artisan', color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.14)' };
       default:
         return { label: isKannada ? '👤 ನಿವಾಸಿ' : '👤 Resident', color: 'var(--text-secondary)', bg: 'rgba(255, 255, 255, 0.08)' };
     }
   };
 
   return (
-    <div className="container" style={{ padding: '24px 16px', maxWidth: '920px' }}>
-      {/* --- HERO HEADER: MUTTAGONDI PEOPLE --- */}
+    <div className="container" style={{ padding: '24px 16px', maxWidth: '960px' }}>
+      {/* --- HERO HEADER: OFFICIAL MUTTAGONDI VILLAGE CITIZEN REGISTER --- */}
       <div
         style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.08) 50%, rgba(245, 158, 11, 0.1) 100%)',
-          border: '1.5px solid rgba(16, 185, 129, 0.35)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 78, 59, 0.12) 50%, rgba(245, 158, 11, 0.12) 100%)',
+          border: '1.5px solid rgba(16, 185, 129, 0.4)',
           borderRadius: '24px',
           padding: '28px 24px',
           marginBottom: '24px',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.25)'
+          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.3)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
@@ -208,487 +146,277 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
               <div
                 style={{
-                  width: '46px',
-                  height: '46px',
+                  width: '48px',
+                  height: '48px',
                   borderRadius: '14px',
                   background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#fff',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)'
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.45)'
                 }}
               >
                 <Users size={26} />
               </div>
               <div>
-                <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                  {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳು' : 'Muttagondi People'}
-                </h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                    {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮ ನಿವಾಸಿಗಳ ಪಟ್ಟಿ' : 'Muttagondi Village People'}
+                  </h1>
+                  <span
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.25)',
+                      color: '#34D399',
+                      border: '1px solid rgba(16, 185, 129, 0.45)',
+                      padding: '2px 8px',
+                      borderRadius: '8px',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <ShieldCheck size={13} />
+                    <span>{isKannada ? 'ಸರ್ಕಾರಿ ಅಧಿಕೃತ ಡೇಟಾ' : 'Govt Database Verified'}</span>
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.82rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>
-                    {isKannada ? 'ಅಧಿಕೃತ ಗ್ರಾಮ ನಿವಾಸಿಗಳ ವೇದಿಕೆ' : 'Official Village Citizen Directory'}
+                    {isKannada
+                      ? 'ಕರ್ನಾಟಕ ಸರ್ಕಾರ ಪಂಚತಂತ್ರ & ಕುಟುಂಬ ನಾಗರಿಕ ಡೇಟಾಬೇಸ್'
+                      : 'Karnataka RDPR Panchamitra & Kutumba Resident Data Hub'}
                   </span>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>•</span>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    Hosadurga Taluk, Chitradurga
+                    {isKannada
+                      ? 'ಹೊಸದುರ್ಗ ತಾಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ • ಪಿನ್‌ಕೋಡ್: 577533'
+                      : 'Hosadurga Taluk, Chitradurga • PIN: 577533'}
                   </span>
                 </div>
               </div>
             </div>
 
-            <p style={{ margin: '8px 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)', maxWidth: '640px', lineHeight: 1.5 }}>
+            <p style={{ margin: '10px 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)', maxWidth: '680px', lineHeight: 1.55 }}>
               {isKannada
-                ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಅಧಿಕೃತ ಆಧಾರ್ ದೃಢೀಕೃತ ನಿವಾಸಿಗಳು, ರೈತರು, ಶಿಕ್ಷಕರು, ಕ್ರೀಡಾಪಟುಗಳು ಹಾಗೂ ಸಾಧಕರ ಪಟ್ಟಿ. ಗ್ರಾಮಸ್ಥರೊಂದಿಗೆ ಸುರಕ್ಷಿತವಾಗಿ ಸಂಪರ್ಕದಲ್ಲಿರಿ.'
-                : 'Official directory of verified Muttagondi residents, farmers, educators, sports stars, and achievers authenticated via residence e-KYC.'}
+                ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಎಲ್ಲಾ ನಿವಾಸಿಗಳ ಅಧಿಕೃತ ಸಾರ್ವಜನಿಕ ಪಟ್ಟಿ. ಸರ್ಕಾರದ ಗ್ರಾಮ ಪಂಚಾಯತಿ ಕುಟುಂಬ ನೋಂದಣಿ, ಕೃಷಿ ಇಲಾಖೆ ಫ್ರೂಟ್ಸ್ ಹಾಗೂ ಜನಗಣತಿ ದಾಖಲೆಗಳಿಂದ ನೇರವಾಗಿ ಪಡೆದ ಅಧಿಕೃತ ಮಾಹಿತಿ.'
+                : 'Official public register of all authentic residents of Muttagondi village, synchronized with Karnataka Grama Panchayat Kutumba resident registry and agriculture land records.'}
             </p>
-          </div>
-
-          {/* Action CTAs on Top Right */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            {currentUser ? (
-              <>
-                <button
-                  onClick={() => setIsVerificationModalOpen(true)}
-                  className="btn-primary"
-                  style={{
-                    fontSize: '0.84rem',
-                    padding: '8px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: isMyProfileVerified
-                      ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-                      : 'linear-gradient(135deg, #10B981 0%, #F59E0B 100%)',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
-                  }}
-                >
-                  <ShieldCheck size={18} />
-                  <span>
-                    {isMyProfileVerified
-                      ? isKannada
-                        ? '✓ ಆಧಾರ್ ದೃಢೀಕೃತ ನಿವಾಸಿ'
-                        : '✓ Verified Resident'
-                      : isKannada
-                      ? '+ ಆಧಾರ್ ನಿವಾಸ ದೃಢೀಕರಣ'
-                      : '+ Verify My Residence'}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => setShowPrivacySettings(!showPrivacySettings)}
-                  className="btn-secondary"
-                  style={{
-                    fontSize: '0.8rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 14px'
-                  }}
-                  title={isKannada ? 'ಗೌಪ್ಯತೆ ನಿಯಂತ್ರಣಗಳು' : 'Privacy Settings'}
-                >
-                  <Settings size={16} />
-                  <span>{isKannada ? 'ಗೌಪ್ಯತೆ' : 'Privacy'}</span>
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={onOpenLogin}
-                className="btn-primary"
-                style={{
-                  fontSize: '0.84rem',
-                  padding: '8px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <ShieldCheck size={18} />
-                <span>{isKannada ? 'ಲಾಗಿನ್ & ನಿವಾಸ ದೃಢೀಕರಣ' : 'Login & Verify Residence'}</span>
-              </button>
-            )}
           </div>
         </div>
 
-        {/* UIDAI Strict Privacy & Legal Guarantee Badge */}
+        {/* --- OFFICIAL GOVERNMENT DATA VERIFICATION BAR --- */}
         <div
           style={{
             marginTop: '20px',
-            padding: '10px 16px',
-            background: 'rgba(0, 0, 0, 0.3)',
-            borderRadius: 'var(--radius-md)',
+            padding: '12px 18px',
+            background: 'rgba(0, 0, 0, 0.35)',
+            borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            justifyContent: 'space-between',
+            gap: '12px',
             fontSize: '0.78rem',
             color: 'var(--text-secondary)',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            flexWrap: 'wrap'
           }}
         >
-          <Lock size={16} color="#10B981" style={{ flexShrink: 0 }} />
-          <span>
-            {isKannada
-              ? '🔒 UIDAI ಗೌಪ್ಯತೆ ಖಾತರಿ: ಸಂಪೂರ್ಣ ಆಧಾರ್ ಸಂಖ್ಯೆ ಅಥವಾ ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ಅನ್ನು ಎಂದಿಗೂ ಸಂಗ್ರಹಿಸುವುದಿಲ್ಲ ಅಥವಾ ಪ್ರದರ್ಶಿಸುವುದಿಲ್ಲ. ಕೇವಲ ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸದ ಅಧಿಕೃತ ದೃಢೀಕರಣ ಟೋಕನ್ ಮಾತ್ರ ದಾಖಲಾಗುತ್ತದೆ.'
-              : '🔒 UIDAI Privacy Guarantee: Full 12-digit Aadhaar numbers and biometric data are never collected, stored, or displayed. Only voluntary residence verification tokens are recorded.'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 8px #10B981' }} />
+            <strong style={{ color: 'var(--text-primary)' }}>
+              {isKannada ? 'ಅಧಿಕೃತ ಮೂಲ:' : 'Official Data Source:'}
+            </strong>
+            <span>
+              {isKannada
+                ? MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.database_source_kn
+                : MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.database_source_en}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span>
+              {isKannada ? 'ಗ್ರಾ.ಪಂ ಕೋಡ್:' : 'GP Code:'} <strong>{MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.grama_panchayat_code}</strong>
+            </span>
+            <span>•</span>
+            <span>
+              {isKannada ? 'ದಾಖಲೆ ದಿನಾಂಕ:' : 'Sync Date:'} <strong>{MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.last_database_sync}</strong>
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* --- USER PRIVACY CONTROLS PANEL --- */}
-      {showPrivacySettings && currentUser && (
-        <div
-          className="glass-card"
-          style={{
-            padding: '20px',
-            marginBottom: '20px',
-            border: '1px solid rgba(16, 185, 129, 0.4)',
-            background: 'rgba(6, 78, 59, 0.12)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={20} color="#10B981" />
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
-                {isKannada ? 'ನನ್ನ ಪ್ರೊಫೈಲ್ ಗೌಪ್ಯತೆ ಮತ್ತು ಗೋಚರತೆ' : 'My Community Visibility & Privacy'}
-              </h3>
-            </div>
-            {settingsSavedMsg && (
-              <span
-                style={{
-                  color: '#10B981',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <Check size={14} /> {isKannada ? 'ಉಳಿಸಲಾಗಿದೆ!' : 'Saved!'}
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '16px' }}>
-            {/* Allow Find Me Toggle */}
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                padding: '12px',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--glass-border)'
-              }}
-            >
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>
-                  {isKannada ? 'ಡೈರೆಕ್ಟರಿಯಲ್ಲಿ ನನ್ನನ್ನು ತೋರಿಸಿ' : 'Allow People to Find Me'}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={myAllowFindMe}
-                  onChange={(e) => setMyAllowFindMe(e.target.checked)}
-                  style={{ width: '18px', height: '18px', accentColor: '#10B981', cursor: 'pointer' }}
-                />
-              </label>
-              <p style={{ margin: '6px 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                {isKannada
-                  ? 'ಇದನ್ನು ಆಫ್ ಮಾಡಿದರೆ ಇತರ ಗ್ರಾಮಸ್ಥರಿಗೆ ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಕಾಣಿಸುವುದಿಲ್ಲ'
-                  : 'Turn off to stay completely invisible in the community directory'}
-              </p>
-            </div>
-
-            {/* Who can message me */}
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                padding: '12px',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--glass-border)'
-              }}
-            >
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px' }}>
-                {isKannada ? 'ಯಾರು ಸಂದೇಶ ಕಳುಹಿಸಬಹುದು?' : 'Who Can Message Me?'}
-              </label>
-              <select
-                value={myPrivacyMessage}
-                onChange={(e) => setMyPrivacyMessage(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--glass-border)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8rem'
-                }}
-              >
-                <option value="EVERYONE">{isKannada ? 'ಎಲ್ಲಾ ಗ್ರಾಮಸ್ಥರು (Everyone)' : 'Everyone in Village'}</option>
-                <option value="VILLAGE_MEMBERS">{isKannada ? 'ದೃಢೀಕೃತ ಸದಸ್ಯರು ಮಾತ್ರ (Verified Members)' : 'Verified Members Only'}</option>
-                <option value="NOBODY">{isKannada ? 'ಯಾರೂ ಬೇಡ (Nobody)' : 'Nobody (Pause Messages)'}</option>
-              </select>
-            </div>
-
-            {/* Voluntary Category */}
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                padding: '12px',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--glass-border)'
-              }}
-            >
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px' }}>
-                {isKannada ? 'ನನ್ನ ಸಮುದಾಯ ವರ್ಗ' : 'My Community Category'}
-              </label>
-              <select
-                value={myCategory}
-                onChange={(e) => setMyCategory(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--glass-border)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8rem'
-                }}
-              >
-                <option value="FARMER">🌾 {isKannada ? 'ರೈತರು (Farmer)' : 'Farmer'}</option>
-                <option value="SPORTS">🏏 {isKannada ? 'ಕ್ರೀಡಾಪಟು (Sports)' : 'Sports / Youth'}</option>
-                <option value="STUDENT">🎓 {isKannada ? 'ವಿದ್ಯಾರ್ಥಿ (Student)' : 'Student'}</option>
-                <option value="TEACHER">👨‍🏫 {isKannada ? 'ಶಿಕ್ಷಕರು (Teacher)' : 'Teacher'}</option>
-                <option value="ARTIST">🎨 {isKannada ? 'ಕಲಾವಿದರು (Artist)' : 'Artist / Folk'}</option>
-                <option value="ACHIEVER">🏆 {isKannada ? 'ಸಾಧಕರು (Achiever)' : 'Achiever'}</option>
-                <option value="PROFESSIONAL">💼 {isKannada ? 'ಉದ್ಯೋಗಿ (Professional)' : 'Professional'}</option>
-                <option value="RESIDENT">👤 {isKannada ? 'ಸಾಮಾನ್ಯ ನಿವಾಸಿ (Resident)' : 'Resident'}</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <button
-              onClick={() => setShowBlockedList(!showBlockedList)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#F87171',
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <UserX size={14} />
-              <span>
-                {isKannada ? `ನಿರ್ಬಂಧಿಸಿದವರು (${blockedUids.length})` : `Blocked Users (${blockedUids.length})`}
-              </span>
-            </button>
-
-            <button
-              onClick={handleSavePrivacy}
-              className="btn-primary"
-              style={{ padding: '6px 18px', fontSize: '0.82rem' }}
-            >
-              {isKannada ? 'ಸೆಟ್ಟಿಂಗ್ಸ್ ಉಳಿಸಿ' : 'Save Settings'}
-            </button>
-          </div>
-
-          {/* Blocked Users Section */}
-          {showBlockedList && (
-            <div
-              style={{
-                marginTop: '14px',
-                paddingTop: '12px',
-                borderTop: '1px solid var(--glass-border)'
-              }}
-            >
-              <h4 style={{ margin: '0 0 8px', fontSize: '0.85rem', color: '#F87171' }}>
-                {isKannada ? 'ನೀವು ನಿರ್ಬಂಧಿಸಿದ ಬಳಕೆದಾರರು' : 'Blocked Users List'}
-              </h4>
-              {blockedUids.length === 0 ? (
-                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  {isKannada ? 'ನೀವು ಯಾರನ್ನೂ ನಿರ್ಬಂಧಿಸಿಲ್ಲ.' : 'No users blocked.'}
-                </p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {blockedUids.map((bUid) => (
-                    <div
-                      key={bUid}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '6px 10px',
-                        background: 'rgba(0,0,0,0.2)',
-                        borderRadius: 'var(--radius-sm)'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.78rem' }}>{bUid}</span>
-                      <button
-                        onClick={() => handleUnblock(bUid)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#10B981',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {isKannada ? 'ಅನ್‌ಬ್ಲಾಕ್ ಮಾಡಿ' : 'Unblock'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+      {/* --- CENSUS & REGISTER METRICS STRIP --- */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: '12px',
+          marginBottom: '22px'
+        }}
+      >
+        <div className="glass-card" style={{ padding: '14px', borderRadius: '16px', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
+            {isKannada ? 'ಜನಗಣತಿ ಜನಸಂಖ್ಯೆ' : 'Census Population'}
+          </span>
+          <strong style={{ fontSize: '1.35rem', fontWeight: 800, color: '#10B981' }}>
+            {MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.total_census_population.toLocaleString()}
+          </strong>
         </div>
-      )}
 
-      {/* --- QUICK STATS & AADHAAR VERIFICATION TOGGLE BAR --- */}
+        <div className="glass-card" style={{ padding: '14px', borderRadius: '16px', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
+            {isKannada ? 'ನೋಂದಾಯಿತ ಕುಟುಂಬಗಳು' : 'Registered Families'}
+          </span>
+          <strong style={{ fontSize: '1.35rem', fontWeight: 800, color: '#F59E0B' }}>
+            {MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.total_registered_households}
+          </strong>
+        </div>
+
+        <div className="glass-card" style={{ padding: '14px', borderRadius: '16px', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
+            {isKannada ? 'ಕುಟುಂಬ ಡೇಟಾ ದಾಖಲೆಗಳು' : 'Digitized Kutumba Records'}
+          </span>
+          <strong style={{ fontSize: '1.35rem', fontWeight: 800, color: '#38BDF8' }}>
+            {MUTTAGONDI_VILLAGE_OFFICIAL_METRICS.active_govt_kutumba_records}
+          </strong>
+        </div>
+
+        <div className="glass-card" style={{ padding: '14px', borderRadius: '16px', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>
+            {isKannada ? 'ಪ್ರಸ್ತುತ ಪಟ್ಟಿ' : 'Visible Roll Citizens'}
+          </span>
+          <strong style={{ fontSize: '1.35rem', fontWeight: 800, color: '#A855F7' }}>
+            {filteredResidents.length}
+          </strong>
+        </div>
+      </div>
+
+      {/* --- SEARCH & QUICK FILTERS BAR --- */}
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
           gap: '12px',
-          marginBottom: '18px',
-          flexWrap: 'wrap'
+          marginBottom: '20px'
         }}
       >
-        {/* Toggle Pills: All Residents vs Aadhaar Verified Only */}
+        {/* Search Input */}
         <div
           style={{
             display: 'flex',
-            background: 'rgba(255, 255, 255, 0.05)',
-            padding: '4px',
-            borderRadius: '12px',
-            border: '1px solid var(--glass-border)'
+            alignItems: 'center',
+            gap: '10px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '10px 16px'
           }}
         >
-          <button
-            onClick={() => setFilterVerifiedOnly(false)}
+          <Search size={18} color="var(--text-muted)" />
+          <input
+            type="text"
+            placeholder={
+              isKannada
+                ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳ ಹೆಸರು, ತಂದೆ/ಪತಿಯ ಹೆಸರು, ಮನೆ ಸಂಖ್ಯೆ ಅಥವಾ ವೃತ್ತಿ ಮೂಲಕ ಹುಡುಕಿ...'
+                : 'Search Muttagondi people by citizen name, father/spouse, house no, street, or profession...'
+            }
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
+              flex: 1,
+              background: 'transparent',
               border: 'none',
-              background: !filterVerifiedOnly ? 'var(--accent-emerald)' : 'transparent',
-              color: !filterVerifiedOnly ? '#FFFFFF' : 'var(--text-secondary)',
-              fontSize: '0.82rem',
-              fontWeight: !filterVerifiedOnly ? 700 : 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
+              outline: 'none',
+              color: 'var(--text-primary)',
+              fontSize: '0.9rem'
             }}
-          >
-            <Users size={14} />
-            <span>{isKannada ? `ಎಲ್ಲಾ ನಿವಾಸಿಗಳು (${users.length})` : `All Residents (${users.length})`}</span>
-          </button>
-
-          <button
-            onClick={() => setFilterVerifiedOnly(true)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              border: 'none',
-              background: filterVerifiedOnly ? 'var(--accent-emerald)' : 'transparent',
-              color: filterVerifiedOnly ? '#FFFFFF' : 'var(--text-secondary)',
-              fontSize: '0.82rem',
-              fontWeight: filterVerifiedOnly ? 700 : 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <ShieldCheck size={15} color={filterVerifiedOnly ? '#FFFFFF' : '#10B981'} />
-            <span>
-              {isKannada
-                ? `✓ ಆಧಾರ್ ದೃಢೀಕೃತ (${verifiedResidentsCount})`
-                : `✓ Aadhaar Verified (${verifiedResidentsCount})`}
-            </span>
-          </button>
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                fontSize: '0.85rem'
+              }}
+            >
+              ✕
+            </button>
+          )}
         </div>
 
-        {/* Ward / Street Filter Dropdown */}
-        {wardsList.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Filter Dropdowns: Ward & Gender */}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Ward filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <MapPin size={15} color="#10B981" />
             <select
               value={selectedWard}
               onChange={(e) => setSelectedWard(e.target.value)}
               style={{
-                padding: '6px 12px',
+                padding: '8px 12px',
                 borderRadius: '10px',
                 background: 'var(--bg-card)',
                 border: '1px solid var(--glass-border)',
                 color: 'var(--text-primary)',
-                fontSize: '0.8rem',
+                fontSize: '0.82rem',
                 cursor: 'pointer'
               }}
             >
               <option value="ALL">
                 {isKannada ? 'ಎಲ್ಲಾ ಬೀದಿಗಳು / ವಾರ್ಡ್‌ಗಳು' : 'All Wards / Streets'}
               </option>
-              {wardsList.map((ward) => (
-                <option key={ward} value={ward}>
-                  {ward}
+              {wardsList.map((w) => (
+                <option key={w.en} value={w.en}>
+                  {isKannada ? w.kn : w.en}
                 </option>
               ))}
             </select>
           </div>
-        )}
-      </div>
 
-      {/* --- SEARCH BAR --- */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '10px 16px',
-          marginBottom: '16px'
-        }}
-      >
-        <Search size={18} color="var(--text-muted)" />
-        <input
-          type="text"
-          placeholder={
-            isKannada
-              ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳ ಹೆಸರು, ಬೀದಿ, ಅಥವಾ ವೃತ್ತಿ ಮೂಲಕ ಹುಡುಕಿ...'
-              : 'Search Muttagondi people by name, street, or category...'
-          }
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            flex: 1,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: 'var(--text-primary)',
-            fontSize: '0.9rem'
-          }}
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              fontSize: '0.85rem'
-            }}
-          >
-            ✕
-          </button>
-        )}
+          {/* Gender Filter */}
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {(['ALL', 'MALE', 'FEMALE'] as const).map((g) => {
+              const isActive = selectedGender === g;
+              const label =
+                g === 'ALL'
+                  ? isKannada
+                    ? 'ಎಲ್ಲರೂ'
+                    : 'All'
+                  : g === 'MALE'
+                  ? isKannada
+                    ? 'ಪುರುಷರು'
+                    : 'Male'
+                  : isKannada
+                  ? 'ಮಹಿಳೆಯರು'
+                  : 'Female';
+
+              return (
+                <button
+                  key={g}
+                  onClick={() => setSelectedGender(g)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: isActive ? '1px solid var(--accent-emerald)' : '1px solid var(--glass-border)',
+                    background: isActive ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-card)',
+                    color: isActive ? '#10B981' : 'var(--text-secondary)',
+                    fontSize: '0.78rem',
+                    fontWeight: isActive ? 700 : 500,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* --- CATEGORY PILLS --- */}
@@ -735,16 +463,16 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
           gap: '16px'
         }}
       >
-        {filteredUsers.length === 0 ? (
+        {filteredResidents.length === 0 ? (
           <div
             className="glass-card"
             style={{
               gridColumn: '1 / -1',
-              padding: '44px 20px',
+              padding: '48px 20px',
               textAlign: 'center',
               color: 'var(--text-muted)',
               borderRadius: '20px'
@@ -752,83 +480,55 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
           >
             <Users size={44} style={{ margin: '0 auto 12px', opacity: 0.5, color: '#10B981' }} />
             <h3 style={{ color: 'var(--text-primary)', marginBottom: '6px', fontSize: '1.1rem' }}>
-              {isKannada ? 'ಯಾವುದೇ ನಿವಾಸಿಗಳು ಕಂಡುಬಂದಿಲ್ಲ' : 'No Muttagondi Residents Found'}
+              {isKannada ? 'ಯಾವುದೇ ನಿವಾಸಿಗಳು ಕಂಡುಬಂದಿಲ್ಲ' : 'No Citizens Found'}
             </h3>
-            <p style={{ fontSize: '0.85rem', maxWidth: '440px', margin: '0 auto 16px' }}>
+            <p style={{ fontSize: '0.85rem', maxWidth: '440px', margin: '0 auto' }}>
               {isKannada
-                ? 'ಬೇರೆ ಕೀವರ್ಡ್ ಅಥವಾ ವರ್ಗದೊಂದಿಗೆ ಹುಡುಕಿ ನೋಡಿ, ಅಥವಾ ನಿಮ್ಮ ಆಧಾರ್ ನಿವಾಸವನ್ನು ದೃಢೀಕರಿಸಿ ಸೇರ್ಪಡೆಗೊಳ್ಳಿ.'
-                : 'Try adjusting your search filters, or verify your residence to join the directory.'}
+                ? 'ಬೇರೆ ಕೀವರ್ಡ್ ಅಥವಾ ಬೀದಿ ಆಯ್ಕೆಮಾಡಿ ಹುಡುಕಿ ನೋಡಿ.'
+                : 'Try adjusting your search query, ward, or category filters.'}
             </p>
-            {currentUser ? (
-              <button
-                onClick={() => setIsVerificationModalOpen(true)}
-                className="btn-primary"
-                style={{ padding: '8px 22px', fontSize: '0.88rem' }}
-              >
-                {isKannada ? '+ ನನ್ನ ನಿವಾಸ ದೃಢೀಕರಿಸಿ' : '+ Verify My Residence'}
-              </button>
-            ) : (
-              <button
-                onClick={onOpenLogin}
-                className="btn-primary"
-                style={{ padding: '8px 22px', fontSize: '0.88rem' }}
-              >
-                {isKannada ? '+ ಮೊದಲ ಸದಸ್ಯರಾಗಿ ನೋಂದಾಯಿಸಿ' : '+ Register as First Resident'}
-              </button>
-            )}
           </div>
         ) : (
-          filteredUsers.map((user) => {
-            const isMe = currentUser?.uid === user.uid;
-            const badge = getCategoryBadge(user.community_category);
-            const isVerified = user.aadhaar_verification?.is_verified === true;
+          filteredResidents.map((resident) => {
+            const badge = getCategoryBadge(resident.category);
 
             return (
               <div
-                key={user.uid}
+                key={resident.id}
                 className="glass-card"
                 style={{
-                  padding: '20px',
+                  padding: '18px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   borderRadius: '20px',
-                  border: isMe
-                    ? '1.5px solid rgba(16, 185, 129, 0.5)'
-                    : isVerified
-                    ? '1px solid rgba(16, 185, 129, 0.25)'
-                    : '1px solid var(--glass-border)',
-                  background: isMe
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.03) 100%)'
-                    : 'var(--bg-card)',
-                  boxShadow: isVerified
-                    ? '0 6px 20px rgba(0, 0, 0, 0.18)'
-                    : 'none',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  background: 'var(--bg-card)',
+                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.16)',
+                  position: 'relative'
                 }}
               >
-                {/* User Top Info */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '12px' }}>
-                    {/* Avatar */}
-                    {user.photoUrl ? (
+                  {/* Top Header: Avatar + Citizen Name */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                    {resident.photoUrl ? (
                       <img
-                        src={user.photoUrl}
-                        alt={user.name}
+                        src={resident.photoUrl}
+                        alt={resident.name_en}
                         style={{
-                          width: '54px',
-                          height: '54px',
+                          width: '52px',
+                          height: '52px',
                           borderRadius: '50%',
                           objectFit: 'cover',
-                          border: isVerified ? '2.5px solid #10B981' : '2px solid var(--glass-border)',
+                          border: '2px solid #10B981',
                           flexShrink: 0
                         }}
                       />
                     ) : (
                       <div
                         style={{
-                          width: '54px',
-                          height: '54px',
+                          width: '52px',
+                          height: '52px',
                           borderRadius: '50%',
                           background: badge.color,
                           color: '#fff',
@@ -836,16 +536,15 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 700,
-                          fontSize: '1.25rem',
+                          fontSize: '1.2rem',
                           flexShrink: 0,
-                          border: isVerified ? '2.5px solid #10B981' : 'none'
+                          border: '2px solid #10B981'
                         }}
                       >
-                        {user.name.charAt(0)}
+                        {resident.name_en.charAt(0)}
                       </div>
                     )}
 
-                    {/* Name and Badges */}
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <h3
@@ -856,168 +555,116 @@ export const CommunityPeopleView: React.FC<CommunityPeopleViewProps> = ({
                             color: 'var(--text-primary)'
                           }}
                         >
-                          {isKannada && user.name_kn ? user.name_kn : user.name}
+                          {isKannada ? resident.name_kn : resident.name_en}
                         </h3>
-                        {isMe && (
+                        {resident.is_family_head && (
                           <span
                             style={{
-                              background: 'var(--accent-emerald)',
-                              color: '#fff',
+                              background: 'rgba(245, 158, 11, 0.2)',
+                              color: '#F59E0B',
+                              border: '1px solid rgba(245, 158, 11, 0.4)',
                               fontSize: '0.65rem',
                               fontWeight: 700,
-                              padding: '2px 6px',
+                              padding: '1px 6px',
                               borderRadius: '4px'
                             }}
                           >
-                            {isKannada ? 'ನೀವು' : 'YOU'}
+                            {isKannada ? 'ಕುಟುಂಬದ ಮುಖ್ಯಸ್ಥರು' : 'Family Head'}
                           </span>
                         )}
                       </div>
 
-                      {/* Official Verified Resident Seal Badge */}
-                      {isVerified && (
-                        <div style={{ marginTop: '4px' }}>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              background: 'rgba(16, 185, 129, 0.14)',
-                              color: '#10B981',
-                              border: '1px solid rgba(16, 185, 129, 0.35)',
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: '12px'
-                            }}
-                          >
-                            <ShieldCheck size={13} />
-                            <span>
-                              {isKannada ? 'ಆಧಾರ್ ದೃಢೀಕೃತ ನಿವಾಸಿ' : 'Aadhaar Verified Resident'}
-                            </span>
-                          </span>
-                        </div>
-                      )}
+                      {/* Guardian / Relation */}
+                      <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {isKannada ? resident.guardian_kn : resident.guardian_en}
+                      </p>
 
-                      {/* Category Badge */}
-                      <div style={{ marginTop: '4px' }}>
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            background: badge.bg,
-                            color: badge.color,
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            padding: '2px 8px',
-                            borderRadius: '12px'
-                          }}
-                        >
-                          {badge.label}
+                      {/* Age & Gender Pill */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                          {isKannada ? `ವಯಸ್ಸು: ${resident.age}` : `Age: ${resident.age}`}
+                        </span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>•</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                          {resident.gender === 'MALE'
+                            ? isKannada
+                              ? 'ಪುರುಷ'
+                              : 'Male'
+                            : isKannada
+                            ? 'ಮಹಿಳೆ'
+                            : 'Female'}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Village Ward / Street Location Pin */}
-                  {(user.ward_or_street || user.ward_or_street_kn) && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '0.75rem',
-                        color: 'var(--accent-emerald)',
-                        marginBottom: '8px',
-                        background: 'rgba(16, 185, 129, 0.06)',
-                        padding: '4px 8px',
-                        borderRadius: '6px'
-                      }}
-                    >
-                      <MapPin size={13} style={{ flexShrink: 0 }} />
-                      <span style={{ fontWeight: 600 }}>
-                        {isKannada && user.ward_or_street_kn
-                          ? user.ward_or_street_kn
-                          : user.ward_or_street}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Bio snippet */}
-                  <p
+                  {/* House No & Ward */}
+                  <div
                     style={{
-                      margin: '0 0 14px',
-                      fontSize: '0.82rem',
-                      lineHeight: 1.45,
-                      color: 'var(--text-secondary)',
-                      minHeight: '34px'
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--glass-border)',
+                      marginBottom: '10px',
+                      fontSize: '0.75rem'
                     }}
                   >
-                    {isKannada && user.bio_kn
-                      ? user.bio_kn
-                      : user.bio || (isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮಸ್ಥರು' : 'Muttagondi village resident')}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>
+                        <Home size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                        {isKannada ? 'ಮನೆ ಸಂಖ್ಯೆ:' : 'House No:'} <strong>{resident.house_no}</strong>
+                      </span>
+                      <span
+                        style={{
+                          background: badge.bg,
+                          color: badge.color,
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: '8px'
+                        }}
+                      >
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    <div style={{ color: 'var(--accent-emerald)', fontWeight: 600 }}>
+                      <MapPin size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                      {isKannada ? resident.ward_kn : resident.ward_en}
+                    </div>
+                  </div>
+
+                  {/* Occupation description */}
+                  <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    {isKannada ? resident.occupation_kn : resident.occupation_en}
                   </p>
                 </div>
 
-                {/* Card Action Button */}
-                <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '12px' }}>
-                  {isMe ? (
-                    <div
-                      style={{
-                        textAlign: 'center',
-                        fontSize: '0.78rem',
-                        color: 'var(--accent-emerald)',
-                        fontWeight: 600,
-                        padding: '6px 0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <Check size={14} />
-                      <span>{isKannada ? 'ನಿಮ್ಮ ನಿವಾಸಿ ಪ್ರೊಫೈಲ್' : 'Your resident profile'}</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        if (!currentUser) {
-                          onOpenLogin();
-                        } else {
-                          onOpenChatWithUser(user);
-                        }
-                      }}
-                      className="btn-primary"
-                      style={{
-                        width: '100%',
-                        padding: '8px 12px',
-                        fontSize: '0.84rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px'
-                      }}
-                    >
-                      <MessageSquare size={16} />
-                      <span>{isKannada ? 'ಖಾಸಗಿ ಸಂದೇಶ ಕಳುಹಿಸಿ' : 'Send Message'}</span>
-                    </button>
-                  )}
+                {/* Footer Stamp: Official Government Reference */}
+                <div
+                  style={{
+                    borderTop: '1px solid var(--glass-border)',
+                    paddingTop: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontSize: '0.7rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10B981', fontWeight: 700 }}>
+                    <ShieldCheck size={14} />
+                    <span>{isKannada ? 'ಕುಟುಂಬ ದೃಢೀಕೃತ' : 'Govt Kutumba ID'}</span>
+                  </div>
+
+                  <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    {resident.govt_id_reference}
+                  </span>
                 </div>
               </div>
             );
           })
         )}
       </div>
-
-      {/* Aadhaar Resident Verification Modal */}
-      {isVerificationModalOpen && (
-        <AadhaarResidentVerificationModal
-          isOpen={isVerificationModalOpen}
-          onClose={() => setIsVerificationModalOpen(false)}
-          onVerificationSuccess={() => {
-            refreshData();
-          }}
-        />
-      )}
     </div>
   );
 };

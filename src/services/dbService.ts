@@ -57,6 +57,7 @@ import {
   SEED_COMMITTEE_AUDIT_LOGS,
   isSuperAdminEmail
 } from './seedData';
+import { MUTTAGONDI_GOVERNMENT_PEOPLE, GovernmentVillageResident } from './muttagondiGovernmentPeopleData';
 import { VERIFIED_VILLAGE_LOCATIONS } from './defaultMapLocations';
 import { isFirebaseConfigured, db } from './firebaseConfig';
 import { realtimeSync } from './realtimeSync';
@@ -2966,6 +2967,14 @@ class DatabaseService {
             }
           : undefined
       }));
+  }
+
+  /**
+   * Returns official government register of Muttagondi village residents
+   * Integrated with Karnataka Kutumba & Grama Panchayat Citizen database.
+   */
+  public getGovernmentVillageResidents(): GovernmentVillageResident[] {
+    return MUTTAGONDI_GOVERNMENT_PEOPLE;
   }
 
   // --- CONVERSATIONS & MESSAGING ---
