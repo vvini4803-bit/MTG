@@ -2166,26 +2166,37 @@ export const App: React.FC = () => {
           <span>{isKannada ? 'ಸಮಿತಿ' : 'Committee'}</span>
         </button>
 
-        {/* Tab 4: Ask AI (Special Highlighted Button) */}
+        {/* Tab 4: Muttagondi People (ನಿವಾಸಿಗಳು - Aadhaar Verified Directory) */}
         <button
-          onClick={() => setIsVoiceModalOpen(true)}
+          onClick={() => navigateTo('people')}
           style={{
-            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+            background: 'none',
             border: 'none',
-            borderRadius: '50%',
-            width: '46px',
-            height: '46px',
-            marginTop: '-14px',
-            color: '#FFFFFF',
+            color: currentSection === 'people' ? '#10B981' : '#94A3B8',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.5)',
-            cursor: 'pointer'
+            gap: '4px',
+            fontSize: '0.72rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            padding: '4px 8px'
           }}
-          title="Ask Village / ನಮ್ಮ ಊರನ್ನು ಕೇಳಿ"
+          title={isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ನಿವಾಸಿಗಳು (Muttagondi People)' : 'Muttagondi People'}
         >
-          <Mic size={24} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Users size={22} color={currentSection === 'people' ? '#10B981' : '#94A3B8'} />
+            <Sparkles
+              size={11}
+              color={currentSection === 'people' ? '#10B981' : '#64748B'}
+              style={{
+                position: 'absolute',
+                top: -3,
+                right: -6
+              }}
+            />
+          </div>
+          <span>{isKannada ? 'ನಿವಾಸಿಗಳು' : 'People'}</span>
         </button>
 
         {/* Tab 5: Profile */}
