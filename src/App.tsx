@@ -33,7 +33,6 @@ import { SearchScreen } from './views/SearchScreen';
 import { NotificationsScreen } from './views/NotificationsScreen';
 import { SettingsScreen } from './views/SettingsScreen';
 import { PhotoAnalyzerScreen } from './views/PhotoAnalyzerScreen';
-import { CommitteeScreen } from './views/CommitteeScreen';
 import { InAppNotificationToast } from './components/notifications/InAppNotificationToast';
 import { NotificationPermissionBanner } from './components/notifications/NotificationPermissionBanner';
 import { notificationService } from './services/notificationService';
@@ -108,8 +107,7 @@ export type MainSection =
   | 'search'
   | 'notifications'
   | 'settings'
-  | 'photo_analyzer'
-  | 'committee';
+  | 'photo_analyzer';
 
 export const App: React.FC = () => {
   const { language, setLanguage, isKannada } = useLanguage();
@@ -460,16 +458,6 @@ export const App: React.FC = () => {
       icon: '🔍',
       color: '#06B6D4',
       bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(14, 165, 233, 0.1) 100%)'
-    },
-    {
-      id: 'committee' as MainSection,
-      title_en: '👥 MTG COMMITTEE',
-      title_kn: '👥 ಎಂಟಿಜಿ ಸಮಿತಿ (MTG COMMITTEE)',
-      subtitle_en: 'Fund • Loans • Interest • Members • AI',
-      subtitle_kn: 'ನಿಧಿ • ಸಾಲಗಳು • ಬಡ್ಡಿ • ಸದಸ್ಯರು • AI',
-      icon: '🏛️',
-      color: '#10B981',
-      bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.24) 0%, rgba(245, 158, 11, 0.12) 100%)'
     }
   ];
 
@@ -1208,89 +1196,6 @@ export const App: React.FC = () => {
               );
             })()}
 
-            {/* 🏛️ FEATURED BANNER: MTG COMMITTEE + GEMINI AI */}
-            <div
-              onClick={() => navigateTo('committee')}
-              className="card-3d"
-              style={{
-                marginBottom: '24px',
-                padding: '18px 22px',
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(245, 158, 11, 0.16) 100%)',
-                border: '1.5px solid rgba(16, 185, 129, 0.45)',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px',
-                boxShadow: '0 8px 28px rgba(0, 0, 0, 0.35), 0 0 20px rgba(16, 185, 129, 0.15)',
-                transition: 'all 0.25s ease'
-              }}
-              title={isKannada ? 'ಎಂಟಿಜಿ ಸಮಿತಿ & AI ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ತೆರೆಯಿರಿ' : 'Open MTG Committee & AI Dashboard'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div
-                  style={{
-                    width: '54px',
-                    height: '54px',
-                    borderRadius: '16px',
-                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.9rem',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
-                    flexShrink: 0
-                  }}
-                >
-                  🏛️
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
-                      👥 MTG COMMITTEE
-                    </h3>
-                    <span
-                      style={{
-                        fontSize: '0.7rem',
-                        padding: '3px 9px',
-                        borderRadius: '9999px',
-                        background: 'rgba(245, 158, 11, 0.25)',
-                        color: '#FBBF24',
-                        border: '1px solid rgba(245, 158, 11, 0.5)',
-                        fontWeight: 800,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      <Sparkles size={11} />
-                      GEMINI AI
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.84rem', color: '#CBD5E1', margin: '4px 0 0 0', fontWeight: 600 }}>
-                    {isKannada ? 'ನಿಧಿ • ಸಾಲಗಳು • ಬಡ್ಡಿ • ಸದಸ್ಯರು • AI' : 'Fund • Loans • Interest • Members • AI'}
-                  </p>
-                </div>
-              </div>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  color: '#34D399',
-                  fontWeight: 800,
-                  fontSize: '0.9rem',
-                  padding: '8px 14px',
-                  borderRadius: '12px',
-                  background: 'rgba(16, 185, 129, 0.15)',
-                  border: '1px solid rgba(16, 185, 129, 0.3)'
-                }}
-              >
-                <span>{isKannada ? 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್' : 'Dashboard'}</span>
-                <ChevronRight size={18} />
-              </div>
-            </div>
 
             {/* ⭐ THE 8 MAIN CARDS GRID (Large, Easy to Tap) */}
             <div style={{ marginBottom: '32px' }}>
@@ -1934,15 +1839,6 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* ============================================================ */}
-        {/* 🏛️ SECTION: MTG COMMITTEE + GEMINI AI                         */}
-        {/* ============================================================ */}
-        {currentSection === 'committee' && (
-          <div>
-            <CommitteeScreen onBack={() => navigateTo('home')} />
-          </div>
-        )}
-
         {/* 🌐 GLOBAL VILLAGE FOOTER */}
         <footer
           style={{
@@ -2068,13 +1964,13 @@ export const App: React.FC = () => {
         </button>
 
 
-        {/* Tab 3: MTG Committee + Gemini AI */}
+        {/* Tab 3: Events */}
         <button
-          onClick={() => navigateTo('committee')}
+          onClick={() => navigateTo('events')}
           style={{
             background: 'none',
             border: 'none',
-            color: currentSection === 'committee' ? '#10B981' : '#94A3B8',
+            color: currentSection === 'events' ? '#10B981' : '#94A3B8',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -2084,21 +1980,10 @@ export const App: React.FC = () => {
             cursor: 'pointer',
             padding: '4px 8px'
           }}
-          title={isKannada ? 'ಎಂಟಿಜಿ ಸಮಿತಿ (MTG Committee)' : 'MTG Committee + Gemini AI'}
+          title={isKannada ? 'ಕಾರ್ಯಕ್ರಮಗಳು (Events)' : 'Events & Festivals'}
         >
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Landmark size={22} color={currentSection === 'committee' ? '#10B981' : '#94A3B8'} />
-            <Sparkles
-              size={11}
-              color={currentSection === 'committee' ? '#F59E0B' : '#64748B'}
-              style={{
-                position: 'absolute',
-                top: -3,
-                right: -6
-              }}
-            />
-          </div>
-          <span>{isKannada ? 'ಸಮಿತಿ' : 'Committee'}</span>
+          <Calendar size={22} color={currentSection === 'events' ? '#10B981' : '#94A3B8'} />
+          <span>{isKannada ? 'ಕಾರ್ಯಕ್ರಮ' : 'Events'}</span>
         </button>
 
         {/* Tab 4: Ask AI / Voice Assistant */}

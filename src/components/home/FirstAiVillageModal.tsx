@@ -305,8 +305,8 @@ export const FirstAiVillageModal: React.FC<FirstAiVillageModalProps> = ({
               </strong>
               <span style={{ fontSize: '0.8rem', color: '#94A3B8', lineHeight: 1.4 }}>
                 {isKannada
-                  ? 'ಗ್ರಾಮದ ಪರಿಶೀಲಿಸಿದ ರಕ್ತದಾನಿಗಳು ಹಾಗೂ ಗ್ರಾಮ ಸಮಿತಿಯ ತಕ್ಷಣದ ತುರ್ತು ಪ್ರಕಟಣೆಗಳು.'
-                  : 'Instant blood donor directory, emergency contacts, and real-time committee administration.'}
+                  ? 'ಗ್ರಾಮದ ಪರಿಶೀಲಿಸಿದ ರಕ್ತದಾನಿಗಳು ಹಾಗೂ ಗ್ರಾಮ ಪಂಚಾಯತಿಯ ತಕ್ಷಣದ ತುರ್ತು ಪ್ರಕಟಣೆಗಳು.'
+                  : 'Instant blood donor directory, emergency contacts, and real-time civic administration.'}
               </span>
             </div>
           </div>
