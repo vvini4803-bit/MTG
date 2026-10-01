@@ -86,7 +86,8 @@ import {
   Heart,
   Share2,
   Settings,
-  Edit3
+  Edit3,
+  Bot
 } from 'lucide-react';
 import { getEffectiveUserId, triggerHapticFeedback } from './services/deviceIdentity';
 import { backNavigation } from './services/backNavigation';
@@ -2158,13 +2159,13 @@ export const App: React.FC = () => {
           <span>{isKannada ? 'ರೈತ & ಕುಟುಂಬ' : 'Farmer AI'}</span>
         </button>
 
-        {/* Tab 4: Ask AI / Voice Assistant */}
+        {/* Tab 4: Talk Agent */}
         <button
           onClick={() => setIsVoiceModalOpen(true)}
           style={{
             background: 'none',
             border: 'none',
-            color: '#94A3B8',
+            color: isVoiceModalOpen ? '#10B981' : '#94A3B8',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -2174,7 +2175,7 @@ export const App: React.FC = () => {
             cursor: 'pointer',
             padding: '4px 8px'
           }}
-          title={isKannada ? 'ಗ್ರಾಮ ಧ್ವನಿ ಸಹಾಯಕ' : 'Village Voice Assistant'}
+          title={isKannada ? 'ಟಾಕ್ ಏಜೆಂಟ್' : 'Talk Agent'}
         >
           <div
             style={{
@@ -2189,9 +2190,9 @@ export const App: React.FC = () => {
               border: '1px solid rgba(16, 185, 129, 0.5)'
             }}
           >
-            <Mic size={20} color="#10B981" />
+            <Bot size={20} color="#10B981" />
           </div>
-          <span>{isKannada ? 'ಧ್ವನಿ AI' : 'Voice AI'}</span>
+          <span>{isKannada ? 'ಟಾಕ್ ಏಜೆಂಟ್' : 'Talk Agent'}</span>
         </button>
 
         {/* Tab 5: Profile */}
