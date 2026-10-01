@@ -35,6 +35,7 @@ interface ChatModalProps {
     role?: string;
     community_category?: string;
   };
+  initialImage?: string | null;
   onClose: () => void;
   onNavigateToPeople?: () => void;
 }
@@ -43,6 +44,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
   isOpen,
   conversationId,
   partnerUser,
+  initialImage,
   onClose,
   onNavigateToPeople
 }) => {
@@ -51,7 +53,13 @@ export const ChatModal: React.FC<ChatModalProps> = ({
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [attachedImage, setAttachedImage] = useState<string | null>(initialImage || null);
+
+  useEffect(() => {
+    if (initialImage) {
+      setAttachedImage(initialImage);
+    }
+  }, [initialImage]);
   const [isSending, setIsSending] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -833,41 +841,81 @@ export const ChatModal: React.FC<ChatModalProps> = ({
         {attachedImage && (
           <div
             style={{
-              padding: '8px 16px',
-              background: 'rgba(0, 0, 0, 0.4)',
-              borderTop: '1px solid var(--glass-border)',
+              padding: '10px 16px',
+              background: 'rgba(16, 185, 129, 0.14)',
+              borderTop: '1.5px solid rgba(16, 185, 129, 0.45)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              gap: '12px'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
               <img
                 src={attachedImage}
                 alt="Selected"
                 style={{
-                  width: '45px',
-                  height: '45px',
-                  borderRadius: '6px',
-                  objectFit: 'cover'
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '8px',
+                  objectFit: 'cover',
+                  border: '1.5px solid #10B981',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                 }}
               />
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                {isKannada ? 'ಚಿತ್ರವನ್ನು ಲಗತ್ತಿಸಲಾಗಿದೆ' : 'Photo attached'}
-              </span>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#10B981', display: 'block' }}>
+                  {isKannada ? '📷 ಚಿತ್ರ ಕಳುಹಿಸಲು ಸಿದ್ಧವಾಗಿದೆ' : '📷 Photo ready to send'}
+                </span>
+                <span style={{ fontSize: '0.74rem', color: '#CBD5E1' }}>
+                  {isKannada ? 'ಐಚ್ಛಿಕ ವಿವರ ಬರೆಯಿರಿ ಅಥವಾ ಕಳುಹಿಸಿ ಒತ್ತಿ' : 'Add text caption or tap Send'}
+                </span>
+              </div>
             </div>
-            <button
-              onClick={() => setAttachedImage(null)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#EF4444',
-                cursor: 'pointer',
-                padding: '4px'
-              }}
-            >
-              <X size={18} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => handleSend()}
+                disabled={isSending}
+                style={{
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  borderRadius: '20px',
+                  padding: '7px 14px',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  cursor: isSending ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)'
+                }}
+              >
+                <Send size={13} />
+                <span>{isKannada ? 'ಕಳುಹಿಸಿ' : 'Send'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttachedImage(null)}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  color: '#EF4444',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+                title={isKannada ? 'ತೆಗೆದುಹಾಕಿ' : 'Remove'}
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
         )}
 
@@ -983,21 +1031,23 @@ export const ChatModal: React.FC<ChatModalProps> = ({
             disabled={isBlocked}
             onClick={() => fileInputRef.current?.click()}
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid var(--glass-border)',
-              color: 'var(--text-secondary)',
+              background: 'rgba(16, 185, 129, 0.16)',
+              border: '1.5px solid rgba(16, 185, 129, 0.5)',
+              color: '#10B981',
               borderRadius: '50%',
-              width: '40px',
-              height: '40px',
+              width: '42px',
+              height: '42px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: isBlocked ? 'not-allowed' : 'pointer',
-              flexShrink: 0
+              flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+              transition: 'all 0.2s ease'
             }}
-            title="Attach Photo"
+            title={isKannada ? 'ಚಿತ್ರ ಲಗತ್ತಿಸಿ (Attach Photo)' : 'Attach Photo'}
           >
-            <ImageIcon size={18} />
+            <ImageIcon size={20} />
           </button>
 
           {/* Text Input */}

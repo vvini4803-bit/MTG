@@ -36,6 +36,7 @@ import { SettingsScreen } from './views/SettingsScreen';
 import { PhotoAnalyzerScreen } from './views/PhotoAnalyzerScreen';
 import { FarmerSummaryScreen } from './views/FarmerSummaryScreen';
 import { FarmerLiveScreen } from './views/FarmerLiveScreen';
+import { FindPeopleScreen } from './views/FindPeopleScreen';
 import { InAppNotificationToast } from './components/notifications/InAppNotificationToast';
 import { NotificationPermissionBanner } from './components/notifications/NotificationPermissionBanner';
 import { notificationService } from './services/notificationService';
@@ -165,6 +166,7 @@ export const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeChatConvId, setActiveChatConvId] = useState<string>('');
   const [activeChatPartner, setActiveChatPartner] = useState<any>(null);
+  const [activeChatInitialImage, setActiveChatInitialImage] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showExitToast, setShowExitToast] = useState(false);
 
@@ -492,6 +494,16 @@ export const App: React.FC = () => {
       icon: '🎙️',
       color: '#06B6D4',
       bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(2, 132, 199, 0.12) 100%)'
+    },
+    {
+      id: 'people' as MainSection,
+      title_en: 'VILLAGE PEOPLE & DIRECTORY',
+      title_kn: 'ಗ್ರಾಮಸ್ಥರ ಡೈರೆಕ್ಟರಿ',
+      subtitle_en: 'Find logged-in residents, message & rename',
+      subtitle_kn: 'ಗ್ರಾಮಸ್ಥರ ಸಂಪರ್ಕ, ಸಂದೇಶ & ಹೆಸರು ಬದಲಿಸಿ',
+      icon: '👥',
+      color: '#10B981',
+      bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(59, 130, 246, 0.12) 100%)'
     }
   ];
 
@@ -602,6 +614,29 @@ export const App: React.FC = () => {
                   {unreadMsgCount}
                 </span>
               )}
+            </button>
+
+            {/* 👥 Find People & Directory Button */}
+            <button
+              onClick={() => navigateTo('people')}
+              className="site-header-icon-btn"
+              style={{
+                position: 'relative',
+                background: currentSection === 'people' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                color: currentSection === 'people' ? '#10B981' : '#CBD5E1',
+                border: currentSection === 'people' ? '1px solid #10B981' : '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '50%',
+                width: '38px',
+                height: '38px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+              title={isKannada ? 'ಗ್ರಾಮಸ್ಥರ ಡೈರೆಕ್ಟರಿ (Find People)' : 'Find People & Directory'}
+            >
+              <Users size={18} />
             </button>
 
             {/* 🔔 Notification Bell Button with Live Unread Badge */}
@@ -1715,11 +1750,96 @@ export const App: React.FC = () => {
               onOpenChat={(convId, partner) => {
                 setActiveChatConvId(convId);
                 setActiveChatPartner(partner);
+                setActiveChatInitialImage(null);
                 setIsChatOpen(true);
               }}
               onNavigateToPeople={() => navigateTo('people')}
             />
           </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* 👥 SECTION: FIND PEOPLE & VILLAGE DIRECTORY                   */}
+        {/* ============================================================ */}
+        {currentSection === 'people' && (
+          <FindPeopleScreen
+            onBack={() => navigateTo('home')}
+            onOpenLogin={() => setIsAuthModalOpen(true)}
+            onOpenChat={async (partner) => {
+              if (!currentUser) {
+                setIsAuthModalOpen(true);
+                return;
+              }
+              try {
+                const conv = await dbService.getOrCreateConversation(
+                  {
+                    uid: currentUser.uid,
+                    name: currentUser.name,
+                    name_kn: currentUser.name_kn,
+                    photoUrl: currentUser.photoUrl,
+                    role: currentUser.role
+                  },
+                  {
+                    uid: partner.uid,
+                    name: partner.name,
+                    name_kn: partner.name_kn,
+                    photoUrl: partner.photoUrl,
+                    role: (partner.role as any) || 'USER'
+                  }
+                );
+                setActiveChatConvId(conv.id);
+                setActiveChatPartner({
+                  uid: partner.uid,
+                  name: partner.name,
+                  name_kn: partner.name_kn,
+                  photoUrl: partner.photoUrl,
+                  role: partner.role,
+                  community_category: partner.community_category
+                });
+                setActiveChatInitialImage(null);
+                setIsChatOpen(true);
+              } catch (e: any) {
+                alert(e.message || 'Could not open conversation');
+              }
+            }}
+            onOpenChatWithImage={async (partner, imageDataUrl) => {
+              if (!currentUser) {
+                setIsAuthModalOpen(true);
+                return;
+              }
+              try {
+                const conv = await dbService.getOrCreateConversation(
+                  {
+                    uid: currentUser.uid,
+                    name: currentUser.name,
+                    name_kn: currentUser.name_kn,
+                    photoUrl: currentUser.photoUrl,
+                    role: currentUser.role
+                  },
+                  {
+                    uid: partner.uid,
+                    name: partner.name,
+                    name_kn: partner.name_kn,
+                    photoUrl: partner.photoUrl,
+                    role: (partner.role as any) || 'USER'
+                  }
+                );
+                setActiveChatConvId(conv.id);
+                setActiveChatPartner({
+                  uid: partner.uid,
+                  name: partner.name,
+                  name_kn: partner.name_kn,
+                  photoUrl: partner.photoUrl,
+                  role: partner.role,
+                  community_category: partner.community_category
+                });
+                setActiveChatInitialImage(imageDataUrl);
+                setIsChatOpen(true);
+              } catch (e: any) {
+                alert(e.message || 'Could not open conversation');
+              }
+            }}
+          />
         )}
 
         {/* ============================================================ */}
@@ -2365,7 +2485,15 @@ export const App: React.FC = () => {
           isOpen={isChatOpen}
           conversationId={activeChatConvId}
           partnerUser={activeChatPartner}
-          onClose={() => setIsChatOpen(false)}
+          initialImage={activeChatInitialImage}
+          onClose={() => {
+            setIsChatOpen(false);
+            setActiveChatInitialImage(null);
+          }}
+          onNavigateToPeople={() => {
+            setIsChatOpen(false);
+            navigateTo('people');
+          }}
         />
       )}
 

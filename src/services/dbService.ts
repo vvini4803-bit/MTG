@@ -320,35 +320,40 @@ class DatabaseService {
     this.socialLinks = this.loadCollection('social_links', this.isDemoMode ? SEED_SOCIAL_LINKS : []);
     this.emergencyAlert = this.loadCollection('emergency_alert', this.isDemoMode ? SEED_EMERGENCY_ALERT : null);
 
-    this.users = this.loadCollection('users', SEED_USERS);
+    // 👥 USERS: Only Real Registered/Authenticated Members (No random or mock users)
+    this.users = this.loadCollection('users', []);
 
-    // Guarantee vvini4803@gmail.com is unconditionally Super Admin in users collection
-    let hasVvini = false;
-    this.users = this.users.map((u) => {
-      if (isSuperAdminEmail(u.email, u.name) || u.uid === 'admin_vvini4803') {
-        hasVvini = true;
-        return {
-          ...u,
-          role: 'SUPER_ADMIN',
-          account_status: 'ACTIVE',
-          email: u.email || 'vvini4803@gmail.com'
-        };
-      }
-      return u;
-    });
-    if (!hasVvini) {
-      const defaultAdmin = SEED_USERS.find((u) => isSuperAdminEmail(u.email, u.name));
-      if (defaultAdmin) {
-        this.users.unshift(defaultAdmin);
-      }
+    // Purge any mock/seed UIDs from previous cache so only real users appear
+    const MOCK_UIDS = new Set([
+      'admin_101',
+      'usr_ramesh_farmer',
+      'usr_manju_sports',
+      'usr_sowmya_teacher',
+      'usr_basavaraj_resident'
+    ]);
+    this.users = this.users.filter(
+      (u) =>
+        u &&
+        u.uid &&
+        !MOCK_UIDS.has(u.uid) &&
+        !u.uid.startsWith('usr_ramesh') &&
+        !u.uid.startsWith('usr_manju') &&
+        !u.uid.startsWith('usr_sowmya') &&
+        !u.uid.startsWith('usr_basavaraj')
+    );
+
+    // If active user from localStorage exists and is real, keep them
+    const activeRaw = localStorage.getItem('gramasiri_active_user');
+    if (activeRaw) {
+      try {
+        const activeParsed = JSON.parse(activeRaw);
+        if (activeParsed?.uid && !MOCK_UIDS.has(activeParsed.uid)) {
+          if (!this.users.some((u) => u.uid === activeParsed.uid)) {
+            this.users.unshift(activeParsed);
+          }
+        }
+      } catch {}
     }
-
-    // Ensure all verified village residents from seed data exist in directory
-    SEED_USERS.forEach((su) => {
-      if (!this.users.some((u) => u.uid === su.uid)) {
-        this.users.push(su);
-      }
-    });
 
     this.saveCollection('users', this.users);
 
@@ -2603,30 +2608,45 @@ class DatabaseService {
 
   // --- USERS MANAGEMENT (RBAC) ---
   public subscribeUsers(callback: (users: UserProfile[]) => void): () => void {
+    const isRealUser = (u: any): boolean => {
+      if (!u || !u.uid) return false;
+      const MOCK_UIDS = ['admin_101', 'usr_ramesh_farmer', 'usr_manju_sports', 'usr_sowmya_teacher', 'usr_basavaraj_resident'];
+      if (MOCK_UIDS.includes(u.uid)) return false;
+      if (u.uid.startsWith('usr_ramesh') || u.uid.startsWith('usr_manju') || u.uid.startsWith('usr_sowmya') || u.uid.startsWith('usr_basavaraj')) {
+        return false;
+      }
+      return true;
+    };
+
     if (isFirebaseConfigured && db) {
       try {
         return onSnapshot(
           collection(db, 'users'),
           (snapshot) => {
             const items = snapshot.docs.map((d) => ({ uid: d.id, ...d.data() } as UserProfile));
-            if (items.length > 0) {
-              this.users = items;
-              this.saveCollection('users', items);
-              callback(items);
+            const realItems = items.filter(isRealUser);
+            if (realItems.length > 0) {
+              const userMap = new Map<string, UserProfile>();
+              this.users.filter(isRealUser).forEach((u) => userMap.set(u.uid, u));
+              realItems.forEach((u) => userMap.set(u.uid, { ...(userMap.get(u.uid) || {}), ...u }));
+              const merged = Array.from(userMap.values());
+              this.users = merged;
+              this.saveCollection('users', merged);
+              callback(merged);
             } else {
-              callback(this.users);
+              callback(this.users.filter(isRealUser));
             }
           },
           (err) => {
             console.warn('Firestore users listener error (using local):', err);
-            callback(this.users);
+            callback(this.users.filter(isRealUser));
           }
         );
       } catch (e) {
         console.warn('Users listener fallback:', e);
       }
     }
-    return this.subscribe('users', this.users, callback);
+    return this.subscribe('users', this.users.filter(isRealUser), (updated) => callback(updated.filter(isRealUser)));
   }
 
   public async updateUserRole(uid: string, newRole: UserProfile['role']): Promise<void> {
@@ -2668,6 +2688,89 @@ class DatabaseService {
     }
 
     this.logAudit('UPDATE_USER_ROLE', 'admin', 'Super Admin', uid, 'USER', `Updated role to ${newRole}`);
+  }
+
+  public async updateUserName(uid: string, name: string, name_kn?: string): Promise<void> {
+    const trimmedName = name.trim();
+    const trimmedKn = name_kn?.trim();
+    if (!trimmedName) return;
+
+    let u = this.users.find((user) => user.uid === uid);
+    if (u) {
+      u.name = trimmedName;
+      if (trimmedKn !== undefined) {
+        u.name_kn = trimmedKn;
+      }
+    } else {
+      u = {
+        uid,
+        name: trimmedName,
+        name_kn: trimmedKn || '',
+        role: 'USER',
+        language: 'kn',
+        account_status: 'ACTIVE',
+        created_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      };
+      this.users.push(u);
+    }
+
+    this.saveCollection('users', [...this.users]);
+    this.emit('users', this.users);
+    realtimeSync.broadcast('USER_UPDATED', u);
+
+    // Also update this user's name across existing conversations
+    let convsChanged = false;
+    this.conversations.forEach((c) => {
+      if (c.participants.includes(uid)) {
+        if (!c.participant_names) c.participant_names = {};
+        c.participant_names[uid] = trimmedName;
+        convsChanged = true;
+      }
+    });
+    if (convsChanged) {
+      this.saveCollection('conversations', [...this.conversations]);
+      this.emit('conversations', this.conversations);
+    }
+
+    if (isFirebaseConfigured && db) {
+      try {
+        const payload: Record<string, any> = { name: trimmedName };
+        if (trimmedKn !== undefined) {
+          payload.name_kn = trimmedKn;
+        }
+        await setDoc(doc(db, 'users', uid), payload, { merge: true });
+      } catch (e) {
+        console.warn('Firestore updateUserName error:', e);
+      }
+    }
+
+    // Update active user in localStorage if matching
+    const active = localStorage.getItem('gramasiri_active_user');
+    if (active) {
+      try {
+        const parsed = JSON.parse(active);
+        if (parsed.uid === uid) {
+          parsed.name = trimmedName;
+          if (trimmedKn !== undefined) parsed.name_kn = trimmedKn;
+          localStorage.setItem('gramasiri_active_user', JSON.stringify(parsed));
+        }
+      } catch (e) {}
+    }
+  }
+
+  public getAllUsers(): UserProfile[] {
+    const MOCK_UIDS = ['admin_101', 'usr_ramesh_farmer', 'usr_manju_sports', 'usr_sowmya_teacher', 'usr_basavaraj_resident'];
+    return this.users.filter(
+      (u) =>
+        u &&
+        u.uid &&
+        !MOCK_UIDS.includes(u.uid) &&
+        !u.uid.startsWith('usr_ramesh') &&
+        !u.uid.startsWith('usr_manju') &&
+        !u.uid.startsWith('usr_sowmya') &&
+        !u.uid.startsWith('usr_basavaraj')
+    );
   }
 
   public async assignRoleByEmail(
@@ -3204,8 +3307,45 @@ class DatabaseService {
     text: string;
     mediaUrl?: string;
   }): Promise<ChatMessage> {
-    const conv = this.conversations.find((c) => c.id === params.conversationId);
-    if (!conv) throw new Error('Conversation not found');
+    let conv = this.conversations.find((c) => c.id === params.conversationId);
+    if (!conv) {
+      const parts = params.conversationId.replace('conv_', '').split('_');
+      const otherUid = parts.find((p) => p !== params.senderId) || 'recipient';
+      const senderUser = this.users.find((u) => u.uid === params.senderId);
+      const recipientUser = this.users.find((u) => u.uid === otherUid);
+
+      conv = {
+        id: params.conversationId,
+        participants: [params.senderId, otherUid],
+        participant_names: {
+          [params.senderId]: params.senderName,
+          [otherUid]: recipientUser?.name || 'Resident'
+        },
+        participant_photos: {
+          ...(params.senderPhoto ? { [params.senderId]: params.senderPhoto } : {}),
+          ...(recipientUser?.photoUrl ? { [otherUid]: recipientUser.photoUrl } : {})
+        },
+        participant_roles: {
+          [params.senderId]: senderUser?.role || 'USER',
+          [otherUid]: recipientUser?.role || 'USER'
+        },
+        last_message_text: params.text || (params.mediaUrl ? '📷 Photo' : ''),
+        last_message_at: new Date().toISOString(),
+        last_sender_id: params.senderId,
+        updated_at: new Date().toISOString(),
+        unread_counts: {
+          [params.senderId]: 0,
+          [otherUid]: 1
+        }
+      };
+      this.conversations = [conv, ...this.conversations];
+      this.saveCollection('conversations', this.conversations);
+      if (isFirebaseConfigured && db) {
+        try {
+          setDoc(doc(db, 'conversations', conv.id), cleanFirestoreData(conv)).catch(() => {});
+        } catch {}
+      }
+    }
 
     const recipientId = conv.participants.find((p) => p !== params.senderId);
     if (recipientId && this.isUserBlocked(params.senderId, recipientId)) {

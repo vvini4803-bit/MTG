@@ -187,6 +187,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
+    dbService.registerOrUpdateUser(profile).catch(() => {});
+
     return profile;
   };
 

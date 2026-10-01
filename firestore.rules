@@ -124,9 +124,10 @@ service cloud.firestore {
       // Allow reading user profiles so community author details and member directory load
       allow read: if true;
 
-      // Account owner or Admin can create/update their profile
-      allow create: if isOwner(userId) || isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
+      // Account owner or Admin can create/update their profile, or authenticated user on sign up
+      allow create: if isAuthenticated() && (isOwner(userId) || isAdmin() || request.auth.uid != null);
+      // Owner or Admin can update full profile; authenticated users can rename display names (name, name_kn)
+      allow update: if isOwner(userId) || isAdmin() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'name_kn']));
       allow delete: if isSuperAdmin();
 
       // ===============================================================
