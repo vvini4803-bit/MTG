@@ -33,6 +33,8 @@ import { SearchScreen } from './views/SearchScreen';
 import { NotificationsScreen } from './views/NotificationsScreen';
 import { SettingsScreen } from './views/SettingsScreen';
 import { PhotoAnalyzerScreen } from './views/PhotoAnalyzerScreen';
+import { FarmerSummaryScreen } from './views/FarmerSummaryScreen';
+import { FarmerLiveScreen } from './views/FarmerLiveScreen';
 import { InAppNotificationToast } from './components/notifications/InAppNotificationToast';
 import { NotificationPermissionBanner } from './components/notifications/NotificationPermissionBanner';
 import { notificationService } from './services/notificationService';
@@ -107,7 +109,9 @@ export type MainSection =
   | 'search'
   | 'notifications'
   | 'settings'
-  | 'photo_analyzer';
+  | 'photo_analyzer'
+  | 'farmer_summary'
+  | 'farmer_live';
 
 export const App: React.FC = () => {
   const { language, setLanguage, isKannada } = useLanguage();
@@ -458,6 +462,26 @@ export const App: React.FC = () => {
       icon: '🔍',
       color: '#06B6D4',
       bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(14, 165, 233, 0.1) 100%)'
+    },
+    {
+      id: 'farmer_summary' as MainSection,
+      title_en: 'MY FARMER & FAMILY SUMMARY',
+      title_kn: 'ನನ್ನ ಕೃಷಿ & ಕುಟುಂಬ ಸಾರಾಂಶ',
+      subtitle_en: 'Private digital farming, profit/loss & family records',
+      subtitle_kn: 'ಖಾಸಗಿ ಕೃಷಿ, ಲಾಭ-ನಷ್ಟ, ಸಾಲ & ಕುಟುಂಬದ ಲೆಕ್ಕಾಚಾರ',
+      icon: '🌾',
+      color: '#10B981',
+      bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.12) 100%)'
+    },
+    {
+      id: 'farmer_live' as MainSection,
+      title_en: 'MTG FARMER AI LIVE',
+      title_kn: 'ರೈತ AI ಲೈವ್ ಸಂಭಾಷಣೆ',
+      subtitle_en: 'Real-time Gemini voice AI in Kannada & English',
+      subtitle_kn: 'ನೈಜ ಸಮಯದ ಜೆಮಿನಿ ಲೈವ್ ಧ್ವನಿ ಸಹಾಯಕ',
+      icon: '🎙️',
+      color: '#06B6D4',
+      bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(2, 132, 199, 0.12) 100%)'
     }
   ];
 
@@ -1197,6 +1221,118 @@ export const App: React.FC = () => {
             })()}
 
 
+            {/* 🌾 FEATURED HERO BANNER: MTG VILLAGE — PRIVATE FARMER & FAMILY AI */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.15) 100%)',
+                border: '1.5px solid rgba(16, 185, 129, 0.45)',
+                borderRadius: '22px',
+                padding: '20px 22px',
+                marginBottom: '28px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45), 0 0 20px rgba(16, 185, 129, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '16px'
+              }}
+              className="card-3d"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: '260px' }}>
+                <div
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '18px',
+                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
+                    flexShrink: 0
+                  }}
+                >
+                  <Wheat size={32} color="#FFFFFF" />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{
+                      background: 'rgba(16, 185, 129, 0.3)',
+                      color: '#34D399',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.68rem',
+                      fontWeight: 900,
+                      letterSpacing: '0.04em'
+                    }}>
+                      {isKannada ? '🔒 100% ಖಾಸಗಿ & ಗೌಪ್ಯ' : '🔒 100% PRIVATE & ENCRYPTED'}
+                    </span>
+                    <span style={{
+                      background: 'rgba(6, 182, 212, 0.25)',
+                      color: '#38BDF8',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.68rem',
+                      fontWeight: 800
+                    }}>
+                      ⚡ Gemini Live AI
+                    </span>
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: '0 0 4px 0', color: '#FFFFFF' }}>
+                    {isKannada ? '🌾 ನನ್ನ ಕೃಷಿ & ಕುಟುಂಬ ಸಾರಾಂಶ' : '🌾 MY FARMER & FAMILY SUMMARY'}
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: '#CBD5E1', margin: 0, lineHeight: 1.4 }}>
+                    {isKannada
+                      ? 'ನಿಮ್ಮ ಖಾಸಗಿ ಬೆಳೆಗಳು • ವೆಚ್ಚಗಳು • ನಿವ್ವಳ ಲಾಭ/ನಷ್ಟ • ಕುಟುಂಬ ಶಿಕ್ಷಣ • ಸಾಲ & ಉಳಿತಾಯ'
+                      : 'Private digital crop ledger, net profit/loss, family education, loans & savings'}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => navigateTo('farmer_summary')}
+                  style={{
+                    background: '#10B981',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '10px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+                  }}
+                >
+                  <Wheat size={16} />
+                  <span>{isKannada ? 'ಖಾತೆ ತೆರೆಯಿರಿ' : 'Open Summary'}</span>
+                </button>
+
+                <button
+                  onClick={() => navigateTo('farmer_live')}
+                  style={{
+                    background: 'rgba(6, 182, 212, 0.2)',
+                    border: '1px solid rgba(6, 182, 212, 0.5)',
+                    color: '#38BDF8',
+                    borderRadius: '12px',
+                    padding: '10px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Mic size={16} />
+                  <span>{isKannada ? 'ಧ್ವನಿ AI ಲೈವ್' : 'Gemini Live AI'}</span>
+                </button>
+              </div>
+            </div>
+
             {/* ⭐ THE 8 MAIN CARDS GRID (Large, Easy to Tap) */}
             <div style={{ marginBottom: '32px' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '14px', color: '#FFFFFF' }}>
@@ -1831,11 +1967,36 @@ export const App: React.FC = () => {
         )}
 
         {/* ============================================================ */}
+        {/* ============================================================ */}
         {/* 🔍 SECTION: MTG AI PHOTO ANALYZER                            */}
         {/* ============================================================ */}
         {currentSection === 'photo_analyzer' && (
           <div>
             <PhotoAnalyzerScreen onBack={() => navigateTo('home')} />
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* 🌾 SECTION: MY FARMER & FAMILY SUMMARY (Private)             */}
+        {/* ============================================================ */}
+        {currentSection === 'farmer_summary' && (
+          <div>
+            <FarmerSummaryScreen
+              onBack={() => navigateTo('home')}
+              onOpenLiveAI={() => navigateTo('farmer_live')}
+            />
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* 🤖 SECTION: MTG FARMER AI LIVE                               */}
+        {/* ============================================================ */}
+        {currentSection === 'farmer_live' && (
+          <div>
+            <FarmerLiveScreen
+              onBack={() => navigateTo('farmer_summary')}
+              onNavigateTab={(tab) => navigateTo(tab as MainSection)}
+            />
           </div>
         )}
 
@@ -1964,13 +2125,13 @@ export const App: React.FC = () => {
         </button>
 
 
-        {/* Tab 3: Events */}
+        {/* Tab 3: 🌾 MTG VILLAGE — PRIVATE FARMER & FAMILY AI */}
         <button
-          onClick={() => navigateTo('events')}
+          onClick={() => navigateTo('farmer_summary')}
           style={{
             background: 'none',
             border: 'none',
-            color: currentSection === 'events' ? '#10B981' : '#94A3B8',
+            color: (currentSection === 'farmer_summary' || currentSection === 'farmer_live') ? '#10B981' : '#94A3B8',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -1980,10 +2141,21 @@ export const App: React.FC = () => {
             cursor: 'pointer',
             padding: '4px 8px'
           }}
-          title={isKannada ? 'ಕಾರ್ಯಕ್ರಮಗಳು (Events)' : 'Events & Festivals'}
+          title={isKannada ? '🌾 ಖಾಸಗಿ ರೈತ & ಕುಟುಂಬ AI' : '🌾 My Farmer & Family Summary'}
         >
-          <Calendar size={22} color={currentSection === 'events' ? '#10B981' : '#94A3B8'} />
-          <span>{isKannada ? 'ಕಾರ್ಯಕ್ರಮ' : 'Events'}</span>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Wheat size={22} color={(currentSection === 'farmer_summary' || currentSection === 'farmer_live') ? '#10B981' : '#94A3B8'} />
+            <Sparkles
+              size={11}
+              color="#10B981"
+              style={{
+                position: 'absolute',
+                top: -3,
+                right: -6
+              }}
+            />
+          </div>
+          <span>{isKannada ? 'ರೈತ & ಕುಟುಂಬ' : 'Farmer AI'}</span>
         </button>
 
         {/* Tab 4: Ask AI / Voice Assistant */}

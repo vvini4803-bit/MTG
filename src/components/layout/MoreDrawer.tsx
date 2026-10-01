@@ -50,6 +50,8 @@ export const MoreDrawer: React.FC<MoreDrawerProps> = ({
     {
       title: isKannada ? 'ಗ್ರಾಮ ಸೇವೆಗಳು & ಜ್ಞಾನ' : 'Village Services & Hubs',
       items: [
+        { id: 'farmer_summary', label: isKannada ? '🌾 ನನ್ನ ಕೃಷಿ & ಕುಟುಂಬ ಸಾರಾಂಶ' : '🌾 My Farmer Summary', icon: Wheat, color: '#10B981' },
+        { id: 'farmer_live', label: isKannada ? '🤖 ಎಂಟಿಜಿ ರೈತ AI ಲೈವ್' : '🤖 MTG Farmer AI Live', icon: Mic, color: '#06B6D4' },
         { id: 'events', label: isKannada ? '📅 ಕಾರ್ಯಕ್ರಮಗಳು (Events)' : '📅 Events & Festivals', icon: Calendar, color: '#F59E0B' },
         { id: 'photo_analyzer', label: isKannada ? 'AI ಫೋಟೋ ವಿಶ್ಲೇಷಕ (Gemini)' : 'AI Photo Analyzer (Gemini)', icon: Camera, color: '#06B6D4' },
         { id: 'agriculture', label: isKannada ? 'ಕೃಷಿ ಮಾಹಿತಿ ಕೇಂದ್ರ' : 'Agriculture Hub', icon: Wheat, color: '#10B981' },

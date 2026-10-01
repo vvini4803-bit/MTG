@@ -3,6 +3,7 @@ import { UserProfile, UserRole } from '../types';
 import { SEED_USERS, isSuperAdminEmail } from '../services/seedData';
 import { realtimeSync } from '../services/realtimeSync';
 import { dbService } from '../services/dbService';
+import { farmerService } from '../services/farmerService';
 import { auth, db, googleProvider } from '../services/firebaseConfig';
 import {
   createUserWithEmailAndPassword,
@@ -417,6 +418,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Logout button that signs the user out and returns to the auth screen
    */
   const logout = async () => {
+    if (currentUser?.uid) {
+      farmerService.clearUserState(currentUser.uid);
+    }
     if (auth) {
       try {
         await signOut(auth);

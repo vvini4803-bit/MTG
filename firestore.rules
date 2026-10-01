@@ -128,6 +128,14 @@ service cloud.firestore {
       allow create: if isOwner(userId) || isAdmin();
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isSuperAdmin();
+
+      // ===============================================================
+      // 🌾 Private Farmer & Family Summary (Strict User Ownership)
+      // ===============================================================
+      // NEVER visible to other users or public visitors
+      match /farmerSummary/{document=**} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      }
     }
 
     // ===============================================================
