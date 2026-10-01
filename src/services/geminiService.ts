@@ -1,5 +1,5 @@
 import { dbService } from './dbService';
-import { Language, UserProfile, ExpenseCategory, CommitteeRole } from '../types';
+import { Language, UserProfile, ExpenseCategory, CommitteeRole, MarketPriceRecord } from '../types';
 import { isSuperAdminEmail } from '../context/AuthContext';
 
 // Pool of Gemini API keys for seamless quota load balancing and failover
@@ -906,6 +906,59 @@ Period: ${month || new Date().getFullYear().toString()}
 - Total Expenses: ₹${summary.totalExpenses.toLocaleString()}
 - Net Available Cash/Bank Balance: ₹${summary.availableBalance.toLocaleString()}
 Certified by: MTG Committee Audit Board`;
+    }
+  }
+
+  /**
+   * Explains official agricultural market prices in clear, farmer-friendly terms (English/Kannada).
+   * Strict safety: NEVER fabricates prices, dates, markets, or statistics.
+   */
+  public async explainMarketPrices(
+    record: MarketPriceRecord,
+    isKannada: boolean = false
+  ): Promise<string> {
+    const minStr = record.minPrice > 0 ? `₹${record.minPrice.toLocaleString('en-IN')}` : 'Not available';
+    const maxStr = record.maxPrice > 0 ? `₹${record.maxPrice.toLocaleString('en-IN')}` : 'Not available';
+    const modalStr = record.modalPrice > 0 ? `₹${record.modalPrice.toLocaleString('en-IN')}` : 'Not available';
+    const arrivalStr =
+      record.arrivalQuantity !== undefined && record.arrivalQuantity !== null && record.arrivalQuantity > 0
+        ? `${record.arrivalQuantity} ${record.unitArrival || record.arrivalUnit || 'tonnes'}`
+        : 'Not available';
+
+    // Factual default fallback in case Gemini API is offline or quota reached
+    const defaultKn = `ಅಧಿಕೃತ ಸರ್ಕಾರಿ AGMARKNET ದತ್ತಾಂಶದ ಪ್ರಕಾರ, ${record.market} ಮಾರುಕಟ್ಟೆಯಲ್ಲಿ ${record.commodity} ಬೆಳೆಯ ಇತ್ತೀಚಿನ ಮಾದರಿ ಬೆಲೆ ಕ್ವಿಂಟಾಲ್‌ಗೆ ${modalStr} ಆಗಿದೆ. ಕನಿಷ್ಠ ಬೆಲೆ ${minStr} ಮತ್ತು ಗರಿಷ್ಠ ಬೆಲೆ ${maxStr} ದಾಖಲಾಗಿದೆ. ಒಟ್ಟು ಆಗಮನ: ${arrivalStr} (ವರದಿ ದಿನಾಂಕ: ${record.arrivalDate}).`;
+    const defaultEn = `According to official AGMARKNET Government of India data, the latest reported modal price for ${record.commodity} at ${record.market} is ${modalStr} per quintal. The minimum price is ${minStr} and maximum price is ${maxStr}. Total arrivals: ${arrivalStr} (Report date: ${record.arrivalDate}).`;
+
+    const systemInstruction = `You are a helpful, respectful agricultural advisor for Karnataka village farmers.
+Your job is to explain the provided government market price data in simple, clear, farmer-friendly language.
+CRITICAL MANDATORY RULES:
+1. NEVER invent, extrapolate, or hallucinate any prices, market names, arrival quantities, or dates.
+2. Only use the EXACT values provided in the prompt.
+3. If a value is missing or "Not available", clearly state that it is not available.
+4. If language is Kannada, write in warm, simple spoken Kannada suitable for a village farmer.
+5. Keep your explanation to 2-3 concise, informative sentences.`;
+
+    const prompt = `Official Government Market Data (AGMARKNET):
+- State: ${record.state}
+- District: ${record.district}
+- Market: ${record.market}
+- Commodity: ${record.commodity}
+${record.variety ? `- Variety: ${record.variety}` : ''}
+${record.grade ? `- Grade: ${record.grade}` : ''}
+- Minimum Price: ${minStr} / quintal
+- Maximum Price: ${maxStr} / quintal
+- Modal Price: ${modalStr} / quintal
+- Arrival Quantity: ${arrivalStr}
+- Arrival / Report Date: ${record.arrivalDate}
+
+Please explain this price report to a farmer in ${isKannada ? 'Kannada (ಕನ್ನಡ)' : 'English'}.`;
+
+    try {
+      const res = await this.callGeminiAPI(prompt, systemInstruction, false);
+      return res || (isKannada ? defaultKn : defaultEn);
+    } catch (e) {
+      console.warn('Gemini explainMarketPrices fallback to template:', e);
+      return isKannada ? defaultKn : defaultEn;
     }
   }
 }

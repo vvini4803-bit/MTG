@@ -18,7 +18,8 @@ export type MainSection =
   | 'notifications'
   | 'settings'
   | 'photo_analyzer'
-  | 'farmer_summary';
+  | 'farmer_summary'
+  | 'market_prices';
 
 type ModalCloseHandler = () => void;
 

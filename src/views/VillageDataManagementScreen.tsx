@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { dbService } from '../services/dbService';
+import { marketPriceService } from '../services/marketPriceService';
+import { MarketPriceRecord } from '../types/market';
 import {
   Database,
   ArrowLeft,
@@ -10,7 +12,10 @@ import {
   AlertTriangle,
   FileJson,
   FileSpreadsheet,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw,
+  ExternalLink,
+  Wheat
 } from 'lucide-react';
 
 interface VillageDataManagementScreenProps {
@@ -22,6 +27,61 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
   const [isDemo, setIsDemo] = useState(dbService.getDemoMode());
   const [importJsonText, setImportJsonText] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
+
+  // AGMARKNET Government Data Sync State
+  const [marketStatus, setMarketStatus] = useState<{
+    loading: boolean;
+    marketsCount: number;
+    commoditiesCount: number;
+    recordsCount: number;
+    lastFetchTime: string;
+    reportDate: string;
+    status: 'CONNECTED' | 'ERROR';
+    source: string;
+    isCached: boolean;
+  }>({
+    loading: true,
+    marketsCount: 0,
+    commoditiesCount: 0,
+    recordsCount: 0,
+    lastFetchTime: 'Not synced yet',
+    reportDate: 'Pending',
+    status: 'CONNECTED',
+    source: 'AGMARKNET / GOI',
+    isCached: false
+  });
+
+  const checkMarketStatus = async (force: boolean = false) => {
+    setMarketStatus((prev) => ({ ...prev, loading: true }));
+    try {
+      const res = await marketPriceService.getMarketPrices({ state: 'Karnataka' }, force);
+      const uniqueMarkets = new Set(res.records.map((r: MarketPriceRecord) => r.market)).size;
+      const uniqueCommodities = new Set(res.records.map((r: MarketPriceRecord) => r.commodity)).size;
+
+      setMarketStatus({
+        loading: false,
+        marketsCount: uniqueMarkets,
+        commoditiesCount: uniqueCommodities,
+        recordsCount: res.records.length,
+        lastFetchTime: res.lastUpdated || new Date().toLocaleString(),
+        reportDate: res.reportDate,
+        status: 'CONNECTED',
+        source: res.source,
+        isCached: res.isCached
+      });
+    } catch (e) {
+      setMarketStatus((prev) => ({
+        ...prev,
+        loading: false,
+        status: 'ERROR',
+        lastFetchTime: new Date().toLocaleString()
+      }));
+    }
+  };
+
+  useEffect(() => {
+    checkMarketStatus();
+  }, []);
 
   const handleToggleDemoMode = () => {
     const next = !isDemo;
@@ -178,6 +238,98 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
           <Upload size={16} />
           <span>Validate & Import Data</span>
         </button>
+      </div>
+
+      {/* 🌾 SECTION: Government Agricultural Market Data Status (AGMARKNET) */}
+      <div className="glass-card" style={{ padding: '24px', marginTop: '28px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Wheat size={20} color="#10B981" />
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
+                {isKannada ? 'ಸರ್ಕಾರಿ ಕೃಷಿ ಮಾರುಕಟ್ಟೆ ದತ್ತಾಂಶ ಸ್ಥಿತಿ' : 'Government Agricultural Market Data Status'}
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+              AGMARKNET 2.0 / Open Government Data Platform (data.gov.in) API Sync Health
+            </p>
+          </div>
+
+          <button
+            onClick={() => checkMarketStatus(true)}
+            disabled={marketStatus.loading}
+            className="btn-secondary"
+            style={{
+              padding: '8px 16px',
+              color: '#34D399',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              background: 'rgba(16, 185, 129, 0.12)'
+            }}
+          >
+            <RefreshCw size={15} className={marketStatus.loading ? 'animate-spin' : ''} />
+            <span>{marketStatus.loading ? 'Testing...' : 'Test Connection & Sync Now'}</span>
+          </button>
+        </div>
+
+        {/* Status Metrics Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '16px' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '14px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '0.74rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 700 }}>
+              Connection Status
+            </span>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: marketStatus.status === 'CONNECTED' ? '#34D399' : '#EF4444', marginTop: '4px' }}>
+              {marketStatus.status === 'CONNECTED' ? '● Connected (HTTP 200)' : '● Offline / Error'}
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '14px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '0.74rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 700 }}>
+              Reporting APMC Markets
+            </span>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', marginTop: '4px' }}>
+              {marketStatus.marketsCount} APMCs (Karnataka)
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '14px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '0.74rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 700 }}>
+              Commodities Reporting
+            </span>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', marginTop: '4px' }}>
+              {marketStatus.commoditiesCount} Commodities
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '14px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '0.74rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 700 }}>
+              Latest Arrival Report Date
+            </span>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FCD34D', marginTop: '4px' }}>
+              {marketStatus.reportDate}
+            </div>
+          </div>
+        </div>
+
+        {/* Notice on Official Source Integrity */}
+        <div
+          style={{
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            fontSize: '0.78rem',
+            color: '#93C5FD',
+            lineHeight: 1.5,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '10px'
+          }}
+        >
+          <ShieldCheck size={18} style={{ flexShrink: 0, marginTop: '2px', color: '#60A5FA' }} />
+          <div>
+            <strong>Government Data Integrity Rule:</strong> Agricultural market prices are fetched directly from the official Government of India AGMARKNET portal via secure backend integration. Admins cannot manually modify or fabricate government prices. In the event of source downtime, cached public values are displayed with clear timestamp attribution.
+          </div>
+        </div>
       </div>
     </div>
   );

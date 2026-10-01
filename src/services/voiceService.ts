@@ -1,5 +1,6 @@
 import { dbService } from './dbService';
 import { geminiService } from './geminiService';
+import { marketPriceService } from './marketPriceService';
 import { Language } from '../types';
 
 export interface VoiceQueryResponse {
@@ -175,6 +176,119 @@ export class VoiceAssistantService {
     }
 
     const q = prompt.toLowerCase().trim();
+
+    // 0. Agricultural Market Prices queries (AGMARKNET Government Data)
+    const isMarketQuery =
+      q.includes('price') ||
+      q.includes('rate') ||
+      q.includes('market') ||
+      q.includes('apmc') ||
+      q.includes('mandi') ||
+      q.includes('ಬೆಲೆ') ||
+      q.includes('ದರ') ||
+      q.includes('ಮಾರುಕಟ್ಟೆ') ||
+      q.includes('ಎಪಿಎಂಸಿ') ||
+      q.includes('ಮಂಡಿ') ||
+      q.includes('ದಾಳಿಂಬೆ') ||
+      q.includes('ಟೊಮೆಟೊ') ||
+      q.includes('ಟೊಮೇಟೊ') ||
+      q.includes('ಈರುಳ್ಳಿ') ||
+      q.includes('ಭತ್ತ') ||
+      q.includes('ಮೆಕ್ಕೆಜೋಳ') ||
+      q.includes('ಕಡಲೆಕಾಯಿ') ||
+      q.includes('ಶೇಂಗಾ') ||
+      q.includes('ಮೆಣಸಿನಕಾಯಿ') ||
+      q.includes('pomegranate') ||
+      q.includes('tomato') ||
+      q.includes('onion') ||
+      q.includes('paddy') ||
+      q.includes('maize') ||
+      q.includes('groundnut') ||
+      q.includes('chilli');
+
+    if (isMarketQuery) {
+      // Detect commodity
+      let detectedCrop = '';
+      let cropNameKn = '';
+      if (q.includes('pomegranate') || q.includes('ದಾಳಿಂಬೆ')) {
+        detectedCrop = 'Pomegranate';
+        cropNameKn = 'ದಾಳಿಂಬೆ';
+      } else if (q.includes('tomato') || q.includes('ಟೊಮೆಟೊ') || q.includes('ಟೊಮೇಟೊ')) {
+        detectedCrop = 'Tomato';
+        cropNameKn = 'ಟೊಮೆಟೊ';
+      } else if (q.includes('onion') || q.includes('ಈರುಳ್ಳಿ')) {
+        detectedCrop = 'Onion';
+        cropNameKn = 'ಈರುಳ್ಳಿ';
+      } else if (q.includes('paddy') || q.includes('ಭತ್ತ')) {
+        detectedCrop = 'Paddy(Common)';
+        cropNameKn = 'ಭತ್ತ';
+      } else if (q.includes('maize') || q.includes('ಮೆಕ್ಕೆಜೋಳ')) {
+        detectedCrop = 'Maize';
+        cropNameKn = 'ಮೆಕ್ಕೆಜೋಳ';
+      } else if (q.includes('groundnut') || q.includes('ಕಡಲೆಕಾಯಿ') || q.includes('ಶೇಂಗಾ')) {
+        detectedCrop = 'Groundnut';
+        cropNameKn = 'ಕಡಲೆಕಾಯಿ';
+      } else if (q.includes('chilli') || q.includes('ಮೆಣಸಿನಕಾಯಿ')) {
+        detectedCrop = 'Dry Chillies';
+        cropNameKn = 'ಒಣ ಮೆಣಸಿನಕಾಯಿ';
+      }
+
+      // Detect market or district
+      let detectedMarket = '';
+      if (q.includes('gadag') || q.includes('ಗದಗ')) detectedMarket = 'Gadag';
+      else if (q.includes('bengaluru') || q.includes('bangalore') || q.includes('ಬೆಂಗಳೂರು')) detectedMarket = 'Bengaluru';
+      else if (q.includes('hubballi') || q.includes('hubli') || q.includes('ಹುಬ್ಬಳ್ಳಿ')) detectedMarket = 'Hubballi';
+      else if (q.includes('dharwad') || q.includes('ಧಾರವಾಡ')) detectedMarket = 'Dharwad';
+      else if (q.includes('chitradurga') || q.includes('ಚಿತ್ರದುರ್ಗ') || q.includes('hosadurga') || q.includes('ಹೊಸದುರ್ಗ')) detectedMarket = 'Chitradurga';
+      else if (q.includes('davangere') || q.includes('ದಾವಣಗೆರೆ')) detectedMarket = 'Davangere';
+
+      // Ambiguity check: user asked for a crop without specifying market
+      if (detectedCrop && !detectedMarket && !q.includes('all') && !q.includes('ಎಲ್ಲಾ')) {
+        return {
+          answer_en: `Which market price would you like for ${detectedCrop}? Gadag, Bengaluru, Hubballi, or Davangere? Opening Market Prices.`,
+          answer_kn: `ಯಾವ ಮಾರುಕಟ್ಟೆಯ ${cropNameKn || detectedCrop} ಬೆಲೆ ಬೇಕು? ಗದಗ, ಬೆಂಗಳೂರು, ಹುಬ್ಬಳ್ಳಿ ಅಥವಾ ದಾವಣಗೆರೆ? ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳ ವಿಭಾಗವನ್ನು ತೆರೆಯಲಾಗುತ್ತಿದೆ.`,
+          category: 'MARKET_PRICES',
+          isVerified: true,
+          navTab: 'market_prices'
+        };
+      }
+
+      // Attempt fast fetch from marketPriceService
+      try {
+        const pricesRes = await marketPriceService.getMarketPrices({
+          state: 'Karnataka',
+          commodity: detectedCrop,
+          market: detectedMarket
+        });
+
+        const records = pricesRes.records || [];
+        if (records.length > 0) {
+          const rec = records[0];
+          const modalFmt = rec.modalPrice ? `₹${rec.modalPrice.toLocaleString('en-IN')}` : 'Not available';
+          const minFmt = rec.minPrice ? `₹${rec.minPrice.toLocaleString('en-IN')}` : 'Not available';
+          const maxFmt = rec.maxPrice ? `₹${rec.maxPrice.toLocaleString('en-IN')}` : 'Not available';
+          const arrivalFmt = rec.arrivalQuantity ? `${rec.arrivalQuantity} ${rec.unitArrival || 'tonnes'}` : 'Not available';
+
+          return {
+            answer_en: `Today's available modal price for ${rec.commodity} at ${rec.market} is ${modalFmt} per quintal (Min: ${minFmt}, Max: ${maxFmt}). Reported arrival: ${arrivalFmt} on ${rec.arrivalDate}. Source: AGMARKNET.`,
+            answer_kn: `${rec.market} ಮಾರುಕಟ್ಟೆಯಲ್ಲಿ ${rec.commodity} ಬೆಳೆಯ ಇತ್ತೀಚಿನ ಲಭ್ಯವಿರುವ ಮಾದರಿ ಬೆಲೆ ಕ್ವಿಂಟಾಲ್‌ಗೆ ${modalFmt} ಆಗಿದೆ (ಕನಿಷ್ಠ: ${minFmt}, ಗರಿಷ್ಠ: ${maxFmt}). ವರದಿ ದಿನಾಂಕ: ${rec.arrivalDate}. ಮೂಲ: AGMARKNET / ಭಾರತ ಸರ್ಕಾರ.`,
+            category: 'MARKET_PRICES',
+            isVerified: true,
+            navTab: 'market_prices'
+          };
+        }
+      } catch (err) {
+        console.warn('Voice market price fetch fallback:', err);
+      }
+
+      return {
+        answer_en: `Viewing daily agricultural market prices from AGMARKNET / Government of India. Opening Market Prices section.`,
+        answer_kn: `ಭಾರತ ಸರ್ಕಾರದ AGMARKNET ನಿಂದ ದೈನಂದಿನ ಮಾರುಕಟ್ಟೆ ದರಗಳು. ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳ ವಿಭಾಗವನ್ನು ತೆರೆಯಲಾಗುತ್ತಿದೆ.`,
+        category: 'MARKET_PRICES',
+        isVerified: true,
+        navTab: 'market_prices'
+      };
+    }
 
     // 1. Cricket / Sports queries
     if (

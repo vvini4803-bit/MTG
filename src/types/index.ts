@@ -487,9 +487,11 @@ export type ViewTab =
   | 'village_3d'
   | 'photo_analyzer'
   | 'farmer_summary'
+  | 'market_prices'
   | 'committee';
 
 export * from './farmer';
+export * from './market';
 
 export interface Conversation {
   id: string;

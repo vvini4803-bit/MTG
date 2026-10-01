@@ -36,6 +36,7 @@ import { SettingsScreen } from './views/SettingsScreen';
 import { PhotoAnalyzerScreen } from './views/PhotoAnalyzerScreen';
 import { FarmerSummaryScreen } from './views/FarmerSummaryScreen';
 import { FindPeopleScreen } from './views/FindPeopleScreen';
+import { MarketPricesScreen } from './views/MarketPricesScreen';
 import { InAppNotificationToast } from './components/notifications/InAppNotificationToast';
 import { NotificationPermissionBanner } from './components/notifications/NotificationPermissionBanner';
 import { notificationService } from './services/notificationService';
@@ -112,7 +113,8 @@ export type MainSection =
   | 'notifications'
   | 'settings'
   | 'photo_analyzer'
-  | 'farmer_summary';
+  | 'farmer_summary'
+  | 'market_prices';
 
 export const App: React.FC = () => {
   const { language, setLanguage, isKannada } = useLanguage();
@@ -412,6 +414,16 @@ export const App: React.FC = () => {
       icon: '🌾',
       color: '#84CC16',
       bgGradient: 'linear-gradient(135deg, rgba(132, 204, 22, 0.18) 0%, rgba(101, 163, 13, 0.08) 100%)'
+    },
+    {
+      id: 'market_prices' as MainSection,
+      title_en: 'MARKET PRICES',
+      title_kn: 'ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳು',
+      subtitle_en: 'Daily AGMARKNET APMC Mandi rates',
+      subtitle_kn: 'ದೈನಂದಿನ ಸರ್ಕಾರಿ ಎಪಿಎಂಸಿ ದರಗಳು',
+      icon: '🌾',
+      color: '#10B981',
+      bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.12) 100%)'
     },
     {
       id: 'temples' as MainSection,
@@ -1639,6 +1651,13 @@ export const App: React.FC = () => {
         )}
 
         {/* ============================================================ */}
+        {/* 🌾 SECTION: DAILY AGRICULTURAL MARKET PRICES (AGMARKNET)     */}
+        {/* ============================================================ */}
+        {currentSection === 'market_prices' && (
+          <MarketPricesScreen onBack={() => navigateTo('home')} />
+        )}
+
+        {/* ============================================================ */}
         {/* 🛕 SECTION 6: TEMPLES & CULTURE                              */}
         {/* ============================================================ */}
         {currentSection === 'temples' && (
@@ -1682,6 +1701,7 @@ export const App: React.FC = () => {
               else if (tab === 'events') navigateTo('events');
               else if (tab === 'sports') navigateTo('sports');
               else if (tab === 'agriculture') navigateTo('agriculture');
+              else if (tab === 'market_prices') navigateTo('market_prices');
               else if (tab === 'temples') navigateTo('temples');
               else if (tab === 'map') navigateTo('map');
               else if (tab === 'village_3d') navigateTo('village_3d');
@@ -1962,6 +1982,7 @@ export const App: React.FC = () => {
                 else if (tab === 'events') navigateTo('events');
                 else if (tab === 'sports') navigateTo('sports');
                 else if (tab === 'agriculture') navigateTo('agriculture');
+                else if (tab === 'market_prices') navigateTo('market_prices');
                 else if (tab === 'temples') navigateTo('temples');
                 else navigateTo('home');
               }}
@@ -2003,6 +2024,7 @@ export const App: React.FC = () => {
                 else if (tab === 'events') navigateTo('events');
                 else if (tab === 'sports') navigateTo('sports');
                 else if (tab === 'agriculture') navigateTo('agriculture');
+                else if (tab === 'market_prices') navigateTo('market_prices');
                 else if (tab === 'temples') navigateTo('temples');
                 else if (tab === 'messages') {
                   navigateTo('messages');
@@ -2333,6 +2355,7 @@ export const App: React.FC = () => {
           else if (tab === 'events') navigateTo('events');
           else if (tab === 'sports') navigateTo('sports');
           else if (tab === 'agriculture') navigateTo('agriculture');
+          else if (tab === 'market_prices') navigateTo('market_prices');
           else if (tab === 'temples') navigateTo('temples');
           else if (tab === 'photo_analyzer') navigateTo('photo_analyzer');
           else navigateTo('home');
