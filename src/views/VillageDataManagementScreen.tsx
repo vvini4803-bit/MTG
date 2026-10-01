@@ -47,7 +47,7 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
     lastFetchTime: 'Not synced yet',
     reportDate: 'Pending',
     status: 'CONNECTED',
-    source: 'Gemini AI Mandi Engine',
+    source: 'AGMARKNET 2.0 / GOI + Gemini AI',
     isCached: false
   });
 
@@ -240,35 +240,61 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
         </button>
       </div>
 
-      {/* 🌾 SECTION: Gemini AI Agricultural Market Engine Status */}
+      {/* 🌾 SECTION: AGMARKNET & Gemini AI Agricultural Market Engine Status */}
       <div className="glass-card" style={{ padding: '24px', marginTop: '28px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Wheat size={20} color="#10B981" />
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
-                {isKannada ? 'ಜೆಮಿನಿ AI ಕೃಷಿ ಮಾರುಕಟ್ಟೆ ಎಂಜಿನ್ ಸ್ಥಿತಿ' : 'Gemini AI Agricultural Market Engine Status'}
+                {isKannada ? 'AGMARKNET 2.0 ಮತ್ತು ಜೆಮಿನಿ AI ಕೃಷಿ ಮಾರುಕಟ್ಟೆ ಎಂಜಿನ್' : 'AGMARKNET 2.0 & Gemini AI Market Engine Status'}
               </h3>
             </div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-              Powered by Google Gemini AI • Karnataka APMC Mandi Daily Intelligence Sync Health
+              Official Government Portal (agmarknet.gov.in) & Google Gemini AI • Karnataka APMC Mandi Daily Intelligence
             </p>
           </div>
 
-          <button
-            onClick={() => checkMarketStatus(true)}
-            disabled={marketStatus.loading}
-            className="btn-secondary"
-            style={{
-              padding: '8px 16px',
-              color: '#34D399',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              background: 'rgba(16, 185, 129, 0.12)'
-            }}
-          >
-            <RefreshCw size={15} className={marketStatus.loading ? 'animate-spin' : ''} />
-            <span>{marketStatus.loading ? 'Testing...' : 'Test Connection & Sync Now'}</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <a
+              href="https://www.agmarknet.gov.in/home"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary"
+              style={{
+                padding: '8px 14px',
+                color: '#34D399',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.82rem'
+              }}
+            >
+              <span>{isKannada ? 'ಅಧಿಕೃತ AGMARKNET' : 'Official AGMARKNET'}</span>
+              <ExternalLink size={14} />
+            </a>
+
+            <button
+              onClick={() => checkMarketStatus(true)}
+              disabled={marketStatus.loading}
+              className="btn-secondary"
+              style={{
+                padding: '8px 16px',
+                color: '#34D399',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                background: 'rgba(16, 185, 129, 0.12)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <RefreshCw size={15} className={marketStatus.loading ? 'animate-spin' : ''} />
+              <span>{marketStatus.loading ? 'Testing...' : 'Test Connection & Sync Now'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Status Metrics Grid */}
@@ -278,7 +304,7 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
               Connection Status
             </span>
             <div style={{ fontSize: '1.15rem', fontWeight: 800, color: marketStatus.status === 'CONNECTED' ? '#34D399' : '#EF4444', marginTop: '4px' }}>
-              {marketStatus.status === 'CONNECTED' ? '● Connected (Gemini AI Live)' : '● Offline / Error'}
+              {marketStatus.status === 'CONNECTED' ? '● Connected (AGMARKNET + AI)' : '● Offline / Error'}
             </div>
           </div>
 
@@ -327,7 +353,7 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
         >
           <ShieldCheck size={18} style={{ flexShrink: 0, marginTop: '2px', color: '#60A5FA' }} />
           <div>
-            <strong>Market Data Engine:</strong> Agricultural market prices, modal rates, and market trends are powered directly by Gemini AI with verified Karnataka APMC calibration. Prices are updated daily with full district coverage and automated alerts.
+            <strong>Hybrid Official AGMARKNET & Gemini AI Engine:</strong> Daily agricultural market rates are sourced directly from Directorate of Marketing & Inspection (DMI), Ministry of Agriculture & Farmers Welfare, Government of India (agmarknet.gov.in) and data.gov.in. Real-time market advisory, voice synthesis, price comparisons, and high-availability uptime failover are managed continuously via Google Gemini AI.
           </div>
         </div>
       </div>

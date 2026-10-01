@@ -1,6 +1,4 @@
-// Universal Serverless handler for Agricultural Market Prices
-// Powered by Gemini AI & MTG Digital Mandi Intelligence
-
+// Self-contained types for universal serverless & Vite dev compatibility
 export interface RequestLike {
   method?: string;
   query: Record<string, string | string[] | undefined>;
@@ -15,12 +13,89 @@ export interface ResponseLike {
   end: (data?: any) => void;
 }
 
+// In-memory cache to prevent repeatedly hammering the government AGMARKNET portal
 interface CacheEntry {
   timestamp: number;
   data: any;
 }
 const cache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 20 * 60 * 1000; // 20 minutes
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+const AGMARKNET_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+  'Referer': 'https://agmarknet.gov.in/',
+  'Origin': 'https://agmarknet.gov.in'
+};
+
+// District lookup helper for Karnataka APMC markets
+const KARNATAKA_MARKET_DISTRICT_MAP: Record<string, string> = {
+  'Gadag': 'Gadag',
+  'Bengaluru': 'Bengaluru Urban',
+  'Binny Mill': 'Bengaluru Urban',
+  'Yeshwanthpur': 'Bengaluru Urban',
+  'Hubballi': 'Dharwad',
+  'Dharwad': 'Dharwad',
+  'Davangere': 'Davangere',
+  'Challakere': 'Chitradurga',
+  'Chitradurga': 'Chitradurga',
+  'Hosadurga': 'Chitradurga',
+  'Hiriyur': 'Chitradurga',
+  'Holalkere': 'Chitradurga',
+  'Kalaburagi': 'Kalaburagi',
+  'Ballari': 'Ballari',
+  'Bellary': 'Ballari',
+  'Belagavi': 'Belagavi',
+  'Mysuru': 'Mysuru',
+  'Mysore': 'Mysuru',
+  'Mandya': 'Mandya',
+  'Hassan': 'Hassan',
+  'Arasikere': 'Hassan',
+  'Tumkur': 'Tumakuru',
+  'Tumakuru': 'Tumakuru',
+  'Tiptur': 'Tumakuru',
+  'Kolar': 'Kolar',
+  'Bangarpet': 'Kolar',
+  'Malur': 'Kolar',
+  'Chikkaballapura': 'Chikkaballapura',
+  'Bagepalli': 'Chikkaballapura',
+  'Chintamani': 'Chikkaballapura',
+  'Chamarajanagar': 'Chamarajanagar',
+  'Gundlupet': 'Chamarajanagar',
+  'Shimoga': 'Shivamogga',
+  'Shivamogga': 'Shivamogga',
+  'Sagar': 'Shivamogga',
+  'Thirthahalli': 'Shivamogga',
+  'Udupi': 'Udupi',
+  'Mangalore': 'Dakshina Kannada',
+  'Puttur': 'Dakshina Kannada',
+  'Madikeri': 'Kodagu',
+  'Somvarpet': 'Kodagu',
+  'Koppal': 'Koppal',
+  'Gangavathi': 'Koppal',
+  'Raichur': 'Raichur',
+  'Sindhanur': 'Raichur',
+  'Yadgir': 'Yadgir',
+  'Bidar': 'Bidar',
+  'Bagalkote': 'Bagalkote',
+  'Badami': 'Bagalkote',
+  'Vijayapura': 'Vijayapura',
+  'Bijapur': 'Vijayapura',
+  'Haveri': 'Haveri',
+  'Ranebennur': 'Haveri',
+  'Byadgi': 'Haveri',
+  'Karwar': 'Uttara Kannada',
+  'Sirsi': 'Uttara Kannada'
+};
+
+function resolveDistrict(marketName: string): string {
+  for (const [key, district] of Object.entries(KARNATAKA_MARKET_DISTRICT_MAP)) {
+    if (marketName.toLowerCase().includes(key.toLowerCase())) {
+      return district;
+    }
+  }
+  return 'Karnataka APMC';
+}
 
 function formatDateISO(d: Date): string {
   const year = d.getFullYear();
@@ -50,6 +125,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   try {
     const {
       state = 'Karnataka',
+      stateId = '16',
       district,
       market,
       commodity,
@@ -58,170 +134,234 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       period = '7d'
     } = req.query;
 
-    const todayStr = typeof date === 'string' && date.trim() ? date.trim() : formatDateISO(new Date());
-    const cacheKey = `gemini_mandi_${todayStr}_${history || 'false'}_${period}_${commodity || 'all'}_${market || 'all'}`;
+    const cacheKey = `agmark_${stateId}_${date || 'latest'}_${history || 'false'}_${period}`;
     const now = Date.now();
 
     // Check cache
     const cached = cache.get(cacheKey);
     if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-      return res.status(200).json(cached.data);
+      let filtered = filterRecords(cached.data.records, { district, market, commodity });
+      return res.status(200).json({
+        ...cached.data,
+        records: filtered,
+        totalRecords: filtered.length,
+        cached: true
+      });
     }
 
     // 1. If History is requested
     if (history === 'true') {
-      const daysCount = period === '7d' ? 7 : period === '15d' ? 15 : period === '30d' ? 30 : 90;
-      const historyData = generateHistoryPoints(commodity as string || 'Pomegranate', market as string || 'Karnataka APMC', daysCount);
-      const historyResponse = {
+      const historyData = await fetchHistoryData(Number(stateId), commodity as string, market as string, period as string);
+      return res.status(200).json({
         success: true,
-        source: 'Gemini AI Live Mandi Engine',
+        source: 'AGMARKNET / Government of India',
         commodity: commodity || 'All',
         market: market || 'All',
         history: historyData
-      };
-      cache.set(cacheKey, { timestamp: now, data: historyResponse });
-      return res.status(200).json(historyResponse);
+      });
     }
 
-    // 2. Daily Market Records
-    const records = generateDailyRecords(todayStr, district as string, commodity as string);
-    let filtered = records;
-    if (market && market !== 'ALL') {
-      const mLower = (market as string).toLowerCase();
-      filtered = filtered.filter((r) => r.market.toLowerCase().includes(mLower));
+    // 2. Fetch daily report from Government AGMARKNET 2.0 API
+    // If a specific date is provided, try that first; otherwise try today, yesterday, and recent business days
+    const datesToTry: string[] = [];
+    if (typeof date === 'string' && date.trim()) {
+      datesToTry.push(date.trim());
+    } else {
+      const today = new Date();
+      datesToTry.push(formatDateISO(today));
+      for (let i = 1; i <= 5; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        datesToTry.push(formatDateISO(d));
+      }
     }
 
-    const marketsSet = new Set<string>(records.map((r) => r.market));
-    const commoditiesSet = new Set<string>(records.map((r) => r.commodity));
+    let reportJson: any = null;
+    let successfulDate = '';
 
-    const responseData = {
+    for (const testDate of datesToTry) {
+      const url = `https://api.agmarknet.gov.in/v1/prices-and-arrivals/commodity-market/daily-report-state?date=${testDate}&state=${stateId}&includeExcel=false`;
+      try {
+        const response = await fetch(url, { headers: AGMARKNET_HEADERS });
+        if (response.ok) {
+          const json = await response.json();
+          if (json && json.success && Array.isArray(json.commodityGroups) && json.commodityGroups.length > 0) {
+            reportJson = json;
+            successfulDate = testDate;
+            break;
+          }
+        }
+      } catch (err) {
+        // Continue trying next recent date
+      }
+    }
+
+    if (!reportJson || !reportJson.commodityGroups) {
+      return res.status(200).json({
+        success: false,
+        message: 'No market-price data is available from AGMARKNET for this period.',
+        source: 'AGMARKNET / Government of India',
+        reportingDate: datesToTry[0],
+        totalRecords: 0,
+        markets: [],
+        commodities: [],
+        records: []
+      });
+    }
+
+    // Normalize Government AGMARKNET response
+    const allRecords: any[] = [];
+    const marketsSet = new Set<string>();
+    const commoditiesSet = new Set<string>();
+
+    for (const group of reportJson.commodityGroups || []) {
+      const groupName = group.CommodityGroup || 'Other';
+      for (const comm of group.commodities || []) {
+        const commName = comm.commodityName || 'Unknown';
+        commoditiesSet.add(commName);
+
+        for (const mkt of comm.markets || []) {
+          const marketName = mkt.marketCenter || 'Unknown APMC';
+          marketsSet.add(marketName);
+          const districtName = resolveDistrict(marketName);
+
+          for (const item of mkt.data || []) {
+            allRecords.push({
+              id: `${commName}_${marketName}_${item.variety || 'std'}_${successfulDate}`.replace(/[\s/\\()]+/g, '_'),
+              state: typeof state === 'string' ? state : 'Karnataka',
+              district: districtName,
+              market: marketName,
+              commodity: commName,
+              commodityGroup: groupName,
+              variety: item.variety || 'FAQ / Standard',
+              grade: 'FAQ (Fair Average Quality)',
+              arrivalDate: successfulDate,
+              minPrice: Number(item.minimumPrice) || 0,
+              maxPrice: Number(item.maximumPrice) || 0,
+              modalPrice: Number(item.modalPrice) || 0,
+              arrivalQuantity: item.arrivals != null ? Number(item.arrivals) : null,
+              arrivalUnit: item.unitOfArrivals || 'Metric Tonnes',
+              priceUnit: item.unitOfPrice || 'Rs./Quintal',
+              source: 'AGMARKNET / Government of India',
+              fetchedAt: new Date().toISOString()
+            });
+          }
+        }
+      }
+    }
+
+    const payload = {
       success: true,
-      source: 'Gemini AI Live Mandi Engine',
+      source: 'AGMARKNET / Government of India',
+      portalUrl: 'https://agmarknet.gov.in/home',
       lastUpdated: new Date().toISOString(),
-      reportingDate: todayStr,
-      reportDate: todayStr,
+      reportingDate: successfulDate,
       state: typeof state === 'string' ? state : 'Karnataka',
-      totalRecords: filtered.length,
       markets: Array.from(marketsSet).sort(),
       commodities: Array.from(commoditiesSet).sort(),
-      records: filtered,
-      cached: false,
-      isCached: false
+      records: allRecords
     };
 
-    cache.set(cacheKey, { timestamp: now, data: responseData });
-    return res.status(200).json(responseData);
-  } catch (err: any) {
-    console.error('Market price API error:', err);
+    // Store in cache
+    cache.set(cacheKey, { timestamp: now, data: payload });
+
+    // Apply client filters if provided
+    const filtered = filterRecords(allRecords, { district, market, commodity });
+
+    return res.status(200).json({
+      ...payload,
+      records: filtered,
+      totalRecords: filtered.length,
+      cached: false
+    });
+  } catch (error: any) {
+    console.error('Market prices API error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to process market prices request',
-      message: err?.message || 'Internal Server Error'
+      message: 'Failed to retrieve agricultural market prices. Please try again.',
+      error: error.message
     });
   }
 }
 
-function generateHistoryPoints(commodity: string, market: string, daysCount: number) {
-  const points: any[] = [];
-  const baseMap: Record<string, number> = {
-    pomegranate: 12500,
-    tomato: 2150,
-    onion: 2800,
-    paddy: 2620,
-    maize: 2320,
-    groundnut: 7300,
-    chilli: 23500,
-    chillies: 23500,
-    cotton: 7800,
-    arecanut: 48000,
-    coconut: 3350
-  };
+function filterRecords(
+  records: any[],
+  filters: { district?: any; market?: any; commodity?: any }
+) {
+  let list = records;
+  if (filters.district && typeof filters.district === 'string' && filters.district !== 'ALL') {
+    const q = filters.district.toLowerCase();
+    list = list.filter((r) => r.district.toLowerCase().includes(q));
+  }
+  if (filters.market && typeof filters.market === 'string' && filters.market !== 'ALL') {
+    const q = filters.market.toLowerCase();
+    list = list.filter((r) => r.market.toLowerCase().includes(q));
+  }
+  if (filters.commodity && typeof filters.commodity === 'string' && filters.commodity !== 'ALL') {
+    const q = filters.commodity.toLowerCase();
+    list = list.filter((r) => r.commodity.toLowerCase().includes(q));
+  }
+  return list;
+}
 
-  let basePrice = 5000;
-  const commLower = commodity.toLowerCase();
-  for (const [k, p] of Object.entries(baseMap)) {
-    if (commLower.includes(k)) {
-      basePrice = p;
-      break;
+// Fetch historical dates for a commodity / market
+async function fetchHistoryData(
+  stateId: number,
+  commodity?: string,
+  market?: string,
+  period: string = '7d'
+) {
+  const daysCount = period === '3m' ? 90 : period === '30d' ? 30 : period === '15d' ? 15 : 7;
+  const historyPoints: any[] = [];
+  const today = new Date();
+
+  // Pick up to 6 evenly spaced sample dates across the selected period
+  const step = Math.max(1, Math.floor(daysCount / 6));
+  const dates: string[] = [];
+  for (let i = 0; i < daysCount; i += step) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    dates.push(formatDateISO(d));
+  }
+
+  for (const dateStr of dates) {
+    const url = `https://api.agmarknet.gov.in/v1/prices-and-arrivals/commodity-market/daily-report-state?date=${dateStr}&state=${stateId}&includeExcel=false`;
+    try {
+      const response = await fetch(url, { headers: AGMARKNET_HEADERS });
+      if (response.ok) {
+        const json = await response.json();
+        if (json?.success && Array.isArray(json.commodityGroups)) {
+          for (const g of json.commodityGroups) {
+            for (const c of g.commodities || []) {
+              if (!commodity || c.commodityName?.toLowerCase().includes(commodity.toLowerCase())) {
+                for (const m of c.markets || []) {
+                  if (!market || m.marketCenter?.toLowerCase().includes(market.toLowerCase())) {
+                    const firstData = m.data?.[0];
+                    if (firstData) {
+                      historyPoints.push({
+                        date: dateStr,
+                        displayDate: new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+                        commodity: c.commodityName,
+                        market: m.marketCenter,
+                        minPrice: Number(firstData.minimumPrice) || 0,
+                        maxPrice: Number(firstData.maximumPrice) || 0,
+                        modalPrice: Number(firstData.modalPrice) || 0,
+                        arrivals: firstData.arrivals != null ? Number(firstData.arrivals) : null
+                      });
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore single date failure
     }
   }
 
-  for (let i = daysCount - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = formatDateISO(d);
-    const sine = Math.sin((i / daysCount) * Math.PI * 2) * 0.04;
-    const noise = (((i * 19) % 13) - 6) * 0.004;
-    const modal = Math.round((basePrice * (1 + sine + noise)) / 10) * 10;
-
-    points.push({
-      date: dateStr,
-      displayDate: d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
-      commodity,
-      market,
-      minPrice: Math.round(modal * 0.82),
-      maxPrice: Math.round(modal * 1.18),
-      modalPrice: modal,
-      arrivals: Math.round(35 + ((i * 5) % 20))
-    });
-  }
-
-  return points;
-}
-
-function generateDailyRecords(targetDate: string, district?: string, commodity?: string) {
-  const baseList = [
-    { commodity: 'Pomegranate', commodityKn: 'ದಾಳಿಂಬೆ', commodityGroup: 'Fruits', market: 'Chitradurga APMC', district: 'Chitradurga', variety: 'Bhagwa / Kesar', grade: 'FAQ', minPrice: 9500, maxPrice: 15500, modalPrice: 12500, arrivalQuantity: 42, arrivalUnit: 'Tonnes' },
-    { commodity: 'Pomegranate', commodityKn: 'ದಾಳಿಂಬೆ', commodityGroup: 'Fruits', market: 'Challakere APMC', district: 'Chitradurga', variety: 'Bhagwa', grade: 'FAQ', minPrice: 9000, maxPrice: 14800, modalPrice: 11800, arrivalQuantity: 28, arrivalUnit: 'Tonnes' },
-    { commodity: 'Pomegranate', commodityKn: 'ದಾಳಿಂಬೆ', commodityGroup: 'Fruits', market: 'Gadag APMC', district: 'Gadag', variety: 'Kesar', grade: 'FAQ', minPrice: 9800, maxPrice: 15200, modalPrice: 12800, arrivalQuantity: 35, arrivalUnit: 'Tonnes' },
-    { commodity: 'Pomegranate', commodityKn: 'ದಾಳಿಂಬೆ', commodityGroup: 'Fruits', market: 'Binny Mill (FF&V) Bengaluru APMC', district: 'Bengaluru Urban', variety: 'Arakta / Bhagwa', grade: 'Grade A', minPrice: 11000, maxPrice: 17500, modalPrice: 14200, arrivalQuantity: 85, arrivalUnit: 'Tonnes' },
-    { commodity: 'Tomato', commodityKn: 'ಟೊಮೆಟೊ', commodityGroup: 'Vegetables', market: 'Bengaluru APMC', district: 'Bengaluru Urban', variety: 'Hybrid Tomato', grade: 'FAQ', minPrice: 1600, maxPrice: 2600, modalPrice: 2150, arrivalQuantity: 340, arrivalUnit: 'Tonnes' },
-    { commodity: 'Tomato', commodityKn: 'ಟೊಮೆಟೊ', commodityGroup: 'Vegetables', market: 'Kolar APMC', district: 'Kolar', variety: 'Local / Hybrid', grade: 'FAQ', minPrice: 1500, maxPrice: 2400, modalPrice: 1950, arrivalQuantity: 420, arrivalUnit: 'Tonnes' },
-    { commodity: 'Tomato', commodityKn: 'ಟೊಮೆಟೊ', commodityGroup: 'Vegetables', market: 'Davangere APMC', district: 'Davangere', variety: 'Local', grade: 'FAQ', minPrice: 1400, maxPrice: 2200, modalPrice: 1850, arrivalQuantity: 95, arrivalUnit: 'Tonnes' },
-    { commodity: 'Onion', commodityKn: 'ಈರುಳ್ಳಿ', commodityGroup: 'Vegetables', market: 'Challakere APMC', district: 'Chitradurga', variety: 'Bellary Onion', grade: 'FAQ', minPrice: 2100, maxPrice: 3400, modalPrice: 2800, arrivalQuantity: 160, arrivalUnit: 'Tonnes' },
-    { commodity: 'Onion', commodityKn: 'ಈರುಳ್ಳಿ', commodityGroup: 'Vegetables', market: 'APMC Hubballi', district: 'Dharwad', variety: 'Hubli Red', grade: 'Medium', minPrice: 2200, maxPrice: 3500, modalPrice: 2950, arrivalQuantity: 280, arrivalUnit: 'Tonnes' },
-    { commodity: 'Onion', commodityKn: 'ಈರುಳ್ಳಿ', commodityGroup: 'Vegetables', market: 'Gadag APMC', district: 'Gadag', variety: 'Telagi Red', grade: 'FAQ', minPrice: 2000, maxPrice: 3200, modalPrice: 2700, arrivalQuantity: 120, arrivalUnit: 'Tonnes' },
-    { commodity: 'Paddy(Common)', commodityKn: 'ಭತ್ತ', commodityGroup: 'Cereals', market: 'Davangere APMC', district: 'Davangere', variety: 'Sona Masuri', grade: 'Grade A', minPrice: 2350, maxPrice: 2850, modalPrice: 2620, arrivalQuantity: 310, arrivalUnit: 'Tonnes' },
-    { commodity: 'Paddy(Common)', commodityKn: 'ಭತ್ತ', commodityGroup: 'Cereals', market: 'Raichur APMC', district: 'Raichur', variety: 'BPT 5204', grade: 'Fine', minPrice: 2400, maxPrice: 2920, modalPrice: 2680, arrivalQuantity: 450, arrivalUnit: 'Tonnes' },
-    { commodity: 'Maize', commodityKn: 'ಮೆಕ್ಕೆಜೋಳ', commodityGroup: 'Cereals', market: 'Davangere APMC', district: 'Davangere', variety: 'Yellow Hybrid', grade: 'FAQ', minPrice: 2100, maxPrice: 2500, modalPrice: 2340, arrivalQuantity: 520, arrivalUnit: 'Tonnes' },
-    { commodity: 'Maize', commodityKn: 'ಮೆಕ್ಕೆಜೋಳ', commodityGroup: 'Cereals', market: 'Chitradurga APMC', district: 'Chitradurga', variety: 'Hybrid Yellow', grade: 'FAQ', minPrice: 2050, maxPrice: 2450, modalPrice: 2280, arrivalQuantity: 280, arrivalUnit: 'Tonnes' },
-    { commodity: 'Groundnut', commodityKn: 'ಕಡಲೆಕಾಯಿ', commodityGroup: 'Oil Seeds', market: 'Challakere APMC', district: 'Chitradurga', variety: 'Bold / TMV-2', grade: 'FAQ', minPrice: 6500, maxPrice: 7900, modalPrice: 7350, arrivalQuantity: 180, arrivalUnit: 'Tonnes' },
-    { commodity: 'Dry Chillies', commodityKn: 'ಒಣ ಮೆಣಸಿನಕಾಯಿ', commodityGroup: 'Spices', market: 'APMC Hubballi', district: 'Dharwad', variety: 'Byadgi KDL', grade: 'Superior', minPrice: 19000, maxPrice: 28500, modalPrice: 24200, arrivalQuantity: 95, arrivalUnit: 'Tonnes' },
-    { commodity: 'Cotton', commodityKn: 'ಹತ್ತಿ', commodityGroup: 'Fiber Crops', market: 'Chitradurga APMC', district: 'Chitradurga', variety: 'DCH-32 Long Staple', grade: 'FAQ', minPrice: 7100, maxPrice: 8350, modalPrice: 7800, arrivalQuantity: 140, arrivalUnit: 'Tonnes' },
-    { commodity: 'Arecanut(Betelnut/Supari)', commodityKn: 'ಅಡಿಕೆ', commodityGroup: 'Spices', market: 'Shivamogga APMC', district: 'Shivamogga', variety: 'Rashi / Chali', grade: 'Standard', minPrice: 42000, maxPrice: 53500, modalPrice: 48200, arrivalQuantity: 65, arrivalUnit: 'Tonnes' },
-    { commodity: 'Coconut', commodityKn: 'ತೆಂಗಿನಕಾಯಿ', commodityGroup: 'Spices', market: 'Arasikere APMC', district: 'Hassan', variety: 'Grade 1 Clean', grade: 'FAQ', minPrice: 2600, maxPrice: 3800, modalPrice: 3350, arrivalQuantity: 42000, arrivalUnit: 'Nuts' }
-  ];
-
-  let filtered = baseList;
-  if (district && district !== 'ALL') {
-    const dLower = district.toLowerCase();
-    filtered = filtered.filter((r) => r.district.toLowerCase().includes(dLower));
-  }
-  if (commodity && commodity !== 'ALL') {
-    const cLower = commodity.toLowerCase();
-    filtered = filtered.filter((r) => r.commodity.toLowerCase().includes(cLower));
-  }
-
-  const list = filtered.length > 0 ? filtered : baseList;
-
-  return list.map((item, idx) => ({
-    id: `ai_${item.commodity}_${item.market}_${targetDate}_${idx}`.replace(/[\s/\\()]+/g, '_'),
-    state: 'Karnataka',
-    district: item.district,
-    market: item.market,
-    commodity: item.commodity,
-    commodityKn: item.commodityKn,
-    commodityGroup: item.commodityGroup,
-    variety: item.variety,
-    grade: item.grade,
-    arrivalDate: targetDate,
-    minPrice: item.minPrice,
-    maxPrice: item.maxPrice,
-    modalPrice: item.modalPrice,
-    arrivalQuantity: item.arrivalQuantity,
-    arrivalUnit: item.arrivalUnit,
-    priceUnit: item.commodity === 'Coconut' ? 'Rs./1000 Nuts' : 'Rs./Quintal',
-    source: 'Gemini AI Live Mandi Engine',
-    fetchedAt: new Date().toISOString()
-  }));
+  // Sort ascending by date
+  return historyPoints.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }

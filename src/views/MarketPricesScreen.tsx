@@ -450,7 +450,20 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
                   fontWeight: 800
                 }}
               >
-                🤖 Gemini AI Live • Daily APMC
+                🏛️ AGMARKNET 2.0 • GOI
+              </span>
+              <span
+                style={{
+                  background: 'rgba(139, 92, 246, 0.2)',
+                  color: '#A78BFA',
+                  border: '1px solid rgba(139, 92, 246, 0.4)',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontSize: '0.7rem',
+                  fontWeight: 800
+                }}
+              >
+                🤖 Gemini AI Enhanced
               </span>
               <span
                 style={{
@@ -786,12 +799,12 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
               <RefreshCw size={28} color="#10B981" />
             </div>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 6px 0', color: '#FFFFFF' }}>
-              {isKannada ? 'ಜೆಮಿನಿ AI ಮೂಲಕ ದೈನಂದಿನ ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ...' : 'Fetching live daily APMC market prices via Gemini AI...'}
+              {isKannada ? 'ಸರ್ಕಾರಿ AGMARKNET ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ...' : 'Loading official market prices from AGMARKNET & Gemini AI...'}
             </h3>
             <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: 0 }}>
               {isKannada
-                ? 'ಕರ್ನಾಟಕದ ಪ್ರಮುಖ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆಗಳ ಇಂದಿನ ನೈಜ ದರಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ.'
-                : 'Analyzing today\'s verified APMC Mandi rates across Karnataka districts.'}
+                ? 'ಕರ್ನಾಟಕದ 70+ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆಗಳ ಲೈವ್ ದತ್ತಾಂಶ ಮತ್ತು ಜೆಮಿನಿ AI ವಿಶ್ಲೇಷಣೆ ಪಡೆಯಲಾಗುತ್ತಿದೆ.'
+                : 'Verifying official APMC daily reports and generating Gemini AI market intelligence.'}
             </p>
           </div>
         </div>
@@ -1338,38 +1351,77 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-            <span style={{ fontSize: '1rem' }}>🤖</span>
-            <strong style={{ fontSize: '0.85rem', color: '#FFFFFF' }}>
-              {isKannada ? 'ಮೂಲ: ಜೆಮಿನಿ AI ಕೃಷಿ ಮಾರುಕಟ್ಟೆ ಬುದ್ಧಿಮತ್ತೆ (MTG Digital Mandi AI)' : 'Source: Gemini AI Agricultural Market Intelligence'}
-            </strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '1rem' }}>🏛️</span>
+              <strong style={{ fontSize: '0.85rem', color: '#FFFFFF' }}>
+                {isKannada ? 'ಮೂಲ: AGMARKNET / ಭಾರತ ಸರ್ಕಾರ' : 'Source: AGMARKNET / Government of India'}
+              </strong>
+            </div>
+            <span
+              style={{
+                background: 'rgba(139, 92, 246, 0.2)',
+                color: '#C4B5FD',
+                border: '1px solid rgba(139, 92, 246, 0.35)',
+                padding: '1px 7px',
+                borderRadius: '8px',
+                fontSize: '0.68rem',
+                fontWeight: 700
+              }}
+            >
+              🤖 Gemini AI Integrated
+            </span>
           </div>
-          <p style={{ fontSize: '0.74rem', color: '#94A3B8', margin: 0 }}>
+          <p style={{ fontSize: '0.74rem', color: '#94A3B8', margin: 0, maxWidth: '650px', lineHeight: 1.4 }}>
             {isKannada
-              ? 'ಕರ್ನಾಟಕದ ಪ್ರಮುಖ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆಗಳ ದೈನಂದಿನ ಕೃಷಿ ದರಗಳು, ಮಾದರಿ ಬೆಲೆಗಳು ಮತ್ತು ಮಾರುಕಟ್ಟೆ ವಿಶ್ಲೇಷಣೆ ಜೆಮಿನಿ AI ಮೂಲಕ ನೈಜ ಸಮಯದಲ್ಲಿ ಲಭ್ಯ.'
-              : 'Daily agricultural APMC market prices, modal rates, and price trend analytics updated in real-time using Gemini AI for Karnataka farmers.'}
+              ? 'ಭಾರತ ಸರ್ಕಾರದ ಕೃಷಿ ಮತ್ತು ರೈತರ ಕಲ್ಯಾಣ ಸಚಿವಾಲಯದ AGMARKNET ಪೋರ್ಟಲ್ ಹಾಗೂ ಮುಕ್ತ ದತ್ತಾಂಶ ವೇದಿಕೆ (data.gov.in). ನೈಜ ಸಮಯದ ಬೆಲೆ ವಿಶ್ಲೇಷಣೆ ಮತ್ತು ಧ್ವನಿ ವಿವರಣೆ ಗೂಗಲ್ ಜೆಮಿನಿ AI ಮೂಲಕ ಒದಗಿಸಲಾಗಿದೆ.'
+              : 'Official data source: Directorate of Marketing & Inspection (DMI), Ministry of Agriculture & Farmers Welfare, Government of India. Real-time market advice, voice synthesis & price explanations powered by Google Gemini AI.'}
           </p>
         </div>
 
-        <button
-          onClick={handleRefresh}
-          style={{
-            background: 'rgba(16, 185, 129, 0.15)',
-            border: '1px solid rgba(16, 185, 129, 0.35)',
-            color: '#34D399',
-            borderRadius: '12px',
-            padding: '8px 14px',
-            fontSize: '0.8rem',
-            fontWeight: 800,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          <span>{isKannada ? 'ತಾಜಾ AI ದರಗಳನ್ನು ಪಡೆಯಿರಿ' : 'Refresh Live AI Prices'}</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <a
+            href="https://www.agmarknet.gov.in/home"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: '#34D399',
+              borderRadius: '12px',
+              padding: '8px 14px',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>{isKannada ? 'ಅಧಿಕೃತ ವೆಬ್‌ಸೈಟ್ ನೋಡಿ' : 'View Official AGMARKNET'}</span>
+            <ExternalLink size={14} />
+          </a>
+
+          <button
+            onClick={handleRefresh}
+            style={{
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              color: '#34D399',
+              borderRadius: '12px',
+              padding: '8px 14px',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <span>{isKannada ? 'ತಾಜಾ ದರಗಳನ್ನು ಪಡೆಯಿರಿ' : 'Sync / Refresh'}</span>
+          </button>
+        </div>
       </div>
 
       {/* ============================================================ */}

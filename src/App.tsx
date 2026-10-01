@@ -419,8 +419,8 @@ export const App: React.FC = () => {
       id: 'market_prices' as MainSection,
       title_en: 'MARKET PRICES',
       title_kn: 'ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳು',
-      subtitle_en: 'Daily APMC Mandi rates • Powered by Gemini AI',
-      subtitle_kn: 'ದೈನಂದಿನ ಎಪಿಎಂಸಿ ದರಗಳು • ಜೆಮಿನಿ AI',
+      subtitle_en: 'Daily AGMARKNET Mandi rates • Gemini AI',
+      subtitle_kn: 'ಸರ್ಕಾರಿ AGMARKNET ದರಗಳು • ಜೆಮಿನಿ AI',
       icon: '🌾',
       color: '#10B981',
       bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.12) 100%)'
@@ -1651,7 +1651,7 @@ export const App: React.FC = () => {
         )}
 
         {/* ============================================================ */}
-        {/* 🌾 SECTION: DAILY AGRICULTURAL MARKET PRICES (GEMINI AI)     */}
+        {/* 🌾 SECTION: DAILY AGRICULTURAL MARKET PRICES (AGMARKNET + AI) */}
         {/* ============================================================ */}
         {currentSection === 'market_prices' && (
           <MarketPricesScreen onBack={() => navigateTo('home')} />

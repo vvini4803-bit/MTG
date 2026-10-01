@@ -16,7 +16,7 @@ export interface MarketPriceRecord {
   arrivalUnit?: string; // e.g. "Metric Tonnes" or "Nos"
   unitArrival?: string; // alias for arrivalUnit
   priceUnit: string; // e.g. "Rs./Quintal"
-  source: string; // "Gemini AI Live Mandi Engine"
+  source: string; // "AGMARKNET / Government of India" | "AGMARKNET / GOI (Gemini AI Enhanced)"
   fetchedAt: string; // ISO string
 }
 
@@ -62,6 +62,7 @@ export interface MarketPriceAlert {
 export interface MarketPriceApiResponse {
   success: boolean;
   source: string;
+  portalUrl?: string;
   lastUpdated: string;
   reportingDate: string;
   reportDate: string; // alias
