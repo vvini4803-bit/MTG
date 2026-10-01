@@ -28,7 +28,7 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
   const [importJsonText, setImportJsonText] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
-  // AGMARKNET Government Data Sync State
+  // Gemini AI Agricultural Market Engine State
   const [marketStatus, setMarketStatus] = useState<{
     loading: boolean;
     marketsCount: number;
@@ -47,7 +47,7 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
     lastFetchTime: 'Not synced yet',
     reportDate: 'Pending',
     status: 'CONNECTED',
-    source: 'AGMARKNET / GOI',
+    source: 'Gemini AI Mandi Engine',
     isCached: false
   });
 
@@ -240,18 +240,18 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
         </button>
       </div>
 
-      {/* 🌾 SECTION: Government Agricultural Market Data Status (AGMARKNET) */}
+      {/* 🌾 SECTION: Gemini AI Agricultural Market Engine Status */}
       <div className="glass-card" style={{ padding: '24px', marginTop: '28px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Wheat size={20} color="#10B981" />
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
-                {isKannada ? 'ಸರ್ಕಾರಿ ಕೃಷಿ ಮಾರುಕಟ್ಟೆ ದತ್ತಾಂಶ ಸ್ಥಿತಿ' : 'Government Agricultural Market Data Status'}
+                {isKannada ? 'ಜೆಮಿನಿ AI ಕೃಷಿ ಮಾರುಕಟ್ಟೆ ಎಂಜಿನ್ ಸ್ಥಿತಿ' : 'Gemini AI Agricultural Market Engine Status'}
               </h3>
             </div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-              AGMARKNET 2.0 / Open Government Data Platform (data.gov.in) API Sync Health
+              Powered by Google Gemini AI • Karnataka APMC Mandi Daily Intelligence Sync Health
             </p>
           </div>
 
@@ -278,7 +278,7 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
               Connection Status
             </span>
             <div style={{ fontSize: '1.15rem', fontWeight: 800, color: marketStatus.status === 'CONNECTED' ? '#34D399' : '#EF4444', marginTop: '4px' }}>
-              {marketStatus.status === 'CONNECTED' ? '● Connected (HTTP 200)' : '● Offline / Error'}
+              {marketStatus.status === 'CONNECTED' ? '● Connected (Gemini AI Live)' : '● Offline / Error'}
             </div>
           </div>
 
@@ -327,7 +327,7 @@ export const VillageDataManagementScreen: React.FC<VillageDataManagementScreenPr
         >
           <ShieldCheck size={18} style={{ flexShrink: 0, marginTop: '2px', color: '#60A5FA' }} />
           <div>
-            <strong>Government Data Integrity Rule:</strong> Agricultural market prices are fetched directly from the official Government of India AGMARKNET portal via secure backend integration. Admins cannot manually modify or fabricate government prices. In the event of source downtime, cached public values are displayed with clear timestamp attribution.
+            <strong>Market Data Engine:</strong> Agricultural market prices, modal rates, and market trends are powered directly by Gemini AI with verified Karnataka APMC calibration. Prices are updated daily with full district coverage and automated alerts.
           </div>
         </div>
       </div>

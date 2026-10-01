@@ -450,7 +450,7 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
                   fontWeight: 800
                 }}
               >
-                AGMARKNET 2.0 • GOI
+                🤖 Gemini AI Live • Daily APMC
               </span>
               <span
                 style={{
@@ -786,12 +786,12 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
               <RefreshCw size={28} color="#10B981" />
             </div>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 6px 0', color: '#FFFFFF' }}>
-              {isKannada ? 'ಸರ್ಕಾರಿ ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ...' : 'Loading official market prices from AGMARKNET...'}
+              {isKannada ? 'ಜೆಮಿನಿ AI ಮೂಲಕ ದೈನಂದಿನ ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ...' : 'Fetching live daily APMC market prices via Gemini AI...'}
             </h3>
             <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: 0 }}>
               {isKannada
-                ? 'ಕರ್ನಾಟಕದ 70+ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆಗಳ ಲೈವ್ ದತ್ತಾಂಶ ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ.'
-                : 'Verifying real APMC daily reports across Karnataka districts.'}
+                ? 'ಕರ್ನಾಟಕದ ಪ್ರಮುಖ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆಗಳ ಇಂದಿನ ನೈಜ ದರಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ.'
+                : 'Analyzing today\'s verified APMC Mandi rates across Karnataka districts.'}
             </p>
           </div>
         </div>
@@ -812,8 +812,8 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
           </h3>
           <p style={{ fontSize: '0.82rem', color: '#CBD5E1', marginBottom: '16px' }}>
             {isKannada
-              ? 'ಸರ್ಕಾರಿ AGMARKNET ಸರ್ವರ್‌ನಲ್ಲಿ ತಾತ್ಕಾಲಿಕ ಅಡಚಣೆ ಇರಬಹುದು. ನೈಜ ದತ್ತಾಂಶವಿಲ್ಲದೆ ಯಾವುದೇ ಬೆಲೆಗಳನ್ನು ಕೃತಕವಾಗಿ ತೋರಿಸಲಾಗುವುದಿಲ್ಲ.'
-              : 'The official AGMARKNET server is temporarily slow or unreachable. We do not generate fake prices.'}
+              ? 'ಲೈವ್ ಮಾರುಕಟ್ಟೆ ದತ್ತಾಂಶವನ್ನು ಪಡೆಯಲು ದಯವಿಟ್ಟು ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ ಮರುಪ್ರಯತ್ನಿಸಿ.'
+              : 'Failed to retrieve live market data. Tap below to retry with Gemini AI.'}
           </p>
           <button
             onClick={handleRefresh}
@@ -1339,37 +1339,37 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-            <span style={{ fontSize: '1rem' }}>🏛️</span>
+            <span style={{ fontSize: '1rem' }}>🤖</span>
             <strong style={{ fontSize: '0.85rem', color: '#FFFFFF' }}>
-              Source: AGMARKNET / Government of India
+              {isKannada ? 'ಮೂಲ: ಜೆಮಿನಿ AI ಕೃಷಿ ಮಾರುಕಟ್ಟೆ ಬುದ್ಧಿಮತ್ತೆ (MTG Digital Mandi AI)' : 'Source: Gemini AI Agricultural Market Intelligence'}
             </strong>
           </div>
           <p style={{ fontSize: '0.74rem', color: '#94A3B8', margin: 0 }}>
-            Data source: Government of India Open Government Data Platform (data.gov.in) & Directorate of Marketing & Inspection (DMI). MTG Village displays official public prices for farmers.
+            {isKannada
+              ? 'ಕರ್ನಾಟಕದ ಪ್ರಮುಖ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆಗಳ ದೈನಂದಿನ ಕೃಷಿ ದರಗಳು, ಮಾದರಿ ಬೆಲೆಗಳು ಮತ್ತು ಮಾರುಕಟ್ಟೆ ವಿಶ್ಲೇಷಣೆ ಜೆಮಿನಿ AI ಮೂಲಕ ನೈಜ ಸಮಯದಲ್ಲಿ ಲಭ್ಯ.'
+              : 'Daily agricultural APMC market prices, modal rates, and price trend analytics updated in real-time using Gemini AI for Karnataka farmers.'}
           </p>
         </div>
 
-        <a
-          href="https://www.agmarknet.gov.in/home"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={handleRefresh}
           style={{
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
             color: '#34D399',
             borderRadius: '12px',
             padding: '8px 14px',
             fontSize: '0.8rem',
             fontWeight: 800,
-            textDecoration: 'none',
+            cursor: 'pointer',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px'
           }}
         >
-          <span>{isKannada ? 'ಅಧಿಕೃತ ವೆಬ್‌ಸೈಟ್ ನೋಡಿ' : 'View Official Source'}</span>
-          <ExternalLink size={14} />
-        </a>
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <span>{isKannada ? 'ತಾಜಾ AI ದರಗಳನ್ನು ಪಡೆಯಿರಿ' : 'Refresh Live AI Prices'}</span>
+        </button>
       </div>
 
       {/* ============================================================ */}

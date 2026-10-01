@@ -16,7 +16,7 @@ export interface MarketPriceRecord {
   arrivalUnit?: string; // e.g. "Metric Tonnes" or "Nos"
   unitArrival?: string; // alias for arrivalUnit
   priceUnit: string; // e.g. "Rs./Quintal"
-  source: string; // "AGMARKNET / Government of India"
+  source: string; // "Gemini AI Live Mandi Engine"
   fetchedAt: string; // ISO string
 }
 

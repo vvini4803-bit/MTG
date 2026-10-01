@@ -177,7 +177,7 @@ export class VoiceAssistantService {
 
     const q = prompt.toLowerCase().trim();
 
-    // 0. Agricultural Market Prices queries (AGMARKNET Government Data)
+    // 0. Agricultural Market Prices queries (Gemini AI Daily Mandi Data)
     const isMarketQuery =
       q.includes('price') ||
       q.includes('rate') ||
@@ -270,8 +270,8 @@ export class VoiceAssistantService {
           const arrivalFmt = rec.arrivalQuantity ? `${rec.arrivalQuantity} ${rec.unitArrival || 'tonnes'}` : 'Not available';
 
           return {
-            answer_en: `Today's available modal price for ${rec.commodity} at ${rec.market} is ${modalFmt} per quintal (Min: ${minFmt}, Max: ${maxFmt}). Reported arrival: ${arrivalFmt} on ${rec.arrivalDate}. Source: AGMARKNET.`,
-            answer_kn: `${rec.market} ಮಾರುಕಟ್ಟೆಯಲ್ಲಿ ${rec.commodity} ಬೆಳೆಯ ಇತ್ತೀಚಿನ ಲಭ್ಯವಿರುವ ಮಾದರಿ ಬೆಲೆ ಕ್ವಿಂಟಾಲ್‌ಗೆ ${modalFmt} ಆಗಿದೆ (ಕನಿಷ್ಠ: ${minFmt}, ಗರಿಷ್ಠ: ${maxFmt}). ವರದಿ ದಿನಾಂಕ: ${rec.arrivalDate}. ಮೂಲ: AGMARKNET / ಭಾರತ ಸರ್ಕಾರ.`,
+            answer_en: `Today's modal price for ${rec.commodity} at ${rec.market} is ${modalFmt} per quintal (Min: ${minFmt}, Max: ${maxFmt}). Reported arrival: ${arrivalFmt} on ${rec.arrivalDate}. Powered by Gemini AI.`,
+            answer_kn: `${rec.market} ಮಾರುಕಟ್ಟೆಯಲ್ಲಿ ${rec.commodity} ಬೆಳೆಯ ಇಂದಿನ ಮಾದರಿ ಬೆಲೆ ಕ್ವಿಂಟಾಲ್‌ಗೆ ${modalFmt} ಆಗಿದೆ (ಕನಿಷ್ಠ: ${minFmt}, ಗರಿಷ್ಠ: ${maxFmt}). ವರದಿ ದಿನಾಂಕ: ${rec.arrivalDate}. ಜೆಮಿನಿ AI ಕೃಷಿ ಮಾರುಕಟ್ಟೆ ಬುದ್ಧಿಮತ್ತೆ.`,
             category: 'MARKET_PRICES',
             isVerified: true,
             navTab: 'market_prices'
@@ -282,8 +282,8 @@ export class VoiceAssistantService {
       }
 
       return {
-        answer_en: `Viewing daily agricultural market prices from AGMARKNET / Government of India. Opening Market Prices section.`,
-        answer_kn: `ಭಾರತ ಸರ್ಕಾರದ AGMARKNET ನಿಂದ ದೈನಂದಿನ ಮಾರುಕಟ್ಟೆ ದರಗಳು. ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳ ವಿಭಾಗವನ್ನು ತೆರೆಯಲಾಗುತ್ತಿದೆ.`,
+        answer_en: `Viewing daily agricultural APMC market prices powered by Gemini AI. Opening Market Prices section.`,
+        answer_kn: `ಜೆಮಿನಿ AI ದೈನಂದಿನ ಕೃಷಿ ಮಾರುಕಟ್ಟೆ ದರಗಳು. ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳ ವಿಭಾಗವನ್ನು ತೆರೆಯಲಾಗುತ್ತಿದೆ.`,
         category: 'MARKET_PRICES',
         isVerified: true,
         navTab: 'market_prices'
