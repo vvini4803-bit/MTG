@@ -172,6 +172,120 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
         </div>
       </div>
 
+      {/* 🌟 Recognition & Technology Innovation Taglines (Moved to Settings) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+        {/* Banner 1: Karnataka & India 1st Digital Village AI App */}
+        <div
+          onClick={() => setIsAiMilestoneOpen(true)}
+          role="button"
+          tabIndex={0}
+          style={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            background: 'linear-gradient(135deg, rgba(6, 78, 59, 0.55) 0%, rgba(4, 120, 87, 0.35) 100%)',
+            border: '1.5px solid rgba(245, 158, 11, 0.7)',
+            borderRadius: '9999px',
+            padding: '10px 18px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(245, 158, 11, 0.15)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>🏆</span>
+            <span
+              style={{
+                fontSize: 'clamp(0.82rem, 2.5vw, 0.95rem)',
+                fontWeight: 700,
+                color: '#FEF08A',
+                letterSpacing: '-0.01em',
+                lineHeight: 1.3
+              }}
+            >
+              {isKannada
+                ? 'ಕರ್ನಾಟಕ & ಭಾರತದ ಪ್ರಥಮ ಡಿಜಿಟಲ್ ಗ್ರಾಮ AI ಆ್ಯಪ್'
+                : "Karnataka & India's 1st Digital Village AI App"}
+            </span>
+          </div>
+          <span
+            style={{
+              background: '#F59E0B',
+              color: '#000000',
+              fontWeight: 800,
+              fontSize: '0.72rem',
+              letterSpacing: '0.06em',
+              padding: '4px 12px',
+              borderRadius: '9999px',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+            }}
+          >
+            VERIFIED
+          </span>
+        </div>
+
+        {/* Banner 2: Google Cloud & Gemini AI Collaboration */}
+        <div
+          onClick={() => setIsGoogleModalOpen(true)}
+          role="button"
+          tabIndex={0}
+          style={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(30, 58, 138, 0.4) 100%)',
+            border: '1.5px solid rgba(66, 133, 244, 0.7)',
+            borderRadius: '9999px',
+            padding: '10px 18px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(66, 133, 244, 0.15)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4285F4' }} />
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EA4335' }} />
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FBBC05' }} />
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#34A853' }} />
+            </div>
+            <span
+              style={{
+                fontSize: 'clamp(0.82rem, 2.5vw, 0.95rem)',
+                fontWeight: 700,
+                color: '#E0E7FF',
+                letterSpacing: '-0.01em',
+                lineHeight: 1.3
+              }}
+            >
+              {isKannada
+                ? 'ಗೂಗಲ್ ಕ್ಲೌಡ್ & ಜೆಮಿನಿ AI ಸಹಯೋಗ'
+                : 'Google Cloud & Gemini AI Collaboration'}
+            </span>
+          </div>
+          <span
+            style={{
+              background: '#3B82F6',
+              color: '#FFFFFF',
+              fontWeight: 800,
+              fontSize: '0.72rem',
+              letterSpacing: '0.06em',
+              padding: '4px 12px',
+              borderRadius: '9999px',
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+            }}
+          >
+            GOOGLE
+          </span>
+        </div>
+      </div>
+
       <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Language Selection */}
         <div>
@@ -843,21 +957,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'space-between',
                   gap: '8px',
                   marginTop: '12px',
-                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(16, 185, 129, 0.18) 100%)',
-                  border: '1px solid rgba(245, 158, 11, 0.45)',
-                  padding: '8px 12px',
-                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, rgba(6, 78, 59, 0.5) 0%, rgba(4, 120, 87, 0.3) 100%)',
+                  border: '1.5px solid rgba(245, 158, 11, 0.7)',
+                  padding: '8px 14px',
+                  borderRadius: '9999px',
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
               >
-                <span style={{ fontSize: '1.1rem' }}>🏆</span>
-                <span style={{ fontSize: '0.78rem', color: '#FDE68A', fontWeight: 800 }}>
-                  {isKannada
-                    ? 'ಕರ್ನಾಟಕ & ಭಾರತದ ಪ್ರಥಮ ಡಿಜಿಟಲ್ ಗ್ರಾಮ AI ಆ್ಯಪ್ — ಮಾಹಿತಿ ನೋಡಿ'
-                    : "Karnataka & India's 1st Digital Village AI App — View"}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <span style={{ fontSize: '1.1rem' }}>🏆</span>
+                  <span style={{ fontSize: '0.78rem', color: '#FEF08A', fontWeight: 800 }}>
+                    {isKannada
+                      ? 'ಕರ್ನಾಟಕ & ಭಾರತದ ಪ್ರಥಮ ಡಿಜಿಟಲ್ ಗ್ರಾಮ AI ಆ್ಯಪ್'
+                      : "Karnataka & India's 1st Digital Village AI App"}
+                  </span>
+                </div>
+                <span style={{ background: '#F59E0B', color: '#000', fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: '9999px', flexShrink: 0 }}>
+                  VERIFIED
                 </span>
               </div>
 
@@ -869,26 +989,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateTab })
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'space-between',
                   gap: '8px',
                   marginTop: '8px',
-                  background: 'linear-gradient(135deg, rgba(66, 133, 244, 0.2) 0%, rgba(52, 168, 83, 0.15) 100%)',
-                  border: '1px solid rgba(66, 133, 244, 0.45)',
-                  padding: '8px 12px',
-                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 138, 0.35) 100%)',
+                  border: '1.5px solid rgba(66, 133, 244, 0.7)',
+                  padding: '8px 14px',
+                  borderRadius: '9999px',
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
               >
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#4285F4' }} />
-                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#EA4335' }} />
-                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#FBBC05' }} />
-                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#34A853' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <div style={{ display: 'flex', gap: '3px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4285F4' }} />
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EA4335' }} />
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FBBC05' }} />
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34A853' }} />
+                  </div>
+                  <span style={{ fontSize: '0.78rem', color: '#BFDBFE', fontWeight: 800 }}>
+                    {isKannada
+                      ? 'ಗೂಗಲ್ ಕ್ಲೌಡ್ & ಜೆಮಿನಿ AI ಸಹಯೋಗ'
+                      : 'Google Cloud & Gemini AI Collaboration'}
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.78rem', color: '#BFDBFE', fontWeight: 800 }}>
-                  {isKannada
-                    ? 'ಗೂಗಲ್ ಕ್ಲೌಡ್ & ಜೆಮಿನಿ AI ತಂತ್ರಜ್ಞಾನ ವ್ಯವಸ್ಥೆ — ವಿವರ ನೋಡಿ'
-                    : 'Google Cloud & Gemini AI Architecture — View'}
+                <span style={{ background: '#3B82F6', color: '#FFF', fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: '9999px', flexShrink: 0 }}>
+                  GOOGLE
                 </span>
               </div>
             </div>

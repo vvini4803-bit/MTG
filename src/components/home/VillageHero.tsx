@@ -10,21 +10,15 @@ import {
   Compass,
   Thermometer
 } from 'lucide-react';
-import { FirstAiVillageModal } from './FirstAiVillageModal';
-import { GoogleEcosystemModal } from '../layout/GoogleEcosystemModal';
 import {
   subscribeMuttagundiWeather,
   fetchMuttagundiLiveWeather,
-  MuttagundiWeather,
-  MUTTAGUNDI_COORDS
+  MuttagundiWeather
 } from '../../services/weatherService';
-
 export const VillageHero: React.FC = () => {
   const { isKannada } = useLanguage();
   const [weather, setWeather] = useState<MuttagundiWeather | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isAiMilestoneOpen, setIsAiMilestoneOpen] = useState(false);
-  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeMuttagundiWeather((w) => {
@@ -224,100 +218,7 @@ export const VillageHero: React.FC = () => {
               : 'Our Village • Our People • Our Stories'}
           </p>
 
-          {/* Badges Row: Milestone & Google Ecosystem */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
-            {/* Milestone Badge: 1st Digital Village AI App of Karnataka & India */}
-            <div
-              onClick={() => setIsAiMilestoneOpen(true)}
-              role="button"
-              tabIndex={0}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(16, 185, 129, 0.2) 100%)',
-                border: '1.5px solid rgba(245, 158, 11, 0.55)',
-                borderRadius: '14px',
-                padding: '8px 14px',
-                fontSize: '0.84rem',
-                color: '#FDE68A',
-                fontWeight: 800,
-                cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(245, 158, 11, 0.25)',
-                transition: 'all 0.2s ease',
-                userSelect: 'none'
-              }}
-              title={isKannada ? 'ವಿವರಗಳನ್ನು ವೀಕ್ಷಿಸಿ' : 'View milestone details'}
-            >
-              <span style={{ fontSize: '1.1rem' }}>🏆</span>
-              <span>
-                {isKannada
-                  ? 'ಕರ್ನಾಟಕ & ಭಾರತದ ಪ್ರಥಮ ಡಿಜಿಟಲ್ ಗ್ರಾಮ AI ಆ್ಯಪ್'
-                  : "Karnataka & India's 1st Digital Village AI App"}
-              </span>
-              <span
-                style={{
-                  fontSize: '0.68rem',
-                  background: '#F59E0B',
-                  color: '#000',
-                  padding: '2px 7px',
-                  borderRadius: '8px',
-                  fontWeight: 900,
-                  letterSpacing: '0.04em'
-                }}
-              >
-                VERIFIED
-              </span>
-            </div>
 
-            {/* Google Ecosystem & AI Architecture Badge */}
-            <div
-              onClick={() => setIsGoogleModalOpen(true)}
-              role="button"
-              tabIndex={0}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'linear-gradient(135deg, rgba(66, 133, 244, 0.22) 0%, rgba(52, 168, 83, 0.18) 100%)',
-                border: '1.5px solid rgba(66, 133, 244, 0.5)',
-                borderRadius: '14px',
-                padding: '8px 14px',
-                fontSize: '0.84rem',
-                color: '#BFDBFE',
-                fontWeight: 800,
-                cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(66, 133, 244, 0.22)',
-                transition: 'all 0.2s ease',
-                userSelect: 'none'
-              }}
-              title={isKannada ? 'ಗೂಗಲ್ ತಂತ್ರಜ್ಞಾನ ಪರಿಸರ ವಿವರಗಳು' : 'Google Ecosystem Details'}
-            >
-              <div style={{ display: 'flex', gap: '2px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4285F4' }} />
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EA4335' }} />
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FBBC05' }} />
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34A853' }} />
-              </div>
-              <span>
-                {isKannada
-                  ? 'ಗೂಗಲ್ ಕ್ಲೌಡ್ & ಜೆಮಿನಿ AI ಸಹಯೋಗ'
-                  : 'Powered by Google Cloud & Gemini AI'}
-              </span>
-              <span
-                style={{
-                  fontSize: '0.66rem',
-                  background: '#4285F4',
-                  color: '#FFF',
-                  padding: '2px 7px',
-                  borderRadius: '8px',
-                  fontWeight: 900
-                }}
-              >
-                GOOGLE
-              </span>
-            </div>
-          </div>
 
           {/* Warm Welcome Indicator */}
           <div
@@ -618,18 +519,6 @@ export const VillageHero: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <FirstAiVillageModal
-        isOpen={isAiMilestoneOpen}
-        onClose={() => setIsAiMilestoneOpen(false)}
-        isKannada={isKannada}
-      />
-
-      <GoogleEcosystemModal
-        isOpen={isGoogleModalOpen}
-        onClose={() => setIsGoogleModalOpen(false)}
-        isKannada={isKannada}
-      />
     </div>
   );
 };
