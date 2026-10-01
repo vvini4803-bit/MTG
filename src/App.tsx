@@ -8,6 +8,7 @@ import { NewsItem, EventItem, Tournament, MatchItem, CropItem, TempleItem, Galle
 import { VillageHero } from './components/home/VillageHero';
 import { ShareUpdateModal } from './components/news/ShareUpdateModal';
 import { VoiceAssistantModal } from './components/voice/VoiceAssistantModal';
+import { TalkAgentModal } from './components/talkAgent/TalkAgentModal';
 
 // Views for the 8 Pillars + Ask Village + Map + Profile
 import { NewsFeedScreen } from './views/NewsFeedScreen';
@@ -141,6 +142,7 @@ export const App: React.FC = () => {
   // Modals state
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isTalkAgentOpen, setIsTalkAgentOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [commentsNews, setCommentsNews] = useState<{ id: string; title_en: string; title_kn?: string; [key: string]: any } | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
@@ -188,6 +190,13 @@ export const App: React.FC = () => {
       return () => dismiss();
     }
   }, [isVoiceModalOpen]);
+
+  useEffect(() => {
+    if (isTalkAgentOpen) {
+      const dismiss = backNavigation.pushModal('talkAgentModal', () => setIsTalkAgentOpen(false));
+      return () => dismiss();
+    }
+  }, [isTalkAgentOpen]);
 
   useEffect(() => {
     if (isShareModalOpen) {
@@ -2161,11 +2170,11 @@ export const App: React.FC = () => {
 
         {/* Tab 4: Talk Agent */}
         <button
-          onClick={() => setIsVoiceModalOpen(true)}
+          onClick={() => setIsTalkAgentOpen(true)}
           style={{
             background: 'none',
             border: 'none',
-            color: isVoiceModalOpen ? '#10B981' : '#94A3B8',
+            color: isTalkAgentOpen ? '#10B981' : '#94A3B8',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -2253,6 +2262,12 @@ export const App: React.FC = () => {
           else if (tab === 'photo_analyzer') navigateTo('photo_analyzer');
           else navigateTo('home');
         }}
+      />
+
+      {/* 🤖 Talk Agent Live Voice Assistance Modal (Gemini Live Stream) */}
+      <TalkAgentModal
+        isOpen={isTalkAgentOpen}
+        onClose={() => setIsTalkAgentOpen(false)}
       />
 
       {/* News Detail Modal */}
