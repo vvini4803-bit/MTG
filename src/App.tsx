@@ -525,15 +525,16 @@ export const App: React.FC = () => {
         <div
           className="site-header-inner"
           style={{
-            maxWidth: '1080px',
-            margin: '0 auto',
+            maxWidth: '100%',
+            width: '100%',
+            margin: '0',
             display: 'flex',
             justifyContent: 'flex-start',
             alignItems: 'center',
             gap: '8px'
           }}
         >
-          {/* Header Controls: Home + Search + Messages + Notifications + Voice + Language + Admin + User (Shifted flush left for maximum viewing comfort) */}
+          {/* Header Controls: Search + Messages + People + Notifications + Settings + Language + Admin + User */}
           <div
             className="site-header-controls"
             style={{
@@ -706,30 +707,6 @@ export const App: React.FC = () => {
               title={isKannada ? 'ಸೆಟ್ಟಿಂಗ್ಸ್ & ಗೌಪ್ಯತೆ (Settings)' : 'Settings & Privacy'}
             >
               <Settings size={18} />
-            </button>
-
-            {/* Quick Ask Village Voice Button */}
-            <button
-              onClick={() => setIsVoiceModalOpen(true)}
-              className="site-header-pill-btn"
-              style={{
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: '24px',
-                padding: '7px 14px',
-                fontSize: '0.82rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
-                flexShrink: 0
-              }}
-            >
-              <span>🎙️</span>
-              <span>{isKannada ? 'ಕೇಳಿ' : 'Ask'}</span>
             </button>
 
             {/* Language Switcher */}
