@@ -487,7 +487,6 @@ export type ViewTab =
   | 'village_3d'
   | 'photo_analyzer'
   | 'farmer_summary'
-  | 'farmer_live'
   | 'committee';
 
 export * from './farmer';

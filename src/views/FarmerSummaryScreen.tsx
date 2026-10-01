@@ -53,7 +53,6 @@ import {
 
 interface FarmerSummaryScreenProps {
   onBack: () => void;
-  onOpenLiveAI: () => void;
 }
 
 type FarmerTab =
@@ -70,7 +69,7 @@ type FarmerTab =
   | 'charts'
   | 'compare';
 
-export const FarmerSummaryScreen: React.FC<FarmerSummaryScreenProps> = ({ onBack, onOpenLiveAI }) => {
+export const FarmerSummaryScreen: React.FC<FarmerSummaryScreenProps> = ({ onBack }) => {
   const { isKannada } = useLanguage();
   const { currentUser } = useAuth();
 
@@ -450,28 +449,6 @@ export const FarmerSummaryScreen: React.FC<FarmerSummaryScreenProps> = ({ onBack
             }}
           >
             + {isKannada ? 'ವರ್ಷ ಸೇರಿಸಿ' : 'Add Year'}
-          </button>
-
-          {/* Gemini Live Button */}
-          <button
-            onClick={onOpenLiveAI}
-            style={{
-              background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
-              border: 'none',
-              color: '#FFFFFF',
-              borderRadius: '12px',
-              padding: '6px 14px',
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
-            }}
-          >
-            <Mic size={16} />
-            <span>{isKannada ? 'ಧ್ವನಿ AI ಲೈವ್' : 'Live AI'}</span>
           </button>
         </div>
       </div>

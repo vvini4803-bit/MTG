@@ -35,7 +35,6 @@ import { NotificationsScreen } from './views/NotificationsScreen';
 import { SettingsScreen } from './views/SettingsScreen';
 import { PhotoAnalyzerScreen } from './views/PhotoAnalyzerScreen';
 import { FarmerSummaryScreen } from './views/FarmerSummaryScreen';
-import { FarmerLiveScreen } from './views/FarmerLiveScreen';
 import { FindPeopleScreen } from './views/FindPeopleScreen';
 import { InAppNotificationToast } from './components/notifications/InAppNotificationToast';
 import { NotificationPermissionBanner } from './components/notifications/NotificationPermissionBanner';
@@ -113,8 +112,7 @@ export type MainSection =
   | 'notifications'
   | 'settings'
   | 'photo_analyzer'
-  | 'farmer_summary'
-  | 'farmer_live';
+  | 'farmer_summary';
 
 export const App: React.FC = () => {
   const { language, setLanguage, isKannada } = useLanguage();
@@ -484,16 +482,6 @@ export const App: React.FC = () => {
       icon: '🌾',
       color: '#10B981',
       bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.12) 100%)'
-    },
-    {
-      id: 'farmer_live' as MainSection,
-      title_en: 'MTG FARMER AI LIVE',
-      title_kn: 'ರೈತ AI ಲೈವ್ ಸಂಭಾಷಣೆ',
-      subtitle_en: 'Real-time Gemini voice AI in Kannada & English',
-      subtitle_kn: 'ನೈಜ ಸಮಯದ ಜೆಮಿನಿ ಲೈವ್ ಧ್ವನಿ ಸಹಾಯಕ',
-      icon: '🎙️',
-      color: '#06B6D4',
-      bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(2, 132, 199, 0.12) 100%)'
     },
     {
       id: 'people' as MainSection,
@@ -1313,14 +1301,14 @@ export const App: React.FC = () => {
                       {isKannada ? '🔒 100% ಖಾಸಗಿ & ಗೌಪ್ಯ' : '🔒 100% PRIVATE & ENCRYPTED'}
                     </span>
                     <span style={{
-                      background: 'rgba(6, 182, 212, 0.25)',
-                      color: '#38BDF8',
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      color: '#34D399',
                       padding: '2px 8px',
                       borderRadius: '6px',
                       fontSize: '0.68rem',
                       fontWeight: 800
                     }}>
-                      ⚡ Gemini Live AI
+                      🔒 {isKannada ? 'ಖಾಸಗಿ & ಸುರಕ್ಷಿತ' : 'Private & Secure'}
                     </span>
                   </div>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: '0 0 4px 0', color: '#FFFFFF' }}>
@@ -1354,26 +1342,6 @@ export const App: React.FC = () => {
                 >
                   <Wheat size={16} />
                   <span>{isKannada ? 'ಖಾತೆ ತೆರೆಯಿರಿ' : 'Open Summary'}</span>
-                </button>
-
-                <button
-                  onClick={() => navigateTo('farmer_live')}
-                  style={{
-                    background: 'rgba(6, 182, 212, 0.2)',
-                    border: '1px solid rgba(6, 182, 212, 0.5)',
-                    color: '#38BDF8',
-                    borderRadius: '12px',
-                    padding: '10px 18px',
-                    fontSize: '0.85rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <Mic size={16} />
-                  <span>{isKannada ? 'ಧ್ವನಿ AI ಲೈವ್' : 'Gemini Live AI'}</span>
                 </button>
               </div>
             </div>
@@ -2113,19 +2081,6 @@ export const App: React.FC = () => {
           <div>
             <FarmerSummaryScreen
               onBack={() => navigateTo('home')}
-              onOpenLiveAI={() => navigateTo('farmer_live')}
-            />
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* 🤖 SECTION: MTG FARMER AI LIVE                               */}
-        {/* ============================================================ */}
-        {currentSection === 'farmer_live' && (
-          <div>
-            <FarmerLiveScreen
-              onBack={() => navigateTo('farmer_summary')}
-              onNavigateTab={(tab) => navigateTo(tab as MainSection)}
             />
           </div>
         )}
@@ -2261,7 +2216,7 @@ export const App: React.FC = () => {
           style={{
             background: 'none',
             border: 'none',
-            color: (currentSection === 'farmer_summary' || currentSection === 'farmer_live') ? '#10B981' : '#94A3B8',
+            color: currentSection === 'farmer_summary' ? '#10B981' : '#94A3B8',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -2274,7 +2229,7 @@ export const App: React.FC = () => {
           title={isKannada ? '🌾 ಖಾಸಗಿ ರೈತ & ಕುಟುಂಬ AI' : '🌾 My Farmer & Family Summary'}
         >
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Wheat size={22} color={(currentSection === 'farmer_summary' || currentSection === 'farmer_live') ? '#10B981' : '#94A3B8'} />
+            <Wheat size={22} color={currentSection === 'farmer_summary' ? '#10B981' : '#94A3B8'} />
             <Sparkles
               size={11}
               color="#10B981"
