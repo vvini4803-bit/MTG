@@ -86,7 +86,8 @@ import {
   Heart,
   Share2,
   Settings,
-  Edit3
+  Edit3,
+  Bot
 } from 'lucide-react';
 import { getEffectiveUserId, triggerHapticFeedback } from './services/deviceIdentity';
 import { backNavigation } from './services/backNavigation';
@@ -475,11 +476,11 @@ export const App: React.FC = () => {
     },
     {
       id: 'farmer_live' as MainSection,
-      title_en: 'MTG FARMER AI LIVE',
-      title_kn: 'ರೈತ AI ಲೈವ್ ಸಂಭಾಷಣೆ',
-      subtitle_en: 'Real-time Gemini voice AI in Kannada & English',
-      subtitle_kn: 'ನೈಜ ಸಮಯದ ಜೆಮಿನಿ ಲೈವ್ ಧ್ವನಿ ಸಹಾಯಕ',
-      icon: '🎙️',
+      title_en: 'AI TALKING AGENT LIVE',
+      title_kn: 'AI ಲೈವ್ ಟಾಕಿಂಗ್ ಏಜೆಂಟ್',
+      subtitle_en: 'Gemini AI live streaming continuous talking agent in Kannada & English',
+      subtitle_kn: 'ಜೆಮಿನಿ ಲೈವ್ ಸ್ಟ್ರೀಮಿಂಗ್ • ನಿರಂತರ ಸಂಭಾಷಣೆ • ರೈತರಿಗೆ ಲೈವ್ ಮಾರ್ಗದರ್ಶನ',
+      icon: '🤖',
       color: '#06B6D4',
       bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(2, 132, 199, 0.12) 100%)'
     }
@@ -663,9 +664,9 @@ export const App: React.FC = () => {
               <Settings size={18} />
             </button>
 
-            {/* Quick Ask Village Voice Button */}
+            {/* Quick Ask AI Live Talking Agent Button */}
             <button
-              onClick={() => setIsVoiceModalOpen(true)}
+              onClick={() => navigateTo('farmer_live')}
               className="site-header-pill-btn"
               style={{
                 background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
@@ -678,13 +679,14 @@ export const App: React.FC = () => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '6px',
                 boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
                 flexShrink: 0
               }}
+              title={isKannada ? '🤖 AI ಲೈವ್ ಟಾಕಿಂಗ್ ಏಜೆಂಟ್ (Gemini Live)' : '🤖 AI Talking Agent Live (Gemini Live)'}
             >
-              <span>🎙️</span>
-              <span>{isKannada ? 'ಕೇಳಿ' : 'Ask'}</span>
+              <Bot size={15} color="#FFFFFF" />
+              <span>{isKannada ? 'AI ಲೈವ್' : 'AI Live'}</span>
             </button>
 
             {/* Language Switcher */}
@@ -1326,9 +1328,10 @@ export const App: React.FC = () => {
                     alignItems: 'center',
                     gap: '6px'
                   }}
+                  title={isKannada ? '🤖 AI ಲೈವ್ ಟಾಕಿಂಗ್ ಏಜೆಂಟ್ (Gemini Live)' : '🤖 AI Talking Agent Live (Gemini Live)'}
                 >
-                  <Mic size={16} />
-                  <span>{isKannada ? 'ಧ್ವನಿ AI ಲೈವ್' : 'Gemini Live AI'}</span>
+                  <Bot size={16} />
+                  <span>{isKannada ? '🤖 AI ಲೈವ್ ಏಜೆಂಟ್' : '🤖 AI Live Agent'}</span>
                 </button>
               </div>
             </div>
@@ -2158,13 +2161,13 @@ export const App: React.FC = () => {
           <span>{isKannada ? 'ರೈತ & ಕುಟುಂಬ' : 'Farmer AI'}</span>
         </button>
 
-        {/* Tab 4: Ask AI / Voice Assistant */}
+        {/* Tab 4: 🤖 AI TALKING AGENT LIVE (Gemini AI Live Streaming) */}
         <button
-          onClick={() => setIsVoiceModalOpen(true)}
+          onClick={() => navigateTo('farmer_live')}
           style={{
             background: 'none',
             border: 'none',
-            color: '#94A3B8',
+            color: currentSection === 'farmer_live' ? '#10B981' : '#94A3B8',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -2172,9 +2175,10 @@ export const App: React.FC = () => {
             fontSize: '0.72rem',
             fontWeight: 800,
             cursor: 'pointer',
-            padding: '4px 8px'
+            padding: '4px 8px',
+            position: 'relative'
           }}
-          title={isKannada ? 'ಗ್ರಾಮ ಧ್ವನಿ ಸಹಾಯಕ' : 'Village Voice Assistant'}
+          title={isKannada ? '🤖 AI ಲೈವ್ ಟಾಕಿಂಗ್ ಏಜೆಂಟ್ (Gemini Live)' : '🤖 AI Talking Agent Live (Gemini Live)'}
         >
           <div
             style={{
@@ -2182,16 +2186,33 @@ export const App: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '36px',
-              height: '36px',
+              width: '38px',
+              height: '38px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.5)'
+              background: currentSection === 'farmer_live'
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.4) 0%, rgba(6, 182, 212, 0.4) 100%)'
+                : 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%)',
+              border: currentSection === 'farmer_live' ? '1.5px solid #10B981' : '1.5px solid rgba(16, 185, 129, 0.5)',
+              boxShadow: currentSection === 'farmer_live' ? '0 0 14px rgba(16, 185, 129, 0.6)' : 'none'
             }}
           >
-            <Mic size={20} color="#10B981" />
+            <Bot size={21} color="#10B981" />
+            <span
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#EF4444',
+                boxShadow: '0 0 6px #EF4444'
+              }}
+            />
           </div>
-          <span>{isKannada ? 'ಧ್ವನಿ AI' : 'Voice AI'}</span>
+          <span style={{ color: currentSection === 'farmer_live' ? '#10B981' : undefined, whiteSpace: 'nowrap' }}>
+            {isKannada ? 'AI ಲೈವ್ ಏಜೆಂಟ್' : 'AI Live Agent'}
+          </span>
         </button>
 
         {/* Tab 5: Profile */}
@@ -2216,15 +2237,16 @@ export const App: React.FC = () => {
         </button>
       </nav>
 
-      {/* 🎙️ Global Floating Voice Assistant Trigger (FAB) */}
-      {currentSection !== 'ask' && !isVoiceModalOpen && (
+      {/* 🎙️ Global Floating AI Talking Agent Trigger (FAB) */}
+      {currentSection !== 'ask' && currentSection !== 'farmer_live' && (
         <button
           className="voice-fab"
-          onClick={() => setIsVoiceModalOpen(true)}
-          title={isKannada ? 'ಗ್ರಾಮ ಧ್ವನಿ ಸಹಾಯಕ (AI Voice Assistant)' : 'Village Voice Assistant (AI)'}
-          aria-label="Open Voice Assistant"
+          onClick={() => navigateTo('farmer_live')}
+          title={isKannada ? '🤖 AI ಲೈವ್ ಟಾಕಿಂಗ್ ಏಜೆಂಟ್ (Gemini Live)' : '🤖 AI Talking Agent Live (Gemini Live)'}
+          aria-label="Open AI Talking Agent Live"
         >
-          <Mic size={28} />
+          <div className="voice-fab-pulse"></div>
+          <Bot size={26} color="#FFFFFF" />
         </button>
       )}
 

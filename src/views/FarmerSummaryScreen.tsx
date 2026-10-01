@@ -452,7 +452,7 @@ export const FarmerSummaryScreen: React.FC<FarmerSummaryScreenProps> = ({ onBack
             + {isKannada ? 'ವರ್ಷ ಸೇರಿಸಿ' : 'Add Year'}
           </button>
 
-          {/* Gemini Live Button */}
+          {/* AI Talking Agent Live Button */}
           <button
             onClick={onOpenLiveAI}
             style={{
@@ -469,9 +469,10 @@ export const FarmerSummaryScreen: React.FC<FarmerSummaryScreenProps> = ({ onBack
               cursor: 'pointer',
               boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
             }}
+            title={isKannada ? '🤖 AI ಲೈವ್ ಟಾಕಿಂಗ್ ಏಜೆಂಟ್ (Gemini Live)' : '🤖 AI Talking Agent Live (Gemini Live)'}
           >
-            <Mic size={16} />
-            <span>{isKannada ? 'ಧ್ವನಿ AI ಲೈವ್' : 'Live AI'}</span>
+            <Radio size={15} color="#FFFFFF" />
+            <span>{isKannada ? '🤖 AI ಲೈವ್ ಏಜೆಂಟ್' : '🤖 AI Live Agent'}</span>
           </button>
         </div>
       </div>
