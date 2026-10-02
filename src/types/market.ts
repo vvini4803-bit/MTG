@@ -66,6 +66,10 @@ export interface MarketPriceApiResponse {
   lastUpdated: string;
   reportingDate: string;
   reportDate: string; // alias
+  requestedDate?: string;
+  isToday?: boolean;
+  isRecentFallback?: boolean;
+  fallbackNotice?: string | null;
   state: string;
   totalRecords: number;
   markets: string[];

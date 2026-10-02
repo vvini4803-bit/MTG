@@ -207,6 +207,31 @@ function formatDateISO(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function getTodayDateIST(): string {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+  } catch (e) {
+    const d = new Date();
+    const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+    const ist = new Date(utc + 3600000 * 5.5);
+    return formatDateISO(ist);
+  }
+}
+
+function getPreviousDateIST(daysAgo: number): string {
+  try {
+    const d = new Date();
+    const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+    const ist = new Date(utc + 3600000 * 5.5 - daysAgo * 86400000);
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(ist);
+  } catch (e) {
+    const d = new Date();
+    const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+    const ist = new Date(utc + 3600000 * 5.5 - daysAgo * 86400000);
+    return formatDateISO(ist);
+  }
+}
+
 export default async function handler(req: RequestLike, res: ResponseLike) {
   // CORS setup
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -233,23 +258,33 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       market,
       commodity,
       date,
+      refresh,
       history,
       period = '7d'
     } = req.query;
 
-    const cacheKey = `agmark_${stateId}_${date || 'latest'}_${history || 'false'}_${period}`;
+    const todayIST = getTodayDateIST();
+    const requestedDate = typeof date === 'string' && date.trim() ? date.trim() : todayIST;
+    const forceRefresh = refresh === 'true' || refresh === '1';
+
+    const cacheKey = `agmark_${stateId}_${requestedDate}_${history || 'false'}_${period}`;
     const now = Date.now();
 
-    // Check cache
-    const cached = cache.get(cacheKey);
-    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-      let filtered = filterRecords(cached.data.records, { district, market, commodity });
-      return res.status(200).json({
-        ...cached.data,
-        records: filtered,
-        totalRecords: filtered.length,
-        cached: true
-      });
+    // Check cache (bypassed if forceRefresh is true)
+    if (!forceRefresh) {
+      const cached = cache.get(cacheKey);
+      const effectiveTtl = cached?.data?.isRecentFallback ? 3 * 60 * 1000 : CACHE_TTL_MS;
+      if (cached && now - cached.timestamp < effectiveTtl) {
+        let filtered = filterRecords(cached.data.records, { district, market, commodity });
+        return res.status(200).json({
+          ...cached.data,
+          records: filtered,
+          totalRecords: filtered.length,
+          cached: true
+        });
+      }
+    } else {
+      cache.delete(cacheKey);
     }
 
     // 1. If History is requested
@@ -265,17 +300,12 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     }
 
     // 2. Fetch daily report from Government AGMARKNET 2.0 API
-    // If a specific date is provided, try that first; otherwise try today, yesterday, and recent business days
-    const datesToTry: string[] = [];
-    if (typeof date === 'string' && date.trim()) {
-      datesToTry.push(date.trim());
-    } else {
-      const today = new Date();
-      datesToTry.push(formatDateISO(today));
-      for (let i = 1; i <= 5; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        datesToTry.push(formatDateISO(d));
+    // Try requestedDate first; if not yet available, try recent business days up to 7 days back
+    const datesToTry: string[] = [requestedDate];
+    for (let i = 1; i <= 7; i++) {
+      const prev = getPreviousDateIST(i);
+      if (!datesToTry.includes(prev)) {
+        datesToTry.push(prev);
       }
     }
 
@@ -353,12 +383,23 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       }
     }
 
+    const isToday = successfulDate === todayIST;
+    const isRecentFallback = successfulDate !== requestedDate;
+    const fallbackNotice = isRecentFallback
+      ? `Today's (${requestedDate}) APMC reports are being finalized by market officers. Showing most recent verified market data from ${successfulDate}.`
+      : null;
+
     const payload = {
       success: true,
       source: 'AGMARKNET / Government of India',
       portalUrl: 'https://agmarknet.gov.in/home',
       lastUpdated: new Date().toISOString(),
+      requestedDate: requestedDate,
       reportingDate: successfulDate,
+      reportDate: successfulDate,
+      isToday: isToday,
+      isRecentFallback: isRecentFallback,
+      fallbackNotice: fallbackNotice,
       state: typeof state === 'string' ? state : 'Karnataka',
       markets: Array.from(marketsSet).sort(),
       commodities: Array.from(commoditiesSet).sort(),

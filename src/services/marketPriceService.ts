@@ -13,9 +13,9 @@ import { geminiService } from './geminiService';
 // Default Preferences
 export const DEFAULT_PREFERENCES: FarmerMarketPreferences = {
   preferredState: 'Karnataka',
-  preferredDistrict: 'Gadag',
-  preferredMarket: 'Gadag APMC',
-  preferredCommodities: ['ALL', 'Maize', 'Paddy(Common)', 'Tomato', 'Onion', 'Groundnut', 'Dry Chillies', 'Cotton']
+  preferredDistrict: 'ALL',
+  preferredMarket: 'ALL',
+  preferredCommodities: ['ALL']
 };
 
 // Kannada & English commodity mapping with emoji icons
@@ -127,6 +127,33 @@ class MarketPriceService {
     };
   }
 
+  // Get Today's date in Indian Standard Time (IST) YYYY-MM-DD
+  public getTodayDateIST(): string {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+    } catch (e) {
+      const d = new Date();
+      const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+      const ist = new Date(utc + 3600000 * 5.5);
+      return ist.toISOString().split('T')[0];
+    }
+  }
+
+  // Get Yesterday's date in Indian Standard Time (IST) YYYY-MM-DD
+  public getYesterdayDateIST(): string {
+    try {
+      const d = new Date();
+      const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+      const ist = new Date(utc + 3600000 * 5.5 - 86400000);
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(ist);
+    } catch (e) {
+      const d = new Date();
+      const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+      const ist = new Date(utc + 3600000 * 5.5 - 86400000);
+      return ist.toISOString().split('T')[0];
+    }
+  }
+
   // Fetch Daily Market Prices (Official AGMARKNET + Gemini AI Intelligence)
   public async fetchDailyPrices(params?: {
     state?: string;
@@ -137,15 +164,17 @@ class MarketPriceService {
     refresh?: boolean;
   }): Promise<MarketPriceApiResponse> {
     const now = Date.now();
-    const targetDate = params?.date || new Date().toISOString().split('T')[0];
+    const todayIST = this.getTodayDateIST();
+    const targetDate = params?.date || todayIST;
+    const isRefresh = !!params?.refresh;
     const cacheKey = `mtg_market_prices_${targetDate}`;
 
     // 1. Check memory cache (if not refreshing and for same date)
     if (
-      !params?.refresh &&
+      !isRefresh &&
       this.memoryCache &&
-      this.memoryCache.reportingDate === targetDate &&
-      now - this.cacheTimestamp < this.CACHE_LIFETIME
+      (this.memoryCache.requestedDate === targetDate || this.memoryCache.reportingDate === targetDate) &&
+      now - this.cacheTimestamp < (this.memoryCache.isRecentFallback ? 3 * 60 * 1000 : this.CACHE_LIFETIME)
     ) {
       const filtered = this.filterRecords(this.memoryCache.records, params);
       return {
@@ -153,21 +182,21 @@ class MarketPriceService {
         records: filtered,
         totalRecords: filtered.length,
         cached: true,
-        isCached: true,
-        reportDate: this.memoryCache.reportDate || targetDate
+        isCached: true
       };
     }
 
     // 2. Try LocalStorage cache
-    if (!params?.refresh) {
+    if (!isRefresh) {
       try {
         const local = localStorage.getItem(cacheKey);
         if (local) {
           const parsed = JSON.parse(local);
+          const maxAge = parsed?.data?.isRecentFallback ? 3 * 60 * 1000 : this.CACHE_LIFETIME;
           if (
             parsed &&
             parsed.timestamp &&
-            now - parsed.timestamp < this.CACHE_LIFETIME &&
+            now - parsed.timestamp < maxAge &&
             parsed.data?.records?.length > 0
           ) {
             this.memoryCache = parsed.data;
@@ -178,8 +207,7 @@ class MarketPriceService {
               records: filtered,
               totalRecords: filtered.length,
               cached: true,
-              isCached: true,
-              reportDate: parsed.data.reportDate || targetDate
+              isCached: true
             };
           }
         }
@@ -197,6 +225,7 @@ class MarketPriceService {
       if (params?.market && params.market !== 'ALL') searchParams.set('market', params.market);
       if (params?.commodity && params.commodity !== 'ALL') searchParams.set('commodity', params.commodity);
       if (params?.date) searchParams.set('date', params.date);
+      if (isRefresh) searchParams.set('refresh', 'true');
 
       const response = await fetch(`/api/market-prices?${searchParams.toString()}`);
       if (response.ok) {
@@ -322,17 +351,17 @@ class MarketPriceService {
 
   // Direct AGMARKNET 2.0 fetcher
   private async fetchDirectAgmarknet(targetDate?: string): Promise<MarketPriceApiResponse> {
-    const datesToTry: string[] = [];
-    if (targetDate) {
-      datesToTry.push(targetDate);
-    } else {
-      const today = new Date();
-      datesToTry.push(today.toISOString().split('T')[0]);
-      for (let i = 1; i <= 4; i++) {
+    const todayIST = this.getTodayDateIST();
+    const reqDate = targetDate || todayIST;
+    const datesToTry: string[] = [reqDate];
+    for (let i = 1; i <= 7; i++) {
+      try {
         const d = new Date();
-        d.setDate(d.getDate() - i);
-        datesToTry.push(d.toISOString().split('T')[0]);
-      }
+        const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+        const ist = new Date(utc + 3600000 * 5.5 - i * 86400000);
+        const prev = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(ist);
+        if (!datesToTry.includes(prev)) datesToTry.push(prev);
+      } catch (e) {}
     }
 
     const headers = {
@@ -405,12 +434,22 @@ class MarketPriceService {
       }
     }
 
+    const isToday = successfulDate === todayIST;
+    const isRecentFallback = successfulDate !== reqDate;
+    const fallbackNotice = isRecentFallback
+      ? `Today's (${reqDate}) APMC reports are being finalized by market officers. Showing most recent verified market data from ${successfulDate}.`
+      : null;
+
     return {
       success: true,
       source: 'AGMARKNET / Government of India',
       lastUpdated: new Date().toISOString(),
+      requestedDate: reqDate,
       reportingDate: successfulDate,
       reportDate: successfulDate,
+      isToday: isToday,
+      isRecentFallback: isRecentFallback,
+      fallbackNotice: fallbackNotice,
       state: 'Karnataka',
       totalRecords: allRecords.length,
       markets: Array.from(marketsSet).sort(),

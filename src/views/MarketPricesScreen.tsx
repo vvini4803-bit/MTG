@@ -47,11 +47,12 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
   const { language, isKannada } = useLanguage();
   const { currentUser } = useAuth();
 
-  // Filter State
+  // Filter State (By user requirement: Default to ALL district, ALL market, ALL crops on open!)
   const [selectedState, setSelectedState] = useState<string>('Karnataka');
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('Gadag');
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('ALL');
   const [selectedMarket, setSelectedMarket] = useState<string>('ALL');
   const [selectedCommodity, setSelectedCommodity] = useState<string>('ALL');
+  const [selectedDate, setSelectedDate] = useState<string>(marketPriceService.getTodayDateIST());
   const [searchCropQuery, setSearchCropQuery] = useState<string>('');
   const [showAllSecondary, setShowAllSecondary] = useState<boolean>(false);
 
@@ -63,7 +64,12 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
   const [metaInfo, setMetaInfo] = useState<{
     source: string;
     lastUpdated: string;
+    reportingDate: string;
     reportDate: string;
+    requestedDate?: string;
+    isToday?: boolean;
+    isRecentFallback?: boolean;
+    fallbackNotice?: string | null;
     isCached: boolean;
     cachedAt?: string;
   } | null>(null);
@@ -108,19 +114,18 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
       const prefs = await marketPriceService.getUserPreferences(uid);
       if (isMounted) {
         setUserPrefs(prefs);
-        if (prefs.preferredDistrict) setSelectedDistrict(prefs.preferredDistrict);
-        if (prefs.preferredMarket) setSelectedMarket(prefs.preferredMarket);
-        if (prefs.preferredCommodities?.[0] && prefs.preferredCommodities[0] !== 'Pomegranate') {
-          setSelectedCommodity(prefs.preferredCommodities[0]);
-        } else {
-          setSelectedCommodity('ALL');
-        }
+        // User explicitly requested: In starting when we open app itself, it selected all market, all district, all crops!
+        setSelectedDistrict('ALL');
+        setSelectedMarket('ALL');
+        setSelectedCommodity('ALL');
       }
 
-      // Fetch official market data
+      // Fetch official market data for today's date in IST
       try {
+        const todayIST = marketPriceService.getTodayDateIST();
         const res = await marketPriceService.getMarketPrices({
-          state: 'Karnataka'
+          state: 'Karnataka',
+          date: todayIST
         });
 
         if (isMounted) {
@@ -128,7 +133,12 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
           setMetaInfo({
             source: res.source,
             lastUpdated: res.lastUpdated,
-            reportDate: res.reportDate,
+            reportingDate: res.reportingDate || res.reportDate,
+            reportDate: res.reportDate || res.reportingDate,
+            requestedDate: res.requestedDate || todayIST,
+            isToday: res.isToday,
+            isRecentFallback: res.isRecentFallback,
+            fallbackNotice: res.fallbackNotice,
             isCached: res.isCached,
             cachedAt: res.cachedAt
           });
@@ -182,20 +192,26 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
     }
   }, [showAiModal]);
 
-  // Manual Refresh Handler
-  const handleRefresh = async () => {
+  // Manual Refresh Handler (Bypasses cache and explicitly re-queries AGMARKNET)
+  const handleRefresh = async (customDate?: string | React.MouseEvent | any) => {
     setRefreshing(true);
     setError(null);
+    const dateToQuery = typeof customDate === 'string' && customDate ? customDate : selectedDate || marketPriceService.getTodayDateIST();
     try {
       const res = await marketPriceService.getMarketPrices(
-        { state: selectedState },
-        true // force bypass cache
+        { state: selectedState, date: dateToQuery },
+        true // force bypass cache!
       );
       setAllRecords(res.records || []);
       setMetaInfo({
         source: res.source,
         lastUpdated: res.lastUpdated,
-        reportDate: res.reportDate,
+        reportingDate: res.reportingDate || res.reportDate,
+        reportDate: res.reportDate || res.reportingDate,
+        requestedDate: res.requestedDate || dateToQuery,
+        isToday: res.isToday,
+        isRecentFallback: res.isRecentFallback,
+        fallbackNotice: res.fallbackNotice,
         isCached: res.isCached,
         cachedAt: res.cachedAt
       });
@@ -207,6 +223,40 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
       );
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  // Date Change Handler (Allows viewing past date-wise reports)
+  const handleDateChange = async (newDate: string) => {
+    setSelectedDate(newDate);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await marketPriceService.getMarketPrices({
+        state: selectedState,
+        date: newDate
+      });
+      setAllRecords(res.records || []);
+      setMetaInfo({
+        source: res.source,
+        lastUpdated: res.lastUpdated,
+        reportingDate: res.reportingDate || res.reportDate,
+        reportDate: res.reportDate || res.reportingDate,
+        requestedDate: res.requestedDate || newDate,
+        isToday: res.isToday,
+        isRecentFallback: res.isRecentFallback,
+        fallbackNotice: res.fallbackNotice,
+        isCached: res.isCached,
+        cachedAt: res.cachedAt
+      });
+    } catch (err: any) {
+      setError(
+        isKannada
+          ? 'ಆಯ್ಕೆಮಾಡಿದ ದಿನಾಂಕದ ಮಾರುಕಟ್ಟೆ ಮಾಹಿತಿ ಪಡೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.'
+          : 'Failed to retrieve market prices for selected date.'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -524,39 +574,202 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
         </div>
       </div>
 
-      {/* Meta Bar: Reporting Date & Cache Status */}
-      {metaInfo && (
+      {/* 2. DATE-WISE MARKET PRICE SELECTOR (Today, Yesterday, or Pick Date) */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '12px 16px',
+          marginBottom: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#34D399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Calendar size={15} />
+            <span>{isKannada ? 'ದಿನಾಂಕದ ಆಯ್ಕೆ (Price Date):' : 'Price Date:'}</span>
+          </span>
+
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Today */}
+            <button
+              onClick={() => handleDateChange(marketPriceService.getTodayDateIST())}
+              style={{
+                background: selectedDate === marketPriceService.getTodayDateIST()
+                  ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                  : 'rgba(255, 255, 255, 0.08)',
+                color: selectedDate === marketPriceService.getTodayDateIST() ? '#FFFFFF' : '#CBD5E1',
+                border: selectedDate === marketPriceService.getTodayDateIST() ? '1px solid #34D399' : '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '12px',
+                padding: '6px 13px',
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: selectedDate === marketPriceService.getTodayDateIST() ? '0 2px 8px rgba(16, 185, 129, 0.4)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>🌟</span>
+              <span>{isKannada ? 'ಇಂದು (Today)' : 'Today'}</span>
+            </button>
+
+            {/* Yesterday */}
+            <button
+              onClick={() => handleDateChange(marketPriceService.getYesterdayDateIST())}
+              style={{
+                background: selectedDate === marketPriceService.getYesterdayDateIST()
+                  ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+                  : 'rgba(255, 255, 255, 0.08)',
+                color: selectedDate === marketPriceService.getYesterdayDateIST() ? '#FFFFFF' : '#CBD5E1',
+                border: selectedDate === marketPriceService.getYesterdayDateIST() ? '1px solid #60A5FA' : '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '12px',
+                padding: '6px 13px',
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: selectedDate === marketPriceService.getYesterdayDateIST() ? '0 2px 8px rgba(59, 130, 246, 0.4)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>📅</span>
+              <span>{isKannada ? 'ನಿನ್ನೆ (Yesterday)' : 'Yesterday'}</span>
+            </button>
+
+            {/* Custom Date Picker */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input
+                type="date"
+                value={selectedDate}
+                max={marketPriceService.getTodayDateIST()}
+                onChange={(e) => handleDateChange(e.target.value)}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  color: '#FFFFFF',
+                  borderRadius: '12px',
+                  padding: '5px 10px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+                title={isKannada ? 'ನಿರ್ದಿಷ್ಟ ದಿನಾಂಕ ಆಯ್ಕೆಮಾಡಿ' : 'Pick a specific date'}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Reporting Metadata Details */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.76rem', color: '#94A3B8' }}>
+          <span>
+            {isKannada ? 'ವರದಿ ದಿನಾಂಕ:' : 'Reporting Date:'}{' '}
+            <strong style={{ color: '#F1F5F9' }}>
+              {metaInfo?.reportingDate || metaInfo?.reportDate || selectedDate}
+            </strong>
+          </span>
+          {metaInfo?.isCached && (
+            <span style={{ color: '#6EE7B7', fontSize: '0.7rem' }}>
+              • {isKannada ? 'ಕ್ಯಾಶ್ ಮಾಡಿದ ದತ್ತಾಂಶ' : 'Verified Cache'}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Fallback Notice Banner (When today's APMC bulletin is still being compiled by officers) */}
+      {metaInfo?.isRecentFallback && (
         <div
           style={{
-            background: 'rgba(15, 23, 42, 0.65)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '12px',
-            padding: '8px 14px',
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.15) 100%)',
+            border: '1px solid rgba(245, 158, 11, 0.45)',
+            borderRadius: '16px',
+            padding: '12px 16px',
             marginBottom: '16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            fontSize: '0.78rem',
-            color: '#94A3B8',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '1.4rem' }}>📢</span>
+            <div style={{ fontSize: '0.82rem', color: '#FEF08A', lineHeight: 1.45 }}>
+              <strong style={{ color: '#FFFFFF', display: 'block', marginBottom: '2px' }}>
+                {isKannada
+                  ? `ಇಂದಿನ (${selectedDate}) ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆ ವರದಿ ಪ್ರಗತಿಯಲ್ಲಿದೆ`
+                  : `Today's (${selectedDate}) APMC Market Bulletin In Progress`}
+              </strong>
+              <span>
+                {isKannada
+                  ? `ಎಪಿಎಂಸಿ ಅಧಿಕಾರಿಗಳು ಇಂದಿನ ವಹಿವಾಟು ವರದಿಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡುತ್ತಿದ್ದಾರೆ. ಇತ್ತೀಚಿನ ಲಭ್ಯವಿರುವ ಸರ್ಕಾರಿ ದರಗಳನ್ನು (${metaInfo.reportingDate || metaInfo.reportDate}) ತೋರಿಸಲಾಗುತ್ತಿದೆ. ಇಂದಿನ ಹೊಸ ದರಗಳಿಗಾಗಿ ಬಟನ್ ಒತ್ತಿ.`
+                  : `Official arrivals are currently being traded & filed by market officers. Showing most recent verified market data from ${metaInfo.reportingDate || metaInfo.reportDate}. Tap below to check for today's new uploads.`}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => handleRefresh(marketPriceService.getTodayDateIST())}
+            disabled={refreshing}
+            style={{
+              background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+              color: '#000000',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '8px 16px',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              cursor: refreshing ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(245, 158, 11, 0.4)'
+            }}
+          >
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            <span>{refreshing ? (isKannada ? 'ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...' : 'Checking...') : (isKannada ? 'ಇಂದಿನ ದರಗಳಿಗಾಗಿ ನವೀಕರಿಸಿ' : "Check Today's Live Uploads")}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Live Today Badge (When today's exact date is active) */}
+      {metaInfo?.isToday && (
+        <div
+          style={{
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            borderRadius: '14px',
+            padding: '10px 14px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '8px'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Calendar size={14} color="#10B981" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6EE7B7', fontSize: '0.82rem', fontWeight: 700 }}>
+            <span>🟢</span>
             <span>
-              {isKannada ? 'ಇತ್ತೀಚಿನ ಲಭ್ಯವಿರುವ ಮಾರುಕಟ್ಟೆ ವರದಿ:' : 'Latest available market report:'}{' '}
-              <strong style={{ color: '#F1F5F9' }}>{metaInfo.reportDate}</strong>
+              {isKannada
+                ? `ಇಂದಿನ (${metaInfo.reportingDate || selectedDate}) ನಿಖರ ಸರ್ಕಾರಿ ಮಾರುಕಟ್ಟೆ ದರಗಳು ಲೈವ್ ಆಗಿವೆ!`
+                : `Today's (${metaInfo.reportingDate || selectedDate}) exact official APMC market prices are live!`}
             </span>
           </div>
-          <div>
-            <span>{metaInfo.isCached ? (isKannada ? 'ಕ್ಯಾಶ್ ಮಾಡಿದ ದತ್ತಾಂಶ (ತ್ವರಿತ)' : 'Verified cached data') : (isKannada ? 'ಲೈವ್ ದತ್ತಾಂಶ' : 'Live server response')}</span>
-            {metaInfo.cachedAt && (
-              <span style={{ marginLeft: '6px', color: '#64748B' }}>
-                ({new Date(metaInfo.cachedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
-              </span>
-            )}
-          </div>
+          <span style={{ fontSize: '0.72rem', color: '#A7F3D0', fontWeight: 800 }}>
+            🏛️ AGMARKNET Verified
+          </span>
         </div>
       )}
 
