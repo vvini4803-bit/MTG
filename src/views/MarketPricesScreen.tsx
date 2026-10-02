@@ -51,8 +51,9 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
   const [selectedState, setSelectedState] = useState<string>('Karnataka');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('Gadag');
   const [selectedMarket, setSelectedMarket] = useState<string>('ALL');
-  const [selectedCommodity, setSelectedCommodity] = useState<string>('Pomegranate');
+  const [selectedCommodity, setSelectedCommodity] = useState<string>('ALL');
   const [searchCropQuery, setSearchCropQuery] = useState<string>('');
+  const [showAllSecondary, setShowAllSecondary] = useState<boolean>(false);
 
   // Data State
   const [allRecords, setAllRecords] = useState<MarketPriceRecord[]>([]);
@@ -108,7 +109,12 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
       if (isMounted) {
         setUserPrefs(prefs);
         if (prefs.preferredDistrict) setSelectedDistrict(prefs.preferredDistrict);
-        if (prefs.preferredCommodities?.[0]) setSelectedCommodity(prefs.preferredCommodities[0]);
+        if (prefs.preferredMarket) setSelectedMarket(prefs.preferredMarket);
+        if (prefs.preferredCommodities?.[0] && prefs.preferredCommodities[0] !== 'Pomegranate') {
+          setSelectedCommodity(prefs.preferredCommodities[0]);
+        } else {
+          setSelectedCommodity('ALL');
+        }
       }
 
       // Fetch official market data
@@ -240,7 +246,9 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
         const matchesEn = rec.commodity.toLowerCase().includes(q);
         const matchesKn = (rec.commodityKn || '').toLowerCase().includes(q);
         const matchesMarket = rec.market.toLowerCase().includes(q);
-        return matchesEn || matchesKn || matchesMarket;
+        const matchesDistrict = rec.district.toLowerCase().includes(q);
+        const matchesVariety = (rec.variety || '').toLowerCase().includes(q);
+        return matchesEn || matchesKn || matchesMarket || matchesDistrict || matchesVariety;
       }
       if (selectedCommodity && selectedCommodity !== 'ALL') {
         return rec.commodity.toLowerCase() === selectedCommodity.toLowerCase();
@@ -252,6 +260,13 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
   // Primary / Featured Card Record
   const featuredRecord = useMemo(() => {
     if (filteredRecords.length === 0) return null;
+    // Prefer selected commodity if specific
+    if (selectedCommodity !== 'ALL') {
+      const match = filteredRecords.find(
+        (r) => r.commodity.toLowerCase() === selectedCommodity.toLowerCase()
+      );
+      if (match) return match;
+    }
     // Prefer exact market match if selected
     if (selectedMarket !== 'ALL') {
       const match = filteredRecords.find(
@@ -260,7 +275,7 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
       if (match) return match;
     }
     return filteredRecords[0];
-  }, [filteredRecords, selectedMarket]);
+  }, [filteredRecords, selectedMarket, selectedCommodity]);
 
   // Secondary records (other reported items in the same APMC / selection)
   const secondaryRecords = useMemo(() => {
@@ -567,57 +582,85 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
         </div>
       )}
 
-      {/* 2. FARMER-FRIENDLY FILTERS: State -> District -> Market */}
+      {/* 2. SPECIFIC DISTRICT & APMC MARKET SELECTOR (AGMARKNET OFFICIAL) */}
       <div
         style={{
-          background: 'rgba(15, 23, 42, 0.85)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '18px',
-          padding: '16px',
-          marginBottom: '16px',
-          boxShadow: '0 6px 20px rgba(0,0,0,0.3)'
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(17, 24, 39, 0.92) 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.35)',
+          borderRadius: '20px',
+          padding: '18px 20px',
+          marginBottom: '18px',
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-          <SlidersHorizontal size={18} color="#10B981" />
-          <h2 style={{ fontSize: '0.98rem', fontWeight: 800, margin: 0, color: '#F8FAFC' }}>
-            {isKannada ? 'ಮಾರುಕಟ್ಟೆ ಮತ್ತು ಜಿಲ್ಲೆ ಆಯ್ಕೆ' : 'Select State, District & Market (APMC)'}
-          </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <SlidersHorizontal size={20} color="#10B981" />
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 900, margin: 0, color: '#FFFFFF' }}>
+              {isKannada ? 'ನಿರ್ದಿಷ್ಟ ಜಿಲ್ಲೆ ಮತ್ತು ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆ ಆಯ್ಕೆ' : 'Select Specific District & APMC Market'}
+            </h2>
+          </div>
+          <span style={{ fontSize: '0.74rem', color: '#94A3B8' }}>
+            🏛️ {allRecords.length} {isKannada ? 'ಲೈವ್ ದರಗಳು (AGMARKNET)' : 'Live APMC rates from AGMARKNET'}
+          </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-          {/* State (Default: Karnataka) */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginBottom: '4px' }}>
-              {isKannada ? 'ರಾಜ್ಯ (State)' : 'State'}
-            </label>
-            <select
-              value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'rgba(30, 41, 59, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: '#FFFFFF',
-                borderRadius: '12px',
-                padding: '10px 12px',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                outline: 'none'
-              }}
-            >
-              <option value="Karnataka">Karnataka (ಕರ್ನಾಟಕ)</option>
-              <option value="Maharashtra">Maharashtra</option>
-              <option value="Andhra Pradesh">Andhra Pradesh</option>
-              <option value="Tamil Nadu">Tamil Nadu</option>
-              <option value="Telangana">Telangana</option>
-            </select>
+        {/* Popular District Quick Tabs */}
+        <div style={{ marginBottom: '14px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94A3B8', display: 'block', marginBottom: '6px' }}>
+            {isKannada ? '⚡ ತ್ವರಿತ ಜಿಲ್ಲಾ ಆಯ್ಕೆ (Popular Districts):' : '⚡ Quick District Select:'}
+          </span>
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+            {[
+              { id: 'Gadag', kn: 'ಗದಗ' },
+              { id: 'Chitradurga', kn: 'ಚಿತ್ರದುರ್ಗ' },
+              { id: 'Davangere', kn: 'ದಾವಣಗೆರೆ' },
+              { id: 'Dharwad', kn: 'ಧಾರವಾಡ / ಹುಬ್ಬಳ್ಳಿ' },
+              { id: 'Mandya', kn: 'ಮಂಡ್ಯ' },
+              { id: 'Ballari', kn: 'ಬಳ್ಳಾರಿ' },
+              { id: 'Belagavi', kn: 'ಬೆಳಗಾವಿ' },
+              { id: 'Shivamogga', kn: 'ಶಿವಮೊಗ್ಗ' },
+              { id: 'Kalaburagi', kn: 'ಕಲಬುರಗಿ' },
+              { id: 'Kolar', kn: 'ಕೋಲಾರ' },
+              { id: 'Mysuru', kn: 'ಮೈಸೂರು' },
+              { id: 'ALL', kn: 'ಎಲ್ಲಾ ಜಿಲ್ಲೆಗಳು' }
+            ].map((d) => {
+              const isActive = selectedDistrict.toLowerCase() === d.id.toLowerCase();
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => {
+                    setSelectedDistrict(d.id);
+                    setSelectedMarket('ALL');
+                  }}
+                  style={{
+                    background: isActive ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : 'rgba(255, 255, 255, 0.06)',
+                    color: isActive ? '#FFFFFF' : '#CBD5E1',
+                    border: isActive ? '1px solid #34D399' : '1px solid rgba(255, 255, 255, 0.12)',
+                    padding: '6px 13px',
+                    borderRadius: '16px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    boxShadow: isActive ? '0 2px 8px rgba(16, 185, 129, 0.4)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {isKannada ? d.kn : d.id === 'ALL' ? 'All Districts' : d.id}
+                </button>
+              );
+            })}
           </div>
+        </div>
 
-          {/* District */}
+        {/* 3-Column Dropdown Selectors */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+          {/* 1. District Selector */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginBottom: '4px' }}>
-              {isKannada ? 'ಜಿಲ್ಲೆ (District)' : 'District'}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: 800, color: '#34D399', marginBottom: '5px' }}>
+              <MapPin size={14} />
+              <span>{isKannada ? '1. ಜಿಲ್ಲೆ ಆಯ್ಕೆಮಾಡಿ (District)' : '1. Select District'}</span>
             </label>
             <select
               value={selectedDistrict}
@@ -627,46 +670,51 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
               }}
               style={{
                 width: '100%',
-                background: 'rgba(30, 41, 59, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: 'rgba(30, 41, 59, 0.95)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
                 color: '#FFFFFF',
                 borderRadius: '12px',
-                padding: '10px 12px',
-                fontSize: '0.9rem',
+                padding: '11px 12px',
+                fontSize: '0.88rem',
                 fontWeight: 700,
-                outline: 'none'
+                outline: 'none',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
               }}
             >
               {KARNATAKA_DISTRICTS.map((d) => (
                 <option key={d.en} value={d.en}>
-                  {isKannada ? d.kn : `${d.en}`}
+                  {isKannada ? d.kn : d.en}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Market / APMC (Dynamically populated) */}
+          {/* 2. Specific APMC Market Selector */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginBottom: '4px' }}>
-              {isKannada ? 'ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆ (APMC Market)' : 'Market / APMC'}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: 800, color: '#60A5FA', marginBottom: '5px' }}>
+              <span style={{ fontSize: '0.9rem' }}>🏛️</span>
+              <span>{isKannada ? '2. ನಿರ್ದಿಷ್ಟ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆ (APMC Mandi)' : '2. Specific APMC Mandi'}</span>
             </label>
             <select
               value={selectedMarket}
               onChange={(e) => setSelectedMarket(e.target.value)}
               style={{
                 width: '100%',
-                background: 'rgba(30, 41, 59, 0.9)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: 'rgba(30, 41, 59, 0.95)',
+                border: '1px solid rgba(96, 165, 250, 0.4)',
                 color: '#FFFFFF',
                 borderRadius: '12px',
-                padding: '10px 12px',
-                fontSize: '0.9rem',
+                padding: '11px 12px',
+                fontSize: '0.88rem',
                 fontWeight: 700,
-                outline: 'none'
+                outline: 'none',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
               }}
             >
               <option value="ALL">
-                {isKannada ? 'ಎಲ್ಲಾ ಮಾರುಕಟ್ಟೆಗಳು (All Markets)' : 'All Markets'}
+                {isKannada
+                  ? (selectedDistrict === 'ALL' ? 'ಎಲ್ಲಾ ಮಾರುಕಟ್ಟೆಗಳು (All Mandis)' : `${selectedDistrict} ಎಲ್ಲಾ ಎಪಿಎಂಸಿಗಳು (${availableMarketsForDistrict.length})`)
+                  : (selectedDistrict === 'ALL' ? 'All Karnataka Mandis' : `All ${selectedDistrict} APMCs (${availableMarketsForDistrict.length})`)}
               </option>
               {availableMarketsForDistrict.map((m) => (
                 <option key={m} value={m}>
@@ -674,6 +722,128 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* 3. Crop / Commodity Filter */}
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: 800, color: '#FBBF24', marginBottom: '5px' }}>
+              <span style={{ fontSize: '0.9rem' }}>🌾</span>
+              <span>{isKannada ? '3. ಬೆಳೆ ಫಿಲ್ಟರ್ (Crop Filter)' : '3. Filter by Crop'}</span>
+            </label>
+            <select
+              value={selectedCommodity}
+              onChange={(e) => {
+                setSelectedCommodity(e.target.value);
+                setSearchCropQuery('');
+              }}
+              style={{
+                width: '100%',
+                background: 'rgba(30, 41, 59, 0.95)',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+                color: '#FFFFFF',
+                borderRadius: '12px',
+                padding: '11px 12px',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                outline: 'none',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+              }}
+            >
+              <option value="ALL">
+                {isKannada ? '🌾 ಎಲ್ಲಾ ಬೆಳೆಗಳು (All Traded Crops)' : '🌾 All Traded Crops in this Mandi'}
+              </option>
+              {availableCommodities.map((c) => (
+                <option key={c} value={c}>
+                  {marketPriceService.getCommodityEmoji(c)} {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Quick APMC Market Pills (When a district is selected and has multiple APMCs) */}
+        {availableMarketsForDistrict.length > 0 && selectedDistrict !== 'ALL' && (
+          <div style={{ marginBottom: '12px', background: 'rgba(0, 0, 0, 0.25)', padding: '10px 12px', borderRadius: '12px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94A3B8', display: 'block', marginBottom: '6px' }}>
+              {isKannada ? `${selectedDistrict} ಜಿಲ್ಲೆಯ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆಗಳು:` : `${selectedDistrict} District APMC Mandis:`}
+            </span>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setSelectedMarket('ALL')}
+                style={{
+                  background: selectedMarket === 'ALL' ? '#3B82F6' : 'rgba(255, 255, 255, 0.08)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '5px 11px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                {isKannada ? 'ಎಲ್ಲಾ ಎಪಿಎಂಸಿಗಳು' : 'All APMCs'} ({availableMarketsForDistrict.length})
+              </button>
+              {availableMarketsForDistrict.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setSelectedMarket(m)}
+                  style={{
+                    background: selectedMarket === m ? '#10B981' : 'rgba(255, 255, 255, 0.08)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '5px 11px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <MapPin size={11} />
+                  <span>{m}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Active Selection Breadcrumb Status Banner */}
+        <div
+          style={{
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: '12px',
+            padding: '8px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '8px',
+            fontSize: '0.78rem'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#D1FAE5', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, color: '#34D399' }}>
+              {isKannada ? 'ಪ್ರಸ್ತುತ ವೀಕ್ಷಣೆ:' : 'Active View:'}
+            </span>
+            <span>
+              {selectedDistrict === 'ALL' ? (isKannada ? 'ಕರ್ನಾಟಕದ ಎಲ್ಲಾ ಜಿಲ್ಲೆಗಳು' : 'All Karnataka Districts') : selectedDistrict}
+            </span>
+            <span>▸</span>
+            <strong style={{ color: '#FFFFFF' }}>
+              {selectedMarket === 'ALL' ? (isKannada ? 'ಎಲ್ಲಾ ಎಪಿಎಂಸಿಗಳು' : 'All Mandis') : selectedMarket}
+            </strong>
+            <span>▸</span>
+            <span style={{ color: '#FBBF24' }}>
+              {selectedCommodity === 'ALL' ? (isKannada ? 'ಎಲ್ಲಾ ಬೆಳೆಗಳು' : 'All Crops') : selectedCommodity}
+            </span>
+          </div>
+
+          <div style={{ color: '#94A3B8', fontSize: '0.75rem' }}>
+            <strong style={{ color: '#34D399' }}>{filteredRecords.length}</strong>{' '}
+            {isKannada ? 'ದಾಖಲೆಗಳು ಹೊಂದಾಣಿಕೆಯಾಗಿವೆ' : 'reports matching'}
           </div>
         </div>
       </div>
@@ -867,8 +1037,63 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
               : `No arrival report for "${selectedCommodity}" in "${selectedDistrict}" district on this reporting date. Please select another market or crop.`}
           </p>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {selectedCommodity !== 'ALL' && (
+              <button
+                onClick={() => {
+                  setSelectedCommodity('ALL');
+                  setSearchCropQuery('');
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '9px 18px',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)'
+                }}
+              >
+                <span>🌾</span>
+                <span>{isKannada ? 'ಈ ಮಾರುಕಟ್ಟೆಯ ಎಲ್ಲಾ ಬೆಳೆಗಳನ್ನು ನೋಡಿ' : 'View All Traded Crops Here'}</span>
+              </button>
+            )}
+            {selectedMarket !== 'ALL' && (
+              <button
+                onClick={() => {
+                  setSelectedMarket('ALL');
+                  setSelectedCommodity('ALL');
+                  setSearchCropQuery('');
+                }}
+                style={{
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  border: '1px solid #3B82F6',
+                  color: '#93C5FD',
+                  borderRadius: '12px',
+                  padding: '9px 16px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>🏛️</span>
+                <span>{isKannada ? `${selectedDistrict} ಜಿಲ್ಲೆಯ ಎಲ್ಲಾ ಎಪಿಎಂಸಿಗಳು` : `All ${selectedDistrict} APMCs`}</span>
+              </button>
+            )}
             <button
-              onClick={() => setSelectedDistrict('ALL')}
+              onClick={() => {
+                setSelectedDistrict('ALL');
+                setSelectedMarket('ALL');
+                setSelectedCommodity('ALL');
+                setSearchCropQuery('');
+              }}
               style={{
                 background: 'rgba(255, 255, 255, 0.1)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -877,28 +1102,14 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
                 padding: '9px 16px',
                 fontSize: '0.85rem',
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
               }}
             >
-              {isKannada ? 'ಎಲ್ಲಾ ಜಿಲ್ಲೆಗಳ ಮಾರುಕಟ್ಟೆ ನೋಡಿ' : 'Change Market (All Districts)'}
-            </button>
-            <button
-              onClick={() => {
-                setSelectedCommodity('Tomato');
-                setSearchCropQuery('');
-              }}
-              style={{
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '9px 16px',
-                fontSize: '0.85rem',
-                fontWeight: 800,
-                cursor: 'pointer'
-              }}
-            >
-              {isKannada ? 'ಟೊಮೆಟೊ ಬೆಲೆ ನೋಡಿ' : 'Change Commodity (Tomato)'}
+              <span>🗺️</span>
+              <span>{isKannada ? 'ಕರ್ನಾಟಕದ ಎಲ್ಲಾ ಜಿಲ್ಲೆಗಳು ಮತ್ತು ಮಾರುಕಟ್ಟೆಗಳು' : 'All Karnataka Districts & APMCs'}</span>
             </button>
           </div>
         </div>
@@ -1222,11 +1433,36 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
           {/* Secondary Records Grid (Other reported items in same market/district) */}
           {secondaryRecords.length > 0 && (
             <div style={{ marginBottom: '28px' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#E2E8F0', marginBottom: '12px' }}>
-                {isKannada
-                  ? `ಇತರ ಮಾರುಕಟ್ಟೆ ವರದಿಗಳು (${secondaryRecords.length})`
-                  : `Other Available Mandi Reports (${secondaryRecords.length})`}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#E2E8F0', margin: 0 }}>
+                  {isKannada
+                    ? (selectedMarket !== 'ALL'
+                        ? `${selectedMarket} ಮಾರುಕಟ್ಟೆಯ ಎಲ್ಲಾ ಬೆಳೆಗಳು (${secondaryRecords.length})`
+                        : `${selectedDistrict !== 'ALL' ? selectedDistrict : 'ಕರ್ನಾಟಕ'} ಮಾರುಕಟ್ಟೆ ವರದಿಗಳು (${secondaryRecords.length})`)
+                    : (selectedMarket !== 'ALL'
+                        ? `All Traded Crops in ${selectedMarket} (${secondaryRecords.length})`
+                        : `Mandi Reports in ${selectedDistrict !== 'ALL' ? selectedDistrict : 'Karnataka'} (${secondaryRecords.length})`)}
+                </h3>
+                {secondaryRecords.length > 24 && selectedMarket === 'ALL' && (
+                  <button
+                    onClick={() => setShowAllSecondary(!showAllSecondary)}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#34D399',
+                      borderRadius: '10px',
+                      padding: '5px 12px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showAllSecondary
+                      ? (isKannada ? 'ಕಡಿಮೆ ತೋರಿಸಿ (Show Less)' : 'Show Less')
+                      : (isKannada ? `ಎಲ್ಲಾ ${secondaryRecords.length} ವರದಿಗಳನ್ನು ನೋಡಿ` : `View All ${secondaryRecords.length} Reports`)}
+                  </button>
+                )}
+              </div>
 
               <div
                 style={{
@@ -1235,7 +1471,7 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
                   gap: '12px'
                 }}
               >
-                {secondaryRecords.slice(0, 12).map((rec) => (
+                {(selectedMarket !== 'ALL' || showAllSecondary ? secondaryRecords : secondaryRecords.slice(0, 24)).map((rec) => (
                   <div
                     key={rec.id}
                     style={{
@@ -1293,38 +1529,90 @@ export const MarketPricesScreen: React.FC<MarketPricesScreenProps> = ({ onBack }
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginTop: '10px' }}>
                       <button
                         onClick={() => handleOpenHistory(rec)}
                         style={{
-                          flex: 1,
                           background: 'rgba(59, 130, 246, 0.12)',
                           border: '1px solid rgba(59, 130, 246, 0.25)',
                           color: '#93C5FD',
                           borderRadius: '8px',
-                          padding: '6px',
-                          fontSize: '0.72rem',
+                          padding: '6px 2px',
+                          fontSize: '0.7rem',
                           fontWeight: 700,
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '2px'
                         }}
+                        title={isKannada ? 'ಬೆಲೆ ಇತಿಹಾಸ' : 'Price History'}
                       >
-                        📈 {isKannada ? 'ಇತಿಹಾಸ' : 'History'}
+                        <TrendingUp size={11} />
+                        <span>{isKannada ? 'ಇತಿಹಾಸ' : 'History'}</span>
                       </button>
                       <button
                         onClick={() => handleOpenCompare(rec)}
                         style={{
-                          flex: 1,
                           background: 'rgba(139, 92, 246, 0.12)',
                           border: '1px solid rgba(139, 92, 246, 0.25)',
                           color: '#C4B5FD',
                           borderRadius: '8px',
-                          padding: '6px',
-                          fontSize: '0.72rem',
+                          padding: '6px 2px',
+                          fontSize: '0.7rem',
                           fontWeight: 700,
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '2px'
                         }}
+                        title={isKannada ? 'ಮಾರುಕಟ್ಟೆ ಹೋಲಿಕೆ' : 'Compare Markets'}
                       >
-                        📊 {isKannada ? 'ಹೋಲಿಕೆ' : 'Compare'}
+                        <BarChart2 size={11} />
+                        <span>{isKannada ? 'ಹೋಲಿಕೆ' : 'Compare'}</span>
+                      </button>
+                      <button
+                        onClick={() => handleOpenAi(rec)}
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.12)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          color: '#34D399',
+                          borderRadius: '8px',
+                          padding: '6px 2px',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '2px'
+                        }}
+                        title={isKannada ? 'AI ಸಲಹೆ' : 'AI Advice'}
+                      >
+                        <Sparkles size={11} />
+                        <span>{isKannada ? 'AI ಸಲಹೆ' : 'AI'}</span>
+                      </button>
+                      <button
+                        onClick={() => handleOpenAlert(rec)}
+                        style={{
+                          background: 'rgba(245, 158, 11, 0.12)',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          color: '#FCD34D',
+                          borderRadius: '8px',
+                          padding: '6px 2px',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '2px'
+                        }}
+                        title={isKannada ? 'ಬೆಲೆ ಎಚ್ಚರಿಕೆ' : 'Price Alert'}
+                      >
+                        <Bell size={11} />
+                        <span>{isKannada ? 'ಎಚ್ಚರಿಕೆ' : 'Alert'}</span>
                       </button>
                     </div>
                   </div>

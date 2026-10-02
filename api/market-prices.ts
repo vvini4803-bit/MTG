@@ -28,64 +28,167 @@ const AGMARKNET_HEADERS = {
   'Origin': 'https://agmarknet.gov.in'
 };
 
-// District lookup helper for Karnataka APMC markets
+// Comprehensive District lookup for all 74 Karnataka APMC markets
 const KARNATAKA_MARKET_DISTRICT_MAP: Record<string, string> = {
-  'Gadag': 'Gadag',
+  // Dharwad
+  'Hubballi': 'Dharwad',
+  'APMC Hubballi': 'Dharwad',
+  'Dharwad': 'Dharwad',
+
+  // Shivamogga
+  'Shimoga': 'Shivamogga',
+  'THIRTHAHALLI': 'Shivamogga',
+  'Sagar': 'Shivamogga',
+  'Shikaripura': 'Shivamogga',
+
+  // Hassan
+  'Arasikere': 'Hassan',
+  'Belur': 'Hassan',
+  'Hassan': 'Hassan',
+
+  // Bidar
+  'Aurad': 'Bidar',
+  'Basava Kalayana': 'Bidar',
+  'Bidar': 'Bidar',
+
+  // Chikkaballapura
+  'Bagepalli': 'Chikkaballapura',
+  'Chintamani': 'Chikkaballapura',
+  'Chikkaballapura': 'Chikkaballapura',
+
+  // Belagavi
+  'Bailahongal': 'Belagavi',
+  'Belgaum': 'Belagavi',
+  'Belagavi': 'Belagavi',
+  'Kudchi': 'Belagavi',
+  'Nippani': 'Belagavi',
+
+  // Ballari
+  'Ballari': 'Ballari',
+  'Bellary': 'Ballari',
+
+  // Kolar
+  'Bangarpet': 'Kolar',
+  'Kolar': 'Kolar',
+  'Malur': 'Kolar',
+
+  // Dakshina Kannada
+  'Bantwala': 'Dakshina Kannada',
+  'Mangaluru': 'Dakshina Kannada',
+  'Mangalore': 'Dakshina Kannada',
+  'Puttur': 'Dakshina Kannada',
+  'Sulya': 'Dakshina Kannada',
+
+  // Bengaluru Urban
   'Bengaluru': 'Bengaluru Urban',
   'Binny Mill': 'Bengaluru Urban',
   'Yeshwanthpur': 'Bengaluru Urban',
-  'Hubballi': 'Dharwad',
-  'Dharwad': 'Dharwad',
-  'Davangere': 'Davangere',
+
+  // Chitradurga
   'Challakere': 'Chitradurga',
   'Chitradurga': 'Chitradurga',
-  'Hosadurga': 'Chitradurga',
   'Hiriyur': 'Chitradurga',
   'Holalkere': 'Chitradurga',
-  'Kalaburagi': 'Kalaburagi',
-  'Ballari': 'Ballari',
-  'Bellary': 'Ballari',
-  'Belagavi': 'Belagavi',
-  'Mysuru': 'Mysuru',
-  'Mysore': 'Mysuru',
-  'Mandya': 'Mandya',
-  'Hassan': 'Hassan',
-  'Arasikere': 'Hassan',
-  'Tumkur': 'Tumakuru',
-  'Tumakuru': 'Tumakuru',
-  'Tiptur': 'Tumakuru',
-  'Kolar': 'Kolar',
-  'Bangarpet': 'Kolar',
-  'Malur': 'Kolar',
-  'Chikkaballapura': 'Chikkaballapura',
-  'Bagepalli': 'Chikkaballapura',
-  'Chintamani': 'Chikkaballapura',
+  'Hosadurga': 'Chitradurga',
+
+  // Chamarajanagar
   'Chamarajanagar': 'Chamarajanagar',
   'Gundlupet': 'Chamarajanagar',
-  'Shimoga': 'Shivamogga',
-  'Shivamogga': 'Shivamogga',
-  'Sagar': 'Shivamogga',
-  'Thirthahalli': 'Shivamogga',
-  'Udupi': 'Udupi',
-  'Mangalore': 'Dakshina Kannada',
-  'Puttur': 'Dakshina Kannada',
-  'Madikeri': 'Kodagu',
-  'Somvarpet': 'Kodagu',
-  'Koppal': 'Koppal',
+
+  // Ramanagara
+  'Channapatna': 'Ramanagara',
+  'Ramanagara': 'Ramanagara',
+
+  // Kalaburagi
+  'Chittapur': 'Kalaburagi',
+  'Jevargi': 'Kalaburagi',
+  'Kalaburagi': 'Kalaburagi',
+
+  // Davangere
+  'Davangere': 'Davangere',
+  'Harihara': 'Davangere',
+  'Honnali': 'Davangere',
+
+  // Bengaluru Rural
+  'Doddaballapur': 'Bengaluru Rural',
+
+  // Gadag
+  'Gadag': 'Gadag',
+
+  // Koppal
   'Gangavathi': 'Koppal',
+  'Koppal': 'Koppal',
+  'Kustagi': 'Koppal',
+
+  // Uttara Kannada
+  'Haliyala': 'Uttara Kannada',
+  'Honnavar': 'Uttara Kannada',
+  'Kumta': 'Uttara Kannada',
+  'Siddapur': 'Uttara Kannada',
+  'Sirsi': 'Uttara Kannada',
+  'Yellapur': 'Uttara Kannada',
+  'Karwar': 'Uttara Kannada',
+
+  // Haveri
+  'Hanagal': 'Haveri',
+  'Haveri': 'Haveri',
+  'Hirekerur': 'Haveri',
+  'Ranebennur': 'Haveri',
+  'Savanur': 'Haveri',
+  'Byadgi': 'Haveri',
+
+  // Vijayanagara
+  'HarappanaHalli': 'Vijayanagara',
+  'Hoovinahadagali': 'Vijayanagara',
+  'Kottur': 'Vijayanagara',
+
+  // Mandya
+  'K.R. Pet': 'Mandya',
+  'Mandya': 'Mandya',
+  'Pandavapura': 'Mandya',
+
+  // Mysuru
+  'K.R.Nagar': 'Mysuru',
+  'Mysuru': 'Mysuru',
+  'Mysore': 'Mysuru',
+  'Nanjangud': 'Mysuru',
+
+  // Chikkamagaluru
+  'Kadur': 'Chikkamagaluru',
+  'Mudigere': 'Chikkamagaluru',
+  'Chikkamagaluru': 'Chikkamagaluru',
+
+  // Udupi
+  'Kundapura': 'Udupi',
+  'Udupi': 'Udupi',
+
+  // Raichur
+  'Lingasugur': 'Raichur',
+  'Manvi': 'Raichur',
   'Raichur': 'Raichur',
   'Sindhanur': 'Raichur',
-  'Yadgir': 'Yadgir',
-  'Bidar': 'Bidar',
-  'Bagalkote': 'Bagalkote',
-  'Badami': 'Bagalkote',
+
+  // Vijayapura
+  'Talikot': 'Vijayapura',
   'Vijayapura': 'Vijayapura',
   'Bijapur': 'Vijayapura',
-  'Haveri': 'Haveri',
-  'Ranebennur': 'Haveri',
-  'Byadgi': 'Haveri',
-  'Karwar': 'Uttara Kannada',
-  'Sirsi': 'Uttara Kannada'
+
+  // Tumakuru
+  'Tiptur': 'Tumakuru',
+  'Turvekere': 'Tumakuru',
+  'Tumkur': 'Tumakuru',
+  'Tumakuru': 'Tumakuru',
+
+  // Yadgir
+  'Yadgir': 'Yadgir',
+
+  // Bagalkote
+  'Bagalkote': 'Bagalkote',
+  'Badami': 'Bagalkote',
+
+  // Kodagu
+  'Madikeri': 'Kodagu',
+  'Somvarpet': 'Kodagu'
 };
 
 function resolveDistrict(marketName: string): string {

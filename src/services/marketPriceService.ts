@@ -15,7 +15,7 @@ export const DEFAULT_PREFERENCES: FarmerMarketPreferences = {
   preferredState: 'Karnataka',
   preferredDistrict: 'Gadag',
   preferredMarket: 'Gadag APMC',
-  preferredCommodities: ['Pomegranate', 'Maize', 'Paddy(Common)', 'Tomato', 'Onion', 'Groundnut', 'Dry Chillies']
+  preferredCommodities: ['ALL', 'Maize', 'Paddy(Common)', 'Tomato', 'Onion', 'Groundnut', 'Dry Chillies', 'Cotton']
 };
 
 // Kannada & English commodity mapping with emoji icons
@@ -27,7 +27,8 @@ export interface CommodityMeta {
 }
 
 export const POPULAR_COMMODITIES: CommodityMeta[] = [
-  { en: 'Pomegranate', kn: 'ದಾಳಿಂಬೆ', emoji: '🍎', category: 'Fruits' },
+  { en: 'ALL', kn: 'ಎಲ್ಲಾ ಬೆಳೆಗಳು (All Crops)', emoji: '🌾', category: 'All' },
+  { en: 'Pomegranate', kn: 'ದಾಳಿಂಬೆ (Pomegranate)', emoji: '🍎', category: 'Fruits' },
   { en: 'Tomato', kn: 'ಟೊಮೆಟೊ', emoji: '🍅', category: 'Vegetables' },
   { en: 'Onion', kn: 'ಈರುಳ್ಳಿ', emoji: '🧅', category: 'Vegetables' },
   { en: 'Paddy(Common)', kn: 'ಭತ್ತ (Paddy)', emoji: '🌾', category: 'Cereals' },
@@ -48,31 +49,35 @@ export const KARNATAKA_DISTRICTS = [
   { en: 'ALL', kn: 'ಎಲ್ಲಾ ಜಿಲ್ಲೆಗಳು (All Districts)' },
   { en: 'Gadag', kn: 'ಗದಗ (Gadag)' },
   { en: 'Chitradurga', kn: 'ಚಿತ್ರದುರ್ಗ (Chitradurga)' },
-  { en: 'Bengaluru Urban', kn: 'ಬೆಂಗಳೂರು (Bengaluru Urban)' },
-  { en: 'Dharwad', kn: 'ಧಾರವಾಡ / ಹುಬ್ಬಳ್ಳಿ (Dharwad/Hubballi)' },
   { en: 'Davangere', kn: 'ದಾವಣಗೆರೆ (Davangere)' },
+  { en: 'Dharwad', kn: 'ಧಾರವಾಡ / ಹುಬ್ಬಳ್ಳಿ (Dharwad/Hubballi)' },
+  { en: 'Mandya', kn: 'ಮಂಡ್ಯ (Mandya)' },
   { en: 'Ballari', kn: 'ಬಳ್ಳಾರಿ (Ballari)' },
   { en: 'Belagavi', kn: 'ಬೆಳಗಾವಿ (Belagavi)' },
-  { en: 'Hassan', kn: 'ಹಾಸನ (Hassan)' },
-  { en: 'Kalaburagi', kn: 'ಕಲಬುರಗಿ (Kalaburagi)' },
-  { en: 'Mysuru', kn: 'ಮೈಸೂರು (Mysuru)' },
-  { en: 'Tumakuru', kn: 'ತುಮಕೂರು (Tumakuru)' },
+  { en: 'Bengaluru Urban', kn: 'ಬೆಂಗಳೂರು ನಗರ (Bengaluru Urban)' },
+  { en: 'Bengaluru Rural', kn: 'ಬೆಂಗಳೂರು ಗ್ರಾಮಾಂತರ (Bengaluru Rural)' },
+  { en: 'Bagalkote', kn: 'ಬಾಗಲಕೋಟೆ (Bagalkote)' },
+  { en: 'Bidar', kn: 'ಬೀದರ್ (Bidar)' },
   { en: 'Chamarajanagar', kn: 'ಚಾಮರಾಜನಗರ (Chamarajanagar)' },
   { en: 'Chikkaballapura', kn: 'ಚಿಕ್ಕಬಳ್ಳಾಪುರ (Chikkaballapura)' },
+  { en: 'Chikkamagaluru', kn: 'ಚಿಕ್ಕಮಗಳೂರು (Chikkamagaluru)' },
+  { en: 'Dakshina Kannada', kn: 'ದಕ್ಷಿಣ ಕನ್ನಡ (Dakshina Kannada)' },
+  { en: 'Hassan', kn: 'ಹಾಸನ (Hassan)' },
+  { en: 'Haveri', kn: 'ಹಾವೇರಿ (Haveri)' },
+  { en: 'Kalaburagi', kn: 'ಕಲಬುರಗಿ (Kalaburagi)' },
+  { en: 'Kodagu', kn: 'ಕೊಡಗು (Kodagu)' },
   { en: 'Kolar', kn: 'ಕೋಲಾರ (Kolar)' },
   { en: 'Koppal', kn: 'ಕೊಪ್ಪಳ (Koppal)' },
-  { en: 'Mandya', kn: 'ಮಂಡ್ಯ (Mandya)' },
+  { en: 'Mysuru', kn: 'ಮೈಸೂರು (Mysuru)' },
   { en: 'Raichur', kn: 'ರಾಯಚೂರು (Raichur)' },
+  { en: 'Ramanagara', kn: 'ರಾಮನಗರ (Ramanagara)' },
   { en: 'Shivamogga', kn: 'ಶಿವಮೊಗ್ಗ (Shivamogga)' },
-  { en: 'Vijayapura', kn: 'ವಿಜಯಪುರ (Vijayapura)' },
-  { en: 'Bagalkote', kn: 'ಬಾಗಲಕೋಟೆ (Bagalkote)' },
-  { en: 'Haveri', kn: 'ಹಾವೇರಿ (Haveri)' },
+  { en: 'Tumakuru', kn: 'ತುಮಕೂರು (Tumakuru)' },
   { en: 'Udupi', kn: 'ಉಡುಪಿ (Udupi)' },
-  { en: 'Dakshina Kannada', kn: 'ದಕ್ಷಿಣ ಕನ್ನಡ (Dakshina Kannada)' },
   { en: 'Uttara Kannada', kn: 'ಉತ್ತರ ಕನ್ನಡ (Uttara Kannada)' },
-  { en: 'Bidar', kn: 'ಬೀದರ್ (Bidar)' },
-  { en: 'Yadgir', kn: 'ಯಾದಗಿರಿ (Yadgir)' },
-  { en: 'Kodagu', kn: 'ಕೊಡಗು (Kodagu)' }
+  { en: 'Vijayanagara', kn: 'ವಿಜಯನಗರ (Vijayanagara)' },
+  { en: 'Vijayapura', kn: 'ವಿಜಯಪುರ (Vijayapura)' },
+  { en: 'Yadgir', kn: 'ಯಾದಗಿರಿ (Yadgir)' }
 ];
 
 export const MAJOR_KARNATAKA_MARKETS = [
@@ -417,22 +422,164 @@ class MarketPriceService {
 
   private deriveDistrict(marketName: string): string {
     const map: Record<string, string> = {
-      gadag: 'Gadag',
-      bengaluru: 'Bengaluru Urban',
+      // Dharwad
+      'hubballi': 'Dharwad',
+      'dharwad': 'Dharwad',
+
+      // Shivamogga
+      'shimoga': 'Shivamogga',
+      'thirthahalli': 'Shivamogga',
+      'sagar': 'Shivamogga',
+      'shikaripura': 'Shivamogga',
+
+      // Hassan
+      'arasikere': 'Hassan',
+      'belur': 'Hassan',
+      'hassan': 'Hassan',
+
+      // Bidar
+      'aurad': 'Bidar',
+      'basava kalayana': 'Bidar',
+      'bidar': 'Bidar',
+
+      // Chikkaballapura
+      'bagepalli': 'Chikkaballapura',
+      'chintamani': 'Chikkaballapura',
+      'chikkaballapura': 'Chikkaballapura',
+
+      // Belagavi
+      'bailahongal': 'Belagavi',
+      'belgaum': 'Belagavi',
+      'belagavi': 'Belagavi',
+      'kudchi': 'Belagavi',
+      'nippani': 'Belagavi',
+
+      // Ballari
+      'ballari': 'Ballari',
+      'bellary': 'Ballari',
+
+      // Kolar
+      'bangarpet': 'Kolar',
+      'kolar': 'Kolar',
+      'malur': 'Kolar',
+
+      // Dakshina Kannada
+      'bantwala': 'Dakshina Kannada',
+      'mangaluru': 'Dakshina Kannada',
+      'mangalore': 'Dakshina Kannada',
+      'puttur': 'Dakshina Kannada',
+      'sulya': 'Dakshina Kannada',
+
+      // Bengaluru Urban
+      'bengaluru': 'Bengaluru Urban',
       'binny mill': 'Bengaluru Urban',
-      hubballi: 'Dharwad',
-      dharwad: 'Dharwad',
-      davangere: 'Davangere',
-      challakere: 'Chitradurga',
-      chitradurga: 'Chitradurga',
-      hosadurga: 'Chitradurga',
-      kalaburagi: 'Kalaburagi',
-      ballari: 'Ballari',
-      arasikere: 'Hassan',
-      bagepalli: 'Chikkaballapura',
-      chamarajanagar: 'Chamarajanagar',
-      koppal: 'Koppal',
-      mysuru: 'Mysuru'
+      'yeshwanthpur': 'Bengaluru Urban',
+
+      // Chitradurga
+      'challakere': 'Chitradurga',
+      'chitradurga': 'Chitradurga',
+      'hiriyur': 'Chitradurga',
+      'holalkere': 'Chitradurga',
+      'hosadurga': 'Chitradurga',
+
+      // Chamarajanagar
+      'chamarajanagar': 'Chamarajanagar',
+      'gundlupet': 'Chamarajanagar',
+
+      // Ramanagara
+      'channapatna': 'Ramanagara',
+      'ramanagara': 'Ramanagara',
+
+      // Kalaburagi
+      'chittapur': 'Kalaburagi',
+      'jevargi': 'Kalaburagi',
+      'kalaburagi': 'Kalaburagi',
+
+      // Davangere
+      'davangere': 'Davangere',
+      'harihara': 'Davangere',
+      'honnali': 'Davangere',
+
+      // Bengaluru Rural
+      'doddaballapur': 'Bengaluru Rural',
+
+      // Gadag
+      'gadag': 'Gadag',
+
+      // Koppal
+      'gangavathi': 'Koppal',
+      'koppal': 'Koppal',
+      'kustagi': 'Koppal',
+
+      // Uttara Kannada
+      'haliyala': 'Uttara Kannada',
+      'honnavar': 'Uttara Kannada',
+      'kumta': 'Uttara Kannada',
+      'siddapur': 'Uttara Kannada',
+      'sirsi': 'Uttara Kannada',
+      'yellapur': 'Uttara Kannada',
+      'karwar': 'Uttara Kannada',
+
+      // Haveri
+      'hanagal': 'Haveri',
+      'haveri': 'Haveri',
+      'hirekerur': 'Haveri',
+      'ranebennur': 'Haveri',
+      'savanur': 'Haveri',
+      'byadgi': 'Haveri',
+
+      // Vijayanagara
+      'harappanahalli': 'Vijayanagara',
+      'hoovinahadagali': 'Vijayanagara',
+      'kottur': 'Vijayanagara',
+
+      // Mandya
+      'k.r. pet': 'Mandya',
+      'mandya': 'Mandya',
+      'pandavapura': 'Mandya',
+
+      // Mysuru
+      'k.r.nagar': 'Mysuru',
+      'mysuru': 'Mysuru',
+      'mysore': 'Mysuru',
+      'nanjangud': 'Mysuru',
+
+      // Chikkamagaluru
+      'kadur': 'Chikkamagaluru',
+      'mudigere': 'Chikkamagaluru',
+      'chikkamagaluru': 'Chikkamagaluru',
+
+      // Udupi
+      'kundapura': 'Udupi',
+      'udupi': 'Udupi',
+
+      // Raichur
+      'lingasugur': 'Raichur',
+      'manvi': 'Raichur',
+      'raichur': 'Raichur',
+      'sindhanur': 'Raichur',
+
+      // Vijayapura
+      'talikot': 'Vijayapura',
+      'vijayapura': 'Vijayapura',
+      'bijapur': 'Vijayapura',
+
+      // Tumakuru
+      'tiptur': 'Tumakuru',
+      'turvekere': 'Tumakuru',
+      'tumkur': 'Tumakuru',
+      'tumakuru': 'Tumakuru',
+
+      // Yadgir
+      'yadgir': 'Yadgir',
+
+      // Bagalkote
+      'bagalkote': 'Bagalkote',
+      'badami': 'Bagalkote',
+
+      // Kodagu
+      'madikeri': 'Kodagu',
+      'somvarpet': 'Kodagu'
     };
     const lower = marketName.toLowerCase();
     for (const [k, dist] of Object.entries(map)) {

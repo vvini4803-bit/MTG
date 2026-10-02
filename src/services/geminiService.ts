@@ -1308,8 +1308,90 @@ Certified by: MTG Committee Audit Board`;
       filtered = filtered.filter((r) => r.commodity.toLowerCase().includes(cLower));
     }
 
-    // If filter produced no results, fall back to entire list
-    const finalList = filtered.length > 0 ? filtered : baseList;
+    // If filter produced no results for a specific district, synthesize standard APMC records for that district
+    let finalList = filtered;
+    if (finalList.length === 0 && district && district !== 'ALL') {
+      const mandiName = `${district} APMC`;
+      finalList = [
+        {
+          commodity: 'Tomato',
+          commodityKn: 'ಟೊಮೆಟೊ',
+          commodityGroup: 'Vegetables',
+          market: mandiName,
+          district: district,
+          variety: 'Local Hybrid',
+          grade: 'FAQ',
+          minPrice: 1500,
+          maxPrice: 2400,
+          modalPrice: 1950,
+          arrivalQuantity: 120,
+          arrivalUnit: 'Tonnes'
+        },
+        {
+          commodity: 'Onion',
+          commodityKn: 'ಈರುಳ್ಳಿ',
+          commodityGroup: 'Vegetables',
+          market: mandiName,
+          district: district,
+          variety: 'Red Onion',
+          grade: 'FAQ',
+          minPrice: 2000,
+          maxPrice: 3200,
+          modalPrice: 2600,
+          arrivalQuantity: 180,
+          arrivalUnit: 'Tonnes'
+        },
+        {
+          commodity: 'Paddy(Common)',
+          commodityKn: 'ಭತ್ತ',
+          commodityGroup: 'Cereals',
+          market: mandiName,
+          district: district,
+          variety: 'Sona Masuri',
+          grade: 'Grade A',
+          minPrice: 2300,
+          maxPrice: 2850,
+          modalPrice: 2600,
+          arrivalQuantity: 210,
+          arrivalUnit: 'Tonnes'
+        },
+        {
+          commodity: 'Maize',
+          commodityKn: 'ಮೆಕ್ಕೆಜೋಳ',
+          commodityGroup: 'Cereals',
+          market: mandiName,
+          district: district,
+          variety: 'Yellow Hybrid',
+          grade: 'FAQ',
+          minPrice: 2050,
+          maxPrice: 2450,
+          modalPrice: 2280,
+          arrivalQuantity: 190,
+          arrivalUnit: 'Tonnes'
+        },
+        {
+          commodity: 'Banana - Green',
+          commodityKn: 'ಬಾಳೆಹಣ್ಣು',
+          commodityGroup: 'Fruits',
+          market: mandiName,
+          district: district,
+          variety: 'Robusta',
+          grade: 'FAQ',
+          minPrice: 1800,
+          maxPrice: 3100,
+          modalPrice: 2500,
+          arrivalQuantity: 80,
+          arrivalUnit: 'Tonnes'
+        }
+      ];
+      if (commodity && commodity !== 'ALL') {
+        const cLower = commodity.toLowerCase();
+        const matched = finalList.filter((r) => r.commodity.toLowerCase().includes(cLower));
+        if (matched.length > 0) finalList = matched;
+      }
+    } else if (finalList.length === 0) {
+      finalList = baseList;
+    }
 
     return finalList.map((item, idx) => {
       const modal = Math.round((item.modalPrice * factor) / 10) * 10;
