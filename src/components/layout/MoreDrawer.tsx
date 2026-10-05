@@ -107,7 +107,7 @@ export const MoreDrawer: React.FC<MoreDrawerProps> = ({
           justifyContent: 'space-between'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src="/logo.svg" alt="Gramasiri" style={{ width: '32px', height: '32px' }} />
+            <img src="/logo-192.png?v=3" alt="MTG Village" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }} />
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>
                 {isKannada ? 'ಗ್ರಾಮಸಿರಿ ಮೆನು' : 'Village Directory'}

@@ -2095,7 +2095,7 @@ export const App: React.FC = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
-            <img src="/logo-192.png" alt="Muttagundi Logo" style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
+            <img src="/logo-192.png?v=3" alt="Muttagundi Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'contain' }} />
             <strong style={{ fontSize: '0.95rem', color: '#FFFFFF' }}>
               {isKannada ? 'ಮುತ್ತಾಗೊಂದಿ ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಪೋರ್ಟಲ್' : 'Muttagundi Digital Village Portal'}
             </strong>

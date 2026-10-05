@@ -293,13 +293,6 @@ export const CommitteeScreen: React.FC<CommitteeScreenProps> = ({ onBack }) => {
   const [generatedReportText, setGeneratedReportText] = useState<string>('');
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
-  // Auto-generate fresh AI insights on tab open
-  useEffect(() => {
-    if (activeTab === 'AI_ASSISTANT' && !aiInsightsText) {
-      handleGenerateInsights();
-    }
-  }, [activeTab]);
-
   const handleGenerateInsights = async () => {
     setIsInsightsLoading(true);
     try {
@@ -311,6 +304,13 @@ export const CommitteeScreen: React.FC<CommitteeScreenProps> = ({ onBack }) => {
       setIsInsightsLoading(false);
     }
   };
+
+  // Auto-generate fresh AI insights on tab open
+  useEffect(() => {
+    if (activeTab === 'AI_ASSISTANT' && !aiInsightsText) {
+      handleGenerateInsights();
+    }
+  }, [activeTab, aiInsightsText]);
 
   const handleSendAiMessage = async (textToSend?: string) => {
     const q = (textToSend || aiQuery).trim();

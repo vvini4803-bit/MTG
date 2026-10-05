@@ -95,14 +95,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     <div className="container" style={{ maxWidth: '480px', padding: '40px 16px' }}>
       <div className="glass-card" style={{ padding: '32px 24px', textAlign: 'center' }}>
         <img
-          src="/logo.png"
+          src="/logo.png?v=3"
           alt="Muttagundi Village MTG Logo"
           style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            objectFit: 'cover',
-            border: '2px solid rgba(245, 158, 11, 0.6)',
+            width: '84px',
+            height: '84px',
+            borderRadius: '20px',
+            objectFit: 'contain',
+            border: '2px solid rgba(245, 158, 11, 0.5)',
             boxShadow: '0 6px 20px rgba(0, 0, 0, 0.4)',
             margin: '0 auto 16px'
           }}

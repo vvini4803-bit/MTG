@@ -238,6 +238,11 @@ export const FarmerSummaryScreen: React.FC<FarmerSummaryScreenProps> = ({ onBack
     });
   }, [currentUser]);
 
+  const refreshSummary = async (uid: string, year: number) => {
+    const s = await farmerService.recalculateYearSummary(uid, year);
+    setSummary(s);
+  };
+
   useEffect(() => {
     if (!currentUser) return;
     const uid = currentUser.uid;
@@ -285,11 +290,6 @@ export const FarmerSummaryScreen: React.FC<FarmerSummaryScreenProps> = ({ onBack
       unsubS();
     };
   }, [currentUser, selectedYear]);
-
-  const refreshSummary = async (uid: string, year: number) => {
-    const s = await farmerService.recalculateYearSummary(uid, year);
-    setSummary(s);
-  };
 
   const handleAddYear = async () => {
     const y = parseInt(newYearInput, 10);

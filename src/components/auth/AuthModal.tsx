@@ -126,13 +126,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img
-              src="/logo.png"
+              src="/logo.png?v=3"
               alt="Muttagundi Logo"
               style={{
                 width: '44px',
                 height: '44px',
-                borderRadius: '50%',
-                objectFit: 'cover',
+                borderRadius: '12px',
+                objectFit: 'contain',
                 border: '1.5px solid rgba(245, 158, 11, 0.5)',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
                 flexShrink: 0

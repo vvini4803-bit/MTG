@@ -1,5 +1,5 @@
 // Service Worker for Muttagundi Digital Village PWA with Push Notifications
-const CACHE_NAME = 'gramasiri-v2';
+const CACHE_NAME = 'gramasiri-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

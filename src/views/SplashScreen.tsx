@@ -52,12 +52,14 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onEnter }) => {
       <div style={{ position: 'relative', zIndex: 10, maxWidth: '480px' }}>
         <div style={{ marginBottom: '24px' }}>
           <img
-            src="/logo.svg"
-            alt="Gramasiri Village Logo"
+            src="/logo-512.png?v=3"
+            alt="MTG Village Logo"
             className="animate-float"
             style={{
-              width: '110px',
-              height: '110px',
+              width: '120px',
+              height: '120px',
+              borderRadius: '28px',
+              objectFit: 'contain',
               filter: 'drop-shadow(0 10px 25px rgba(16, 185, 129, 0.5))'
             }}
           />

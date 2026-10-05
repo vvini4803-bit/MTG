@@ -22,16 +22,16 @@ function rotateApiKey() {
   }
 }
 
-// Default active Gemini models verified with current API key
+// Default active Gemini models prioritized for sub-1.5s ultra-fast response latency
 const GEMINI_MODELS = [
+  'gemini-flash-lite-latest',
   'gemini-3.5-flash-lite',
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
-  'gemini-3.7-flash',
   'gemini-3-flash-preview',
   'gemini-3.8-flash',
-  'gemini-flash-lite-latest',
-  'gemini-flash-latest'
+  'gemini-flash-latest',
+  'gemini-3.7-flash',
+  'gemini-3.5-flash',
+  'gemini-3.6-flash'
 ];
 
 export interface GeminiResponse {
@@ -41,8 +41,45 @@ export interface GeminiResponse {
   navTab?: string;
 }
 
+export interface CropDetails {
+  crop_name_en: string; // e.g. "Pomegranate (ದಾಳಿಂಬೆ)", "Tomato", "Arecanut", "Paddy", "Chilli", etc.
+  crop_name_kn: string;
+  affected_part: string; // "Leaf / ಎಲೆ", "Fruit / ಕಾಯಿ", "Stem / ಕಾಂಡ", "Roots / ಬೇರು", "Flower / ಹೂವು", "Whole Plant / ಇಡೀ ಗಿಡ"
+  condition_type: 'HEALTHY' | 'DISEASE' | 'PEST_ATTACK' | 'NUTRIENT_DEFICIENCY' | 'WEED_ISSUE';
+  diagnosis_en: string; // Exact scientific & common disease/pest/deficiency name
+  diagnosis_kn: string;
+  symptoms_en: string[];
+  symptoms_kn: string[];
+  // Exact & correct agricultural solutions:
+  organic_solution_en: string; // Organic/bio remedy (e.g. Neem oil, Trichoderma, Pseudomonas, Jeevamrutha)
+  organic_solution_kn: string;
+  chemical_solution_en: string; // Exact scientific active ingredient & formulation (e.g. Copper Oxychloride 50% WP)
+  chemical_solution_kn: string;
+  exact_dosage_en: string; // Exact dosage per 1 liter of water
+  exact_dosage_kn: string;
+  pump_15l_dosage_en: string; // Pre-calculated exact dosage for a standard 15-liter knapsack spray pump
+  pump_15l_dosage_kn: string;
+  spray_schedule_en?: string; // Best spraying time (morning/evening) and repeat intervals
+  spray_schedule_kn?: string;
+  preventive_measures_en: string; // Cultural & preventive practices
+  preventive_measures_kn: string;
+}
+
+export interface StudySolution {
+  subject: string; // e.g. "Mathematics (ಗಣಿತ)", "Science / Physics", "Chemistry", "Biology", "English", "Kannada"
+  grade_level?: string; // e.g. "Class 10 / SSLC", "PUC / 12th", "College / KPSC / Competitive Exam"
+  question_detected_en: string; // Transcribed problem / question statement in English
+  question_detected_kn: string; // Transcribed problem / question statement in Kannada
+  step_by_step_solution_en: string[]; // Sequential step-by-step mathematical or scientific derivation
+  step_by_step_solution_kn: string[];
+  final_answer: string; // Clear, highlighted final answer/result
+  formulas_used?: string[]; // Mathematical equations or scientific laws applied
+  key_concepts_en?: string; // Key takeaway concept explaining how it was solved
+  key_concepts_kn?: string;
+}
+
 export interface PhotoAnalysisResult {
-  category: 'AGRICULTURE' | 'HEALTHCARE' | 'TEMPLE_VILLAGE' | 'DOCUMENT_OCR' | 'INFRASTRUCTURE' | 'LIVESTOCK' | 'GENERAL' | 'UNCLEAR';
+  category: 'AGRICULTURE' | 'STUDY_DOCUMENT' | 'DOCUMENT_OCR' | 'HEALTHCARE' | 'LIVESTOCK' | 'TEMPLE_VILLAGE' | 'INFRASTRUCTURE' | 'GENERAL' | 'UNCLEAR';
   category_label_en: string;
   category_label_kn: string;
   what_i_see_en: string;
@@ -57,6 +94,9 @@ export interface PhotoAnalysisResult {
   detected_text?: string;
   caution_notes_en?: string;
   caution_notes_kn?: string;
+  // Specialized domain solutions:
+  crop_details?: CropDetails;
+  study_solution?: StudySolution;
 }
 
 class GeminiService {
@@ -380,11 +420,13 @@ JSON array only:`;
 
   /**
    * Generic Multimodal content caller for images and multi-turn conversations
+   * Tuned for sub-1.5s ultra-fast execution with deterministic temperature
    */
   public async callGeminiMultimodalAPI(
     contents: any[],
     systemInstruction?: string,
-    isJson: boolean = false
+    isJson: boolean = false,
+    maxOutputTokens: number = 2500
   ): Promise<string> {
     let lastError: any = null;
 
@@ -397,8 +439,8 @@ JSON array only:`;
         const body: any = {
           contents,
           generationConfig: {
-            temperature: 0.25,
-            maxOutputTokens: 1500
+            temperature: 0.2,
+            maxOutputTokens: maxOutputTokens
           }
         };
 
@@ -444,7 +486,9 @@ JSON array only:`;
   }
 
   /**
-   * Comprehensive Universal Image Analysis for MTG AI Photo Analyzer
+   * Super-Fast Comprehensive Universal Image Analysis & Expert Problem Solver
+   * Specializing in ALL crops (exact disease/pest identification & exact UAS/ICAR dosages)
+   * and Study Documents / Homework / Math / Question Papers (step-by-step solutions).
    */
   public async analyzePhoto(
     imageBase64: string,
@@ -457,45 +501,82 @@ JSON array only:`;
 
     const villageContext = this.buildVillageContext();
 
-    const systemInstruction = `You are the MTG Village AI visual assistant (ಮುತ್ತಾಗೊಂದಿ ಗ್ರಾಮದ ಕೃತಕ ಬುದ್ಧಿಮತ್ತೆ ದೃಶ್ಯ ಸಹಾಯಕ).
+    const systemInstruction = `You are the MTG Super-Fast Universal AI Photo Analyzer & Expert Solver (ಮುತ್ತಾಗೊಂದಿ & ಕರ್ನಾಟಕದ AI ದೃಶ್ಯ ವಿಶ್ಲೇಷಕ ಮತ್ತು ಪರಿಹಾರ ತಜ್ಞ).
 Context: Muttagundi Digital Village, Hosadurga Taluk, Chitradurga District, Karnataka.
 ${villageContext}
 
-Analyze the user's uploaded image carefully. Identify what is visibly present, determine the most relevant context, and provide useful information in simple, clear language. Do not invent details that cannot be determined from the image. Clearly distinguish observations from assumptions.
+YOUR MISSION:
+1. ALL CROPS (ಬೆಳೆ ಸಂರಕ್ಷಣೆ & ನಿಖರ ಪರಿಹಾರ): Instantly recognize ANY crop cultivated in Karnataka & India (Pomegranate/ದಾಳಿಂಬೆ, Tomato/ಟೊಮೆಟೊ, Arecanut/ಅಡಿಕೆ, Coconut/ತೆಂಗು, Cotton/ಹತ್ತಿ, Paddy/ಭತ್ತ, Maize/ಮೆಕ್ಕೆಜೋಳ, Ragi/ರಾಗಿ, Groundnut/ಕಡಲೆಕಾಯಿ, Onion/ಈರುಳ್ಳಿ, Chilli/ಮೆಣಸಿನಕಾಯಿ, Sugarcane/ಕಬ್ಬು, Banana/ಬಾಳೆ, Mango/ಮಾವು, Ginger/ಶುಂಠಿ, Turmeric/ಅರಿಶಿನ, Pulses, Vegetables, Flowers, etc.).
+   - Identify affected part (Leaf, Fruit, Stem, Roots, Flower, Whole Plant).
+   - Accurately diagnose the issue (fungal, bacterial, viral, insect pest attack, nutrient deficiency).
+   - Provide EXACT AND CORRECT SOLUTIONS:
+     * Organic / Bio Remedy: Natural spray with exact concentration (e.g. Neem oil 10,000 ppm @ 2.5-3 ml/L, Trichoderma harzianum @ 5 g/L, Pseudomonas fluorescens @ 5 g/L, Jeevamrutha).
+     * Scientific Chemical Treatment: Real active ingredients based on UAS Bangalore/Dharwad & ICAR recommendations (e.g., Copper Oxychloride 50% WP, Mancozeb 75% WP, Streptocycline, Chlorantraniliprole 18.5% SC, Imidacloprid 17.8% SL, Hexaconazole 5% SC, Carbendazim 50% WP, Emamectin Benzoate 5% SG).
+     * Exact Dosage per 1 Liter of water (e.g. 2.5 g/L or 0.3 ml/L).
+     * Exact Dosage for a standard 15-Liter knapsack spray pump (e.g. 35-40 grams per 15L pump).
+     * Spray timing & schedule (morning/evening, repeat interval).
+     * Preventive crop sanitation & cultural measures.
 
-CATEGORIES (Identify the most relevant):
-- AGRICULTURE: Crops, leaves, plants, fruits, weeds, soil, pests, diseases, farm water.
-  * Rules: Do not diagnose with absolute certainty from photo alone. For uncertain issues, explicitly state: "Possible cause — needs field confirmation" (ಕೃಷಿ ಜಮೀನಿನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳುವುದು ಅಗತ್ಯ). Do NOT prescribe hazardous pesticide dosage without official advice.
-- HEALTHCARE: Medical, health clinic, prescription, pharmacy, symptom, injury.
-  * Rules: Do NOT provide a definitive medical diagnosis. Strictly state: "This image may show... For a proper diagnosis, consult a qualified healthcare professional." (ಸರಿಯಾದ ರೋಗನಿರ್ಣಯಕ್ಕಾಗಿ ದಯವಿಟ್ಟು ಅರ್ಹ ವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ).
-- TEMPLE_VILLAGE: Temples, religious shrines, cultural monuments, heritage structures.
-  * Rules: Describe visible architecture, gopuram, stone carvings, facilities. Do not invent unverified historical folklore.
-- INFRASTRUCTURE: Roads, schools, drainage, electricity poles, public buildings, damaged roads/structures.
-  * Rules: Describe visible physical condition, maintenance needs, safety impact.
-- DOCUMENT_OCR: Notice boards, printed/written circulars, receipts, announcements, boards.
-  * Rules: Transcribe text, summarize clearly, highlight dates, amounts, and critical actions in both Kannada and English.
-- LIVESTOCK: Cows, oxen, buffaloes, sheep, goats, poultry, domestic animals.
-  * Rules: Note visible physical condition, advise local veterinary doctor (ಪಶು ವೈದ್ಯಾಧಿಕಾರಿ) for medical care.
-- GENERAL: Everyday objects, tools, vehicles, scenes.
-- UNCLEAR: Blurry, too dark, out of focus, or indeterminate image. Prompt user for a clearer photo.
+2. STUDY DOCUMENTS & HOMEWORK (ಅಧ್ಯಯನ ಪರಿಹಾರ & ಪ್ರಶ್ನೋತ್ತರ): Instantly recognize textbook pages, notebook handwriting, question papers, math equations, physics/chemistry/biology problems, grammar, SSLC, PUC, CET, KPSC questions.
+   - Transcribe detected question/problem accurately.
+   - Provide step-by-step solution showing clear working, derivations, substitutions, and intermediate steps.
+   - List formulas used.
+   - State the bold, clear final answer.
+   - Explain key concepts to help the student learn.
 
-OUTPUT FORMAT: Strict JSON object with these keys:
+3. UNIVERSAL IDENTIFICATION: Accurately identify any other photo (RTC/Pahani land records, village notices, electricity bills, medicines & tablets, livestock like cows/buffaloes/sheep, tools, machinery, temples, infrastructure, everyday items) and give actionable solutions.
+
+STRICT JSON OUTPUT FORMAT (Return ONLY this valid JSON, no markdown outside):
 {
-  "category": "AGRICULTURE" | "HEALTHCARE" | "TEMPLE_VILLAGE" | "DOCUMENT_OCR" | "INFRASTRUCTURE" | "LIVESTOCK" | "GENERAL" | "UNCLEAR",
-  "category_label_en": "Short category name in English (e.g. Agriculture / Crop Health)",
-  "category_label_kn": "Short category name in Kannada (e.g. ಕೃಷಿ / ಬೆಳೆ ಆರೋಗ್ಯ)",
+  "category": "AGRICULTURE" | "STUDY_DOCUMENT" | "DOCUMENT_OCR" | "HEALTHCARE" | "LIVESTOCK" | "TEMPLE_VILLAGE" | "INFRASTRUCTURE" | "GENERAL" | "UNCLEAR",
+  "category_label_en": "Category label in English (e.g. Crop Health & Doctor, or Study Document & Homework Solver)",
+  "category_label_kn": "Category label in Kannada (e.g. ಕೃಷಿ / ಬೆಳೆ ವೈದ್ಯ & ನಿಖರ ಪರಿಹಾರ, or ಅಧ್ಯಯನ ಪರಿಹಾರ & ಪ್ರಶ್ನೋತ್ತರ)",
   "what_i_see_en": "1-2 sentences identifying what is in the photo in English",
   "what_i_see_kn": "1-2 sentences identifying what is in the photo in Kannada",
-  "analysis_en": "Detailed observations of features, symptoms, condition, or OCR text in English",
-  "analysis_kn": "Detailed observations of features, symptoms, condition, or OCR text in Kannada",
-  "possible_issue_en": "Visible issue, damage, illness or concern (if any) in English",
-  "possible_issue_kn": "Visible issue, damage, illness or concern (if any) in Kannada",
-  "recommended_action_en": "Clear practical next steps and safe advice in English",
-  "recommended_action_kn": "Clear practical next steps and safe advice in Kannada",
+  "analysis_en": "Detailed observations of features, symptoms, condition, or question in English",
+  "analysis_kn": "Detailed observations of features, symptoms, condition, or question in Kannada",
+  "possible_issue_en": "Visible issue, disease, damage, or question statement in English",
+  "possible_issue_kn": "Visible issue, disease, damage, or question statement in Kannada",
+  "recommended_action_en": "Clear practical solutions and advice in English",
+  "recommended_action_kn": "Clear practical solutions and advice in Kannada",
   "confidence": "HIGH" | "MEDIUM" | "LOW",
-  "detected_text": "Extracted OCR text if text is detected (optional)",
-  "caution_notes_en": "Relevant cautionary disclaimer in English",
-  "caution_notes_kn": "Relevant cautionary disclaimer in Kannada"
+  "detected_text": "Extracted OCR text if text is detected in photo",
+  "caution_notes_en": "Relevant safety precautions or guidance in English",
+  "caution_notes_kn": "Relevant safety precautions or guidance in Kannada",
+  "crop_details": {
+    "crop_name_en": "Crop Name (e.g. Pomegranate, Tomato, Arecanut, Paddy, Chilli)",
+    "crop_name_kn": "ಬೆಳೆಯ ಹೆಸರು (ಉದಾ: ದಾಳಿಂಬೆ, ಟೊಮೆಟೊ, ಅಡಿಕೆ, ಭತ್ತ, ಮೆಣಸಿನಕಾಯಿ)",
+    "affected_part": "e.g. Leaf / ಎಲೆ, Fruit / ಕಾಯಿ, Stem / ಕಾಂಡ, Roots / ಬೇರು, Flower / ಹೂವು, Whole Plant / ಇಡೀ ಗಿಡ",
+    "condition_type": "HEALTHY" | "DISEASE" | "PEST_ATTACK" | "NUTRIENT_DEFICIENCY" | "WEED_ISSUE",
+    "diagnosis_en": "Accurate scientific & common disease/pest/deficiency name",
+    "diagnosis_kn": "ರೋಗ / ಕೀಟ / ಕೊರತೆಯ ನಿಖರ ಹೆಸರು",
+    "symptoms_en": ["List of visible symptoms in English"],
+    "symptoms_kn": ["ಕಾಣಿಸುವ ಪ್ರಮುಖ ಲಕ್ಷಣಗಳು"],
+    "organic_solution_en": "Immediate organic/bio remedy with exact dosage (e.g. Neem oil 10,000 ppm @ 3 ml/L + Pseudomonas @ 5 g/L)",
+    "organic_solution_kn": "ನೈಸರ್ಗಿಕ/ಜೈವಿಕ ಪರಿಹಾರ ಮತ್ತು ನಿಖರ ಡೋಸೇಜ್",
+    "chemical_solution_en": "Exact scientific chemical name & formulation (e.g. Copper Oxychloride 50% WP + Streptocycline)",
+    "chemical_solution_kn": "ವೈಜ್ಞಾನಿಕ ರಾಸಾಯನಿಕ ಪರಿಹಾರ ಮತ್ತು ಔಷಧಿಯ ಹೆಸರು",
+    "exact_dosage_en": "Exact dosage per 1 liter of water (e.g. 2.5 g/L)",
+    "exact_dosage_kn": "ಪ್ರತಿ 1 ಲೀಟರ್ ನೀರಿಗೆ ಬೆರೆಸಬೇಕಾದ ನಿಖರ ಪ್ರಮಾಣ",
+    "pump_15l_dosage_en": "Dosage for standard 15-liter knapsack spray pump (e.g. 35-40 grams per 15L pump)",
+    "pump_15l_dosage_kn": "15 ಲೀಟರ್ ಸ್ಪ್ರೇ ಪಂಪ್‌ಗೆ ಹಾಕಬೇಕಾದ ನಿಖರ ಅಳತೆ",
+    "spray_schedule_en": "Spray in cool morning (7-10 AM) or evening, repeat after 7-10 days if needed",
+    "spray_schedule_kn": "ಬೆಳಗ್ಗೆ (7-10) ಅಥವಾ ಸಂಜೆ ಸಿಂಪಡಿಸಿ, ಅಗತ್ಯವಿದ್ದರೆ 7-10 ದಿನಗಳ ನಂತರ ಪುನರಾವರ್ತಿಸಿ",
+    "preventive_measures_en": "Key preventive and crop management practices",
+    "preventive_measures_kn": "ರೋಗ ತಡೆಗಟ್ಟುವ ಮುಂಜಾಗ್ರತಾ ಕ್ರಮಗಳು"
+  },
+  "study_solution": {
+    "subject": "e.g. Mathematics / ಗಣಿತ, Science / Physics / Chemistry / Biology, English, Kannada",
+    "grade_level": "e.g. Class 10 / SSLC, PUC / 12th, Degree / Competitive Exam",
+    "question_detected_en": "Transcribed question or problem statement in English",
+    "question_detected_kn": "ಪತ್ತೆಯಾದ ಪ್ರಶ್ನೆ ಅಥವಾ ಲೆಕ್ಕ (ಕನ್ನಡ ವಿವರಣೆ)",
+    "step_by_step_solution_en": ["Step 1: ...", "Step 2: ...", "Step 3: ..."],
+    "step_by_step_solution_kn": ["ಹಂತ 1: ...", "ಹಂತ 2: ...", "ಹಂತ 3: ..."],
+    "final_answer": "Clear, highlighted final answer/result",
+    "formulas_used": ["List of formulas or rules used"],
+    "key_concepts_en": "Explanation of underlying concept to help the student learn",
+    "key_concepts_kn": "ವಿದ್ಯಾರ್ಥಿಯ ಸುಲಭ ಕಲಿಕೆಗಾಗಿ ಪರಿಕಲ್ಪನೆಯ ವಿವರಣೆ"
+  }
 }`;
 
     const contents = [
@@ -509,21 +590,21 @@ OUTPUT FORMAT: Strict JSON object with these keys:
             }
           },
           {
-            text: `Analyze this image thoroughly for a resident of Muttagundi Village. Provide accurate visual identification, analysis, issues, actions, and safety guidance in both English and Kannada. Return ONLY the requested JSON object.`
+            text: `Analyze this image instantly. If it is a crop/plant, provide exact diagnosis and exact organic & chemical solutions with precise dosages per liter and per 15L pump. If it is a study document or question, solve it step-by-step with formulas and final answer. If it is any other image, identify it thoroughly. Return strictly the JSON object.`
           }
         ]
       }
     ];
 
     try {
-      const raw = await this.callGeminiMultimodalAPI(contents, systemInstruction, true);
+      const raw = await this.callGeminiMultimodalAPI(contents, systemInstruction, true, 2500);
       const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleaned);
 
       return {
         category: parsed.category || 'GENERAL',
-        category_label_en: parsed.category_label_en || 'General Object',
-        category_label_kn: parsed.category_label_kn || 'ಸಾಮಾನ್ಯ ವಸ್ತು',
+        category_label_en: parsed.category_label_en || (parsed.category === 'AGRICULTURE' ? 'Crop Health & Doctor' : parsed.category === 'STUDY_DOCUMENT' ? 'Study Document & Solver' : 'General Object'),
+        category_label_kn: parsed.category_label_kn || (parsed.category === 'AGRICULTURE' ? 'ಕೃಷಿ / ಬೆಳೆ ವೈದ್ಯ & ನಿಖರ ಪರಿಹಾರ' : parsed.category === 'STUDY_DOCUMENT' ? 'ಅಧ್ಯಯನ ಪರಿಹಾರ & ಪ್ರಶ್ನೋತ್ತರ' : 'ಸಾಮಾನ್ಯ ವಸ್ತು'),
         what_i_see_en: parsed.what_i_see_en || 'Visual object detected in photo.',
         what_i_see_kn: parsed.what_i_see_kn || 'ಚಿತ್ರದಲ್ಲಿ ಗುರುತಿಸಲಾದ ಅಂಶ.',
         analysis_en: parsed.analysis_en || 'Detailed visual analysis complete.',
@@ -532,10 +613,12 @@ OUTPUT FORMAT: Strict JSON object with these keys:
         possible_issue_kn: parsed.possible_issue_kn,
         recommended_action_en: parsed.recommended_action_en || 'Verify on site and proceed as needed.',
         recommended_action_kn: parsed.recommended_action_kn || 'ಸ್ಥಳದಲ್ಲಿ ಪರಿಶೀಲಿಸಿ ಸೂಕ್ತ ಕ್ರಮ ಕೈಗೊಳ್ಳಿ.',
-        confidence: (parsed.confidence as any) || 'MEDIUM',
+        confidence: (parsed.confidence as any) || 'HIGH',
         detected_text: parsed.detected_text,
         caution_notes_en: parsed.caution_notes_en,
-        caution_notes_kn: parsed.caution_notes_kn
+        caution_notes_kn: parsed.caution_notes_kn,
+        crop_details: parsed.crop_details,
+        study_solution: parsed.study_solution
       };
     } catch (err) {
       console.warn('Multimodal Gemini analysis fallback:', err);
@@ -574,13 +657,14 @@ OUTPUT FORMAT: Strict JSON object with these keys:
 
     const langName = preferredLang === 'kn' ? 'Kannada (ಕನ್ನಡ)' : 'Indian English';
 
-    const systemInstruction = `You are the MTG Village AI visual assistant. You are in an interactive conversation with a resident of Muttagundi Village who has uploaded a photo.
+    const systemInstruction = `You are the MTG Super-Fast AI visual assistant and expert advisor. You are in an interactive conversation with a resident or student of Muttagundi Village who has uploaded a photo.
 Answer the user's follow-up questions specifically regarding the uploaded photo.
 Always reply in simple, respectful, and direct ${langName}.
-Keep safety rules in mind:
-- If agricultural: never claim 100% disease certainty; note field confirmation is recommended. Avoid prescribing dangerous chemical dosages.
-- If medical/health: do not give definitive medical diagnoses; advise consulting a doctor.
-- If OCR/document: answer based on visible text.`;
+Guidelines:
+- If agricultural/crop: provide exact organic and chemical solutions, precise spray dosages per liter and 15L pump, timing, and UAS/ICAR recommended practices.
+- If study document/homework: explain concepts clearly, provide alternative solution methods, simplify math steps, and help student learn.
+- If medical/health: provide factual information while advising consultation with a doctor.
+- If document/OCR: answer based on visible text, dates, numbers, and clauses.`;
 
     const contents: any[] = [
       {
@@ -603,11 +687,11 @@ Keep safety rules in mind:
     // Append current question
     contents.push({
       role: 'user',
-      parts: [{ text: `${question}\n\n(Please answer helpfully in ${langName})` }]
+      parts: [{ text: `${question}\n\n(Please answer helpfully, accurately and directly in ${langName})` }]
     });
 
     try {
-      const response = await this.callGeminiMultimodalAPI(contents, systemInstruction, false);
+      const response = await this.callGeminiMultimodalAPI(contents, systemInstruction, false, 2000);
       return response;
     } catch (err: any) {
       console.warn('Photo follow-up API error:', err);

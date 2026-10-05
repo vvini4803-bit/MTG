@@ -87,9 +87,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           }}
         >
           <img
-            src="/logo.svg"
-            alt="Gramasiri Logo"
-            style={{ width: '42px', height: '42px', filter: 'drop-shadow(0 2px 8px rgba(16, 185, 129, 0.4))' }}
+            src="/logo.png?v=3"
+            alt="MTG Village Logo"
+            style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(16, 185, 129, 0.4))' }}
           />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

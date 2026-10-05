@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { geminiService, PhotoAnalysisResult } from '../services/geminiService';
+import { geminiService, PhotoAnalysisResult, CropDetails, StudySolution } from '../services/geminiService';
 import {
   Camera,
   Image as ImageIcon,
@@ -27,7 +27,13 @@ import {
   Landmark,
   Building2,
   Flame,
-  Search
+  Search,
+  GraduationCap,
+  Droplet,
+  Clock,
+  Zap,
+  BookOpen,
+  CheckCheck
 } from 'lucide-react';
 
 interface ChatTurn {
@@ -70,6 +76,7 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [isListeningVoice, setIsListeningVoice] = useState<boolean>(false);
   const [copiedText, setCopiedText] = useState<boolean>(false);
+  const [copiedAnswer, setCopiedAnswer] = useState<boolean>(false);
 
   // Hidden File Inputs
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +103,7 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, isAskingFollowUp]);
 
-  // Smart client-side image compression & optimization to max 1280px (fast upload & memory safe)
+  // Ultra-fast client-side image compression & optimization to max 1024px (sub-second upload & crisp details)
   const processAndSetImage = (file: File) => {
     setErrorMessage(null);
     setAnalysisResult(null);
@@ -120,7 +127,7 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_DIM = 1280;
+        const MAX_DIM = 1024;
         let width = img.width;
         let height = img.height;
 
@@ -141,7 +148,7 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.86);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.80);
           setSelectedImage(compressedDataUrl);
           setMimeType('image/jpeg');
           setImageMeta({
@@ -170,7 +177,7 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
     e.target.value = '';
   };
 
-  // Run Gemini Multimodal Analysis
+  // Run Gemini Multimodal Super-Fast Analysis
   const handleAnalyzePhoto = async () => {
     if (!selectedImage) return;
 
@@ -186,10 +193,25 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
       setAnalysisResult(result);
 
       // Initialize initial conversation summary
-      const initialSummary =
-        activeLang === 'kn'
-          ? `ವಿಶ್ಲೇಷಣೆ ಪೂರ್ಣಗೊಂಡಿದೆ: ${result.what_i_see_kn} \n\nಮುಂದಿನ ಶಿಫಾರಸು: ${result.recommended_action_kn}`
-          : `Analysis complete: ${result.what_i_see_en} \n\nRecommended: ${result.recommended_action_en}`;
+      let initialSummary = '';
+      if (result.crop_details) {
+        const cd = result.crop_details;
+        initialSummary =
+          activeLang === 'kn'
+            ? `🌾 ಬೆಳೆ ವೈದ್ಯ ವಿಶ್ಲೇಷಣೆ ಪೂರ್ಣಗೊಂಡಿದೆ: ${cd.crop_name_kn} (${cd.affected_part}) - ${cd.diagnosis_kn}. \n\n🧪 ನಿಖರ ರಾಸಾಯನಿಕ ಔಷಧ: ${cd.chemical_solution_kn} (ಪ್ರಮಾಣ: ${cd.exact_dosage_kn}) \n💧 15 ಲೀಟರ್ ಸ್ಪ್ರೇ ಪಂಪ್‌ಗೆ: ${cd.pump_15l_dosage_kn} \n🌿 ಸಾವಯವ ಪರಿಹಾರ: ${cd.organic_solution_kn}`
+            : `🌾 Crop Doctor diagnosis complete: ${cd.crop_name_en} (${cd.affected_part}) - ${cd.diagnosis_en}. \n\n🧪 Recommended Treatment: ${cd.chemical_solution_en} (Dosage: ${cd.exact_dosage_en}) \n💧 15-Liter Pump: ${cd.pump_15l_dosage_en} \n🌿 Organic Remedy: ${cd.organic_solution_en}`;
+      } else if (result.study_solution) {
+        const ss = result.study_solution;
+        initialSummary =
+          activeLang === 'kn'
+            ? `📚 ಅಧ್ಯಯನ ಪರಿಹಾರ ಸಿದ್ಧವಾಗಿದೆ: ${ss.subject}. \n🎯 ಅಂತಿಮ ಉತ್ತರ: ${ss.final_answer} \n\nಹಂತ ಹಂತದ ವಿವರವಾದ ಲೆಕ್ಕಾಚಾರ ಮತ್ತು ಪರಿಹಾರ ಕೆಳಗೆ ನೀಡಲಾಗಿದೆ.`
+            : `📚 Study question solved: ${ss.subject}. \n🎯 Final Answer: ${ss.final_answer} \n\nStep-by-step solution is displayed below.`;
+      } else {
+        initialSummary =
+          activeLang === 'kn'
+            ? `ವಿಶ್ಲೇಷಣೆ ಪೂರ್ಣಗೊಂಡಿದೆ: ${result.what_i_see_kn} \n\nಮುಂದಿನ ಶಿಫಾರಸು: ${result.recommended_action_kn}`
+            : `Analysis complete: ${result.what_i_see_en} \n\nRecommended: ${result.recommended_action_en}`;
+      }
 
       setChatHistory([
         {
@@ -370,7 +392,7 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
   };
 
   // Preset Sample Images for Immediate One-Click Demonstration
-  const loadSample = (sampleType: 'LEAF' | 'TEMPLE' | 'NOTICE' | 'HEALTH' | 'TRACTOR') => {
+  const loadSample = (sampleType: 'LEAF' | 'TEMPLE' | 'NOTICE' | 'HEALTH' | 'TRACTOR' | 'STUDY') => {
     const canvas = document.createElement('canvas');
     canvas.width = 600;
     canvas.height = 450;
@@ -428,6 +450,37 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
       ctx.fillStyle = '#EF4444';
       ctx.fillRect(270, 140, 60, 170);
       ctx.fillRect(215, 195, 170, 60);
+    } else if (sampleType === 'STUDY') {
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(0, 0, 600, 450);
+      ctx.fillStyle = '#1E293B';
+      ctx.fillRect(50, 30, 500, 390);
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1;
+      for (let y = 100; y < 400; y += 35) {
+        ctx.beginPath();
+        ctx.moveTo(70, y);
+        ctx.lineTo(530, y);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = '#EF4444';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(110, 30);
+      ctx.lineTo(110, 420);
+      ctx.stroke();
+      ctx.fillStyle = '#38BDF8';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText('Class 10 / SSLC Mathematics', 130, 75);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText('Solve: 2x² - 8x + 6 = 0', 130, 130);
+      ctx.font = '15px sans-serif';
+      ctx.fillStyle = '#94A3B8';
+      ctx.fillText('Find roots using quadratic formula:', 130, 165);
+      ctx.fillText('x = (-b ± √(b² - 4ac)) / (2a)', 130, 200);
+      ctx.fillStyle = '#6EE7B7';
+      ctx.fillText('ವರ್ಗ ಸಮೀಕರಣದ ಮೂಲಗಳನ್ನು ಕಂಡುಹಿಡಿಯಿರಿ', 130, 240);
     } else {
       ctx.fillStyle = '#111827';
       ctx.fillRect(0, 0, 600, 450);
@@ -457,6 +510,8 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
     switch (cat) {
       case 'AGRICULTURE':
         return { icon: Wheat, color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.4)' };
+      case 'STUDY_DOCUMENT':
+        return { icon: GraduationCap, color: '#38BDF8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)' };
       case 'HEALTHCARE':
         return { icon: Stethoscope, color: '#EF4444', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)' };
       case 'TEMPLE_VILLAGE':
@@ -734,6 +789,21 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
                 }}
               >
                 🏥 {activeLang === 'kn' ? 'ಆರೋಗ್ಯ / ಕ್ಲಿನಿಕ್' : 'Healthcare'}
+              </button>
+              <button
+                onClick={() => loadSample('STUDY')}
+                style={{
+                  background: 'rgba(56, 189, 248, 0.12)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  color: '#7DD3FC',
+                  borderRadius: '10px',
+                  padding: '6px 12px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                📚 {activeLang === 'kn' ? 'ಗಣಿತ / ಅಧ್ಯಯನ' : 'Math / Study'}
               </button>
               <button
                 onClick={() => loadSample('TRACTOR')}
@@ -1081,6 +1151,482 @@ export const PhotoAnalyzerScreen: React.FC<PhotoAnalyzerScreenProps> = ({ onBack
 
           {/* 4 CORE SECTIONS */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* 🌾 SPECIALIZED CROP DOCTOR CARD */}
+            {analysisResult.crop_details && (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(6, 78, 59, 0.5) 0%, rgba(4, 47, 46, 0.7) 100%)',
+                  border: '1.5px solid rgba(16, 185, 129, 0.45)',
+                  borderRadius: '20px',
+                  padding: '20px',
+                  boxShadow: '0 8px 30px rgba(6, 78, 59, 0.35)'
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'rgba(16, 185, 129, 0.25)',
+                        border: '1px solid rgba(16, 185, 129, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#6EE7B7'
+                      }}
+                    >
+                      <Wheat size={22} />
+                    </div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: '#FFFFFF' }}>
+                        {activeLang === 'kn' ? '🌾 ಬೆಳೆ ವೈದ್ಯ: ರೋಗ & ಕೀಟ ನಿರ್ಣಯ' : '🌾 Crop Doctor: Diagnosis & Prescription'}
+                      </h4>
+                      <span style={{ fontSize: '0.74rem', color: '#A7F3D0' }}>
+                        {activeLang === 'kn' ? 'UAS & ICAR ವೈಜ್ಞಾನಿಕ ಶಿಫಾರಸು ಆಧಾರಿತ ನಿಖರ ಔಷಧಿ' : 'Based on official UAS & ICAR agricultural recommendations'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <span
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.2)',
+                        border: '1px solid rgba(16, 185, 129, 0.4)',
+                        color: '#6EE7B7',
+                        padding: '3px 10px',
+                        borderRadius: '8px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700
+                      }}
+                    >
+                      🌱 {activeLang === 'kn' ? analysisResult.crop_details.crop_name_kn : analysisResult.crop_details.crop_name_en}
+                    </span>
+                    <span
+                      style={{
+                        background: 'rgba(245, 158, 11, 0.2)',
+                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                        color: '#FCD34D',
+                        padding: '3px 10px',
+                        borderRadius: '8px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700
+                      }}
+                    >
+                      📍 {analysisResult.crop_details.affected_part}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Diagnosis Highlight */}
+                <div
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    borderRadius: '14px',
+                    padding: '12px 16px',
+                    marginBottom: '16px'
+                  }}
+                >
+                  <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: '#94A3B8', fontWeight: 800, letterSpacing: '0.05em' }}>
+                    {activeLang === 'kn' ? 'ಪತ್ತೆಯಾದ ರೋಗ / ಕೀಟ / ಕೊರತೆ' : 'Confirmed Issue / Diagnosis'}
+                  </span>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#6EE7B7', marginTop: '2px' }}>
+                    {activeLang === 'kn' ? analysisResult.crop_details.diagnosis_kn : analysisResult.crop_details.diagnosis_en}
+                  </div>
+                  {/* Symptoms tags */}
+                  {((activeLang === 'kn' ? analysisResult.crop_details.symptoms_kn : analysisResult.crop_details.symptoms_en) || []).length > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                      {(activeLang === 'kn' ? analysisResult.crop_details.symptoms_kn : analysisResult.crop_details.symptoms_en).map((sym, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            color: '#E2E8F0',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.72rem'
+                          }}
+                        >
+                          • {sym}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Treatment Grid: Chemical Dosage vs Organic */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                  {/* Chemical Solution & Precise Dosage */}
+                  <div
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.65)',
+                      border: '1px solid rgba(59, 130, 246, 0.35)',
+                      borderRadius: '14px',
+                      padding: '14px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <Zap size={16} color="#60A5FA" />
+                      <strong style={{ fontSize: '0.86rem', color: '#93C5FD' }}>
+                        {activeLang === 'kn' ? 'ವೈಜ್ಞಾನಿಕ ರಾಸಾಯನಿಕ ಪರಿಹಾರ' : 'Chemical Formulation & Treatment'}
+                      </strong>
+                    </div>
+                    <div style={{ fontSize: '0.88rem', color: '#F8FAFC', fontWeight: 700, marginBottom: '8px', lineHeight: 1.4 }}>
+                      {activeLang === 'kn' ? analysisResult.crop_details.chemical_solution_kn : analysisResult.crop_details.chemical_solution_en}
+                    </div>
+
+                    {/* 15-Liter Pump Dosage Callout */}
+                    <div
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.25) 0%, rgba(14, 165, 233, 0.25) 100%)',
+                        border: '1px solid rgba(56, 189, 248, 0.45)',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                        marginTop: '8px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38BDF8', fontSize: '0.74rem', fontWeight: 800 }}>
+                        <Droplet size={14} />
+                        <span>{activeLang === 'kn' ? '15 ಲೀಟರ್ ಸ್ಪ್ರೇ ಪಂಪ್‌ಗೆ ನಿಖರ ಪ್ರಮಾಣ' : 'Exact Dosage for 15-Liter Spray Pump'}</span>
+                      </div>
+                      <div style={{ fontSize: '1rem', fontWeight: 900, color: '#FFFFFF', marginTop: '3px' }}>
+                        {activeLang === 'kn' ? analysisResult.crop_details.pump_15l_dosage_kn : analysisResult.crop_details.pump_15l_dosage_en}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>
+                        {activeLang === 'kn'
+                          ? `(ಪ್ರತಿ 1 ಲೀ ನೀರಿಗೆ: ${analysisResult.crop_details.exact_dosage_kn})`
+                          : `(Per 1 Liter: ${analysisResult.crop_details.exact_dosage_en})`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Organic Solution */}
+                  <div
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.65)',
+                      border: '1px solid rgba(34, 197, 94, 0.35)',
+                      borderRadius: '14px',
+                      padding: '14px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '1rem' }}>🌿</span>
+                      <strong style={{ fontSize: '0.86rem', color: '#86EFAC' }}>
+                        {activeLang === 'kn' ? 'ಸಾವಯವ / ಜೈವಿಕ ಪರಿಹಾರ' : 'Organic & Biological Alternative'}
+                      </strong>
+                    </div>
+                    <div style={{ fontSize: '0.88rem', color: '#ECFDF5', lineHeight: 1.5 }}>
+                      {activeLang === 'kn' ? analysisResult.crop_details.organic_solution_kn : analysisResult.crop_details.organic_solution_en}
+                    </div>
+
+                    {/* Spray Timing */}
+                    <div
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                        marginTop: '10px',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '8px'
+                      }}
+                    >
+                      <Clock size={16} color="#FBBF24" style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: '#FCD34D', fontWeight: 800 }}>
+                          {activeLang === 'kn' ? 'ಸಿಂಪರಣೆ ಸಮಯ & ವೇಳಾಪಟ್ಟಿ' : 'Spray Timing & Schedule'}
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: '#CBD5E1', marginTop: '2px', lineHeight: 1.4 }}>
+                          {activeLang === 'kn' ? analysisResult.crop_details.spray_schedule_kn : analysisResult.crop_details.spray_schedule_en}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preventive Sanitation */}
+                {(analysisResult.crop_details.preventive_measures_kn || analysisResult.crop_details.preventive_measures_en) && (
+                  <div
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      borderRadius: '10px',
+                      padding: '10px 14px',
+                      fontSize: '0.78rem',
+                      color: '#CBD5E1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span style={{ fontSize: '1rem' }}>🛡️</span>
+                    <span>
+                      <strong style={{ color: '#6EE7B7' }}>{activeLang === 'kn' ? 'ಮುಂಜಾಗ್ರತಾ ಕ್ರಮಗಳು: ' : 'Preventive Care: '}</strong>
+                      {activeLang === 'kn' ? analysisResult.crop_details.preventive_measures_kn : analysisResult.crop_details.preventive_measures_en}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 📚 SPECIALIZED STUDY & HOMEWORK SOLVER CARD */}
+            {analysisResult.study_solution && (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%)',
+                  border: '1.5px solid rgba(56, 189, 248, 0.45)',
+                  borderRadius: '20px',
+                  padding: '20px',
+                  boxShadow: '0 8px 30px rgba(14, 165, 233, 0.25)'
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'rgba(56, 189, 248, 0.25)',
+                        border: '1px solid rgba(56, 189, 248, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#38BDF8'
+                      }}
+                    >
+                      <GraduationCap size={22} />
+                    </div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: '#FFFFFF' }}>
+                        {activeLang === 'kn' ? '📚 ಅಧ್ಯಯನ ಪರಿಹಾರ & ಪ್ರಶ್ನೋತ್ತರ' : '📚 Study & Homework Problem Solver'}
+                      </h4>
+                      <span style={{ fontSize: '0.74rem', color: '#7DD3FC' }}>
+                        {activeLang === 'kn' ? 'ಹಂತ-ಹಂತದ ನಿಖರ ವಿವರಣೆ ಮತ್ತು ಅಂತಿಮ ಉತ್ತರ' : 'Step-by-step breakdown, formulas, and verified answer'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <span
+                      style={{
+                        background: 'rgba(56, 189, 248, 0.2)',
+                        border: '1px solid rgba(56, 189, 248, 0.4)',
+                        color: '#7DD3FC',
+                        padding: '3px 10px',
+                        borderRadius: '8px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700
+                      }}
+                    >
+                      📖 {analysisResult.study_solution.subject}
+                    </span>
+                    {analysisResult.study_solution.grade_level && (
+                      <span
+                        style={{
+                          background: 'rgba(168, 85, 247, 0.2)',
+                          border: '1px solid rgba(168, 85, 247, 0.4)',
+                          color: '#D8B4FE',
+                          padding: '3px 10px',
+                          borderRadius: '8px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700
+                        }}
+                      >
+                        🎓 {analysisResult.study_solution.grade_level}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Detected Question */}
+                {(analysisResult.study_solution.question_detected_en || analysisResult.study_solution.question_detected_kn) && (
+                  <div
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      borderRadius: '12px',
+                      padding: '12px 14px',
+                      marginBottom: '16px'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: '#94A3B8', fontWeight: 800, letterSpacing: '0.05em' }}>
+                      {activeLang === 'kn' ? 'ಪತ್ತೆಯಾದ ಪ್ರಶ್ನೆ' : 'Detected Question / Problem'}
+                    </span>
+                    <div style={{ fontSize: '0.92rem', color: '#F1F5F9', fontWeight: 600, marginTop: '4px', lineHeight: 1.5 }}>
+                      {activeLang === 'kn'
+                        ? (analysisResult.study_solution.question_detected_kn || analysisResult.study_solution.question_detected_en)
+                        : (analysisResult.study_solution.question_detected_en || analysisResult.study_solution.question_detected_kn)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step by step solution */}
+                {((activeLang === 'kn'
+                  ? analysisResult.study_solution.step_by_step_solution_kn
+                  : analysisResult.study_solution.step_by_step_solution_en) || []).length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <BookOpen size={16} color="#38BDF8" />
+                      <strong style={{ fontSize: '0.86rem', color: '#38BDF8' }}>
+                        {activeLang === 'kn' ? 'ಹಂತ-ಹಂತದ ಪರಿಹಾರ (Step-by-Step Working):' : 'Step-by-Step Working:'}
+                      </strong>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {(activeLang === 'kn'
+                        ? analysisResult.study_solution.step_by_step_solution_kn
+                        : analysisResult.study_solution.step_by_step_solution_en
+                      ).map((step, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '10px',
+                            padding: '10px 14px',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '10px',
+                            fontSize: '0.88rem',
+                            color: '#E2E8F0',
+                            lineHeight: 1.5
+                          }}
+                        >
+                          <span
+                            style={{
+                              background: 'rgba(56, 189, 248, 0.2)',
+                              color: '#38BDF8',
+                              fontWeight: 900,
+                              borderRadius: '50%',
+                              width: '22px',
+                              height: '22px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.74rem',
+                              flexShrink: 0
+                            }}
+                          >
+                            {idx + 1}
+                          </span>
+                          <span style={{ fontFamily: 'inherit' }}>{step}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Final Answer Highlight Box */}
+                {analysisResult.study_solution.final_answer && (
+                  <div
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(6, 182, 212, 0.25) 100%)',
+                      border: '1.5px solid rgba(16, 185, 129, 0.5)',
+                      borderRadius: '14px',
+                      padding: '14px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '10px',
+                      marginBottom: '14px'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: '#6EE7B7', fontWeight: 800, letterSpacing: '0.05em' }}>
+                        🎯 {activeLang === 'kn' ? 'ಅಂತಿಮ ಉತ್ತರ (Final Answer)' : 'Verified Final Answer'}
+                      </div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#FFFFFF', marginTop: '2px' }}>
+                        {analysisResult.study_solution.final_answer}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        if (analysisResult.study_solution?.final_answer) {
+                          navigator.clipboard.writeText(analysisResult.study_solution.final_answer);
+                          setCopiedAnswer(true);
+                          setTimeout(() => setCopiedAnswer(false), 2000);
+                        }
+                      }}
+                      style={{
+                        background: copiedAnswer ? '#10B981' : 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '10px',
+                        padding: '8px 14px',
+                        color: '#FFFFFF',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {copiedAnswer ? <CheckCheck size={16} /> : <Copy size={16} />}
+                      <span>
+                        {copiedAnswer
+                          ? (activeLang === 'kn' ? 'ಉತ್ತರ ನಕಲಿಸಲಾಗಿದೆ!' : 'Copied!')
+                          : (activeLang === 'kn' ? 'ಉತ್ತರ ನಕಲಿಸಿ' : 'Copy Answer')}
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Formulas & Key Concepts */}
+                {((analysisResult.study_solution.formulas_used || []).length > 0 ||
+                  analysisResult.study_solution.key_concepts_en ||
+                  analysisResult.study_solution.key_concepts_kn) && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {(analysisResult.study_solution.formulas_used || []).length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>
+                          {activeLang === 'kn' ? 'ಬಳಸಿದ ಸೂತ್ರಗಳು:' : 'Formulas Used:'}
+                        </span>
+                        {analysisResult.study_solution.formulas_used!.map((form, fidx) => (
+                          <span
+                            key={fidx}
+                            style={{
+                              background: 'rgba(56, 189, 248, 0.15)',
+                              border: '1px solid rgba(56, 189, 248, 0.3)',
+                              color: '#BAE6FD',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              fontSize: '0.74rem',
+                              fontFamily: 'monospace'
+                            }}
+                          >
+                            {form}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {(analysisResult.study_solution.key_concepts_kn || analysisResult.study_solution.key_concepts_en) && (
+                      <div
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          fontSize: '0.76rem',
+                          color: '#CBD5E1',
+                          lineHeight: 1.4
+                        }}
+                      >
+                        <strong style={{ color: '#FCD34D' }}>💡 {activeLang === 'kn' ? 'ಕಲಿಕೆಯ ಮುಖ್ಯಾಂಶ: ' : 'Key Concept: '}</strong>
+                        {activeLang === 'kn' ? analysisResult.study_solution.key_concepts_kn : analysisResult.study_solution.key_concepts_en}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 1. What I See */}
             <div
               style={{

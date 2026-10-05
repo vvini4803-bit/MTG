@@ -152,15 +152,15 @@ export const VillageHero: React.FC = () => {
           {/* Village Name Title & Logo Emblem */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '0 0 10px 0', flexWrap: 'wrap' }}>
             <img
-              src="/logo.png"
+              src="/logo.png?v=3"
               alt="Muttagundi Village MTG Emblem"
               style={{
                 width: '74px',
                 height: '74px',
-                borderRadius: '50%',
-                objectFit: 'cover',
+                borderRadius: '18px',
+                objectFit: 'contain',
                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
-                border: '2.5px solid rgba(245, 158, 11, 0.65)',
+                border: '1.5px solid rgba(245, 158, 11, 0.45)',
                 background: '#070F1E',
                 flexShrink: 0
               }}
