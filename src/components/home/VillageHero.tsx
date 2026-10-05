@@ -8,14 +8,20 @@ import {
   CloudRain,
   RefreshCw,
   Compass,
-  Thermometer
+  Thermometer,
+  Play
 } from 'lucide-react';
 import {
   subscribeMuttagundiWeather,
   fetchMuttagundiLiveWeather,
   MuttagundiWeather
 } from '../../services/weatherService';
-export const VillageHero: React.FC = () => {
+
+interface VillageHeroProps {
+  onOpenIntro?: () => void;
+}
+
+export const VillageHero: React.FC<VillageHeroProps> = ({ onOpenIntro }) => {
   const { isKannada } = useLanguage();
   const [weather, setWeather] = useState<MuttagundiWeather | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -203,44 +209,86 @@ export const VillageHero: React.FC = () => {
           </div>
 
           {/* Soulful Tagline */}
-          <p
-            style={{
-              fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-              color: '#E2E8F0',
-              margin: '0 0 16px 0',
-              fontWeight: 600,
-              lineHeight: 1.4,
-              textShadow: '0 1px 4px rgba(0,0,0,0.6)'
-            }}
-          >
-            {isKannada
-              ? 'ನಮ್ಮ ಗ್ರಾಮ • ನಮ್ಮ ಜನ • ನಮ್ಮ ಕಥೆಗಳು'
-              : 'Our Village • Our People • Our Stories'}
-          </p>
-
-
-
-          {/* Warm Welcome Indicator */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'rgba(16, 185, 129, 0.22)',
-              border: '1px solid rgba(52, 211, 153, 0.4)',
-              borderRadius: '12px',
-              padding: '6px 14px',
-              fontSize: '0.82rem',
-              color: '#A7F3D0',
-              fontWeight: 700
-            }}
-          >
-            <Sparkles size={16} color="#34D399" />
-            <span>
+          <div style={{ margin: '0 0 16px 0' }}>
+            <h2
+              style={{
+                fontSize: 'clamp(1.2rem, 3vw, 1.55rem)',
+                fontWeight: 900,
+                lineHeight: 1.3,
+                margin: '0 0 6px 0',
+                background: 'linear-gradient(135deg, #FEF08A 0%, #F59E0B 50%, #34D399 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 2px 10px rgba(0,0,0,0.6)'
+              }}
+            >
               {isKannada
-                ? 'ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಮಾಹಿತಿ & ಸೇವಾ ಕೇಂದ್ರಕ್ಕೆ ಸುಸ್ವಾಗತ'
-                : 'Welcome to the Digital Village Hub & Information Center'}
-            </span>
+                ? 'ನಮ್ಮ ಹೆಮ್ಮೆಯ ಮುತ್ತಾಗೊಂದಿ ಗೆ ಸ್ವಾಗತ'
+                : 'Welcome to Our Proud Muttagundi'}
+            </h2>
+            <p
+              style={{
+                fontSize: 'clamp(0.88rem, 2vw, 0.98rem)',
+                color: '#E2E8F0',
+                fontWeight: 600,
+                lineHeight: 1.4,
+                margin: 0,
+                textShadow: '0 1px 4px rgba(0,0,0,0.6)'
+              }}
+            >
+              {isKannada
+                ? 'ನಮ್ಮ ಗ್ರಾಮ • ನಮ್ಮ ಜನ • ನಮ್ಮ ಕಥೆಗಳು'
+                : 'Our Village • Our People • Our Stories'}
+            </p>
+          </div>
+
+          {/* Warm Welcome Indicator & Intro Video Replay Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(16, 185, 129, 0.22)',
+                border: '1px solid rgba(52, 211, 153, 0.4)',
+                borderRadius: '12px',
+                padding: '6px 14px',
+                fontSize: '0.82rem',
+                color: '#A7F3D0',
+                fontWeight: 700
+              }}
+            >
+              <Sparkles size={16} color="#34D399" />
+              <span>
+                {isKannada
+                  ? 'ಡಿಜಿಟಲ್ ಗ್ರಾಮ ಮಾಹಿತಿ & ಸೇವಾ ಕೇಂದ್ರ'
+                  : 'Digital Village Hub & Information Center'}
+              </span>
+            </div>
+
+            {onOpenIntro && (
+              <button
+                onClick={onOpenIntro}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.28) 0%, rgba(16, 185, 129, 0.28) 100%)',
+                  border: '1.5px solid rgba(245, 158, 11, 0.65)',
+                  borderRadius: '12px',
+                  padding: '6px 14px',
+                  fontSize: '0.82rem',
+                  color: '#FEF08A',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 15px rgba(245, 158, 11, 0.25)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Play size={14} fill="#F59E0B" color="#F59E0B" />
+                <span>{isKannada ? '🎬 ಗ್ರಾಮ ಪರಿಚಯ (Watch Intro)' : '🎬 Village Intro Video'}</span>
+              </button>
+            )}
           </div>
         </div>
 

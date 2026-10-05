@@ -6,6 +6,7 @@ import { NewsItem, EventItem, Tournament, MatchItem, CropItem, TempleItem, Galle
 
 // Layout & Hero
 import { VillageHero } from './components/home/VillageHero';
+import { SplashScreen } from './views/SplashScreen';
 import { ShareUpdateModal } from './components/news/ShareUpdateModal';
 import { VoiceAssistantModal } from './components/voice/VoiceAssistantModal';
 import { TalkAgentModal } from './components/talkAgent/TalkAgentModal';
@@ -122,6 +123,22 @@ export const App: React.FC = () => {
 
   // Active Main Navigation Section
   const [currentSection, setCurrentSection] = useState<MainSection>('home');
+
+  // Cinematic Animated Intro Screen (shows on opening the app)
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('mtg_intro_dismissed') !== 'true';
+    } catch {
+      return true;
+    }
+  });
+
+  const handleEnterApp = () => {
+    setShowIntro(false);
+    try {
+      sessionStorage.setItem('mtg_intro_dismissed', 'true');
+    } catch {}
+  };
 
   // Real-time collections for previews and tickers
   const [emergencyAlert, setEmergencyAlert] = useState<EmergencyAlert | null>(null);
@@ -894,7 +911,7 @@ export const App: React.FC = () => {
         {currentSection === 'home' && (
           <div>
             {/* The Animated Village Hero Landscape */}
-            <VillageHero />
+            <VillageHero onOpenIntro={() => setShowIntro(true)} />
 
             {/* Mobile Notification Enable Permission Banner */}
             <NotificationPermissionBanner />
@@ -2486,6 +2503,11 @@ export const App: React.FC = () => {
             {isKannada ? 'ಅಪ್ಲಿಕೇಶನ್‌ನಿಂದ ನಿರ್ಗಮಿಸಲು ಮತ್ತೊಮ್ಮೆ ಬ್ಯಾಕ್ ಒತ್ತಿ' : 'Press back again to leave app'}
           </span>
         </div>
+      )}
+
+      {/* 🎬 CINEMATIC INTRO VIDEO SCREEN (Welcoming to "ನಮ್ಮ ಹೆಮ್ಮೆಯ ಮುತ್ತಾಗೊಂದಿ ಗೆ ಸ್ವಾಗತ") */}
+      {showIntro && (
+        <SplashScreen onEnter={handleEnterApp} />
       )}
     </div>
   );
