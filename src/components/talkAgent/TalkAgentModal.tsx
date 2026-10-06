@@ -72,6 +72,7 @@ export const TalkAgentModal: React.FC<TalkAgentModalProps> = ({ isOpen, onClose 
 
   const handleToggleListening = () => {
     if (!agentService) return;
+    setErrorMessage(null);
     if (status === 'listening') {
       agentService.stop();
     } else {
@@ -81,6 +82,7 @@ export const TalkAgentModal: React.FC<TalkAgentModalProps> = ({ isOpen, onClose 
 
   const handleStopSpeaking = () => {
     if (agentService) {
+      setErrorMessage(null);
       agentService.stopSpeaking();
       agentService.startListening();
     }
@@ -88,6 +90,7 @@ export const TalkAgentModal: React.FC<TalkAgentModalProps> = ({ isOpen, onClose 
 
   const handleSendText = () => {
     if (!inputText.trim() || !agentService) return;
+    setErrorMessage(null);
     const q = inputText.trim();
     setInputText('');
     agentService.answerQuestion(q);
@@ -95,6 +98,7 @@ export const TalkAgentModal: React.FC<TalkAgentModalProps> = ({ isOpen, onClose 
 
   const handlePromptClick = (prompt: string) => {
     if (!agentService) return;
+    setErrorMessage(null);
     agentService.answerQuestion(prompt);
   };
 
@@ -429,8 +433,43 @@ export const TalkAgentModal: React.FC<TalkAgentModalProps> = ({ isOpen, onClose 
           )}
 
           {errorMessage && (
-            <div style={{ marginTop: '8px', color: '#FCA5A5', fontSize: '0.75rem' }}>
-              ⚠️ {errorMessage}
+            <div
+              style={{
+                marginTop: '10px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '12px',
+                padding: '8px 12px',
+                color: '#FCA5A5',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                maxWidth: '460px',
+                margin: '10px auto 0'
+              }}
+            >
+              <span>⚠️ {errorMessage}</span>
+              <button
+                onClick={() => {
+                  setErrorMessage(null);
+                  agentService?.startListening();
+                }}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.3)',
+                  border: '1px solid #EF4444',
+                  color: '#FFFFFF',
+                  borderRadius: '12px',
+                  padding: '3px 10px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {isKannada ? 'ಮರುಪ್ರಯತ್ನಿಸಿ' : 'Retry'}
+              </button>
             </div>
           )}
         </div>
